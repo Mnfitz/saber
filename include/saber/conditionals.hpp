@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2024 Matthew Fitzgerald
 //
@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 
 #pragma once
 #ifndef SABRE_CONDITIONALS_HPP
@@ -77,9 +77,8 @@
 //	#endif
 //	};
 
-// ---------------------------------------------------
-// Public accessor macros:
-//
+// ------------------------------------------------------------------
+#pragma region public SABRE_MACROS
 
 // Sizeof cpu processor architecture (in bits)
 // (arch) := (32|64)
@@ -100,6 +99,11 @@
 // Compiler type being used for compilation
 // (compiler) := (CLANG|GCC|MSVC)
 #define SABRE_COMPILER(compiler) (SABRE_PRIVATE_COMPILER_##compiler(compiler))
+
+#pragma endregion ()
+
+// ------------------------------------------------------------------
+#pragma region private (do not use)! SABRE_MACROS
 
 // TRICKY j3fitz 28apr2024: "Sorta private" sabre macros w/ unused dummy parameter...
 // The following #undef's serve no actual purpose other than as a preview-hint
@@ -142,6 +146,8 @@
 #undef SABRE_PRIVATE_COMPILER_CLANG
 #undef SABRE_PRIVATE_COMPILER_GCC
 #undef SABRE_PRIVATE_COMPILER_MSVC
+
+#pragma endregion ()
 
 #if defined(_MSC_VER) // MSVC-specific "magic" preprocessor symbol announcing "Microsoft"
 // ---------------------------------------------------
