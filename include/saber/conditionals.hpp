@@ -141,6 +141,7 @@
 #undef SABER_PRIVATE_PLATFORM_IOS
 #undef SABER_PRIVATE_PLATFORM_OSX
 #undef SABER_PRIVATE_PLATFORM_LINUX
+// #undef SABER_PRIVATE_PLATFORM_POSIX // not yet
 #undef SABER_PRIVATE_PLATFORM_WIN32
 
 #undef SABER_PRIVATE_COMPILER_CLANG
@@ -149,10 +150,9 @@
 
 #pragma endregion ()
 
-#if defined(_MSC_VER) // MSVC-specific "magic" preprocessor symbol announcing "Microsoft"
-// ---------------------------------------------------
-// Microsoft:
-// #if SABER_PLATFORM(WIN32)...
+#if defined(_MSC_VER) // MSVC-specific preprocessor symbol announcing "Microsoft" toolset
+// ------------------------------------------------------------------
+#pragma region WIN32: Visual Studio toolset detection
 
 	#include <winapifamily.h>
 	#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) // exclude UWP apps
@@ -213,10 +213,11 @@
 //		#define SABER_PRIVATE_PLATFORM_LINUX(platform)	1
 //		// etc...
 
-#elif defined(__APPLE__) && defined(__MACH__) // Xcode-specific "magic" preprocessor symbols announcing "Apple"
-// ---------------------------------------------------
-// Apple:
-// #if SABER_PLATFORM(OSX) || SABER_PLATFORM(IOS)...
+#pragma endregion ()
+
+#elif defined(__APPLE__) && defined(__MACH__) // Xcode-specific preprocessor symbols announcing "Apple"
+// ------------------------------------------------------------------
+#pragma region OSX/IOS: Xcode toolset detection
 
 	#include <TargetConditionals.h>
 	#if TARGET_OS_MAC // OSX
@@ -259,10 +260,11 @@
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
-#elif defined(__linux__) // GCC-specific "magic" preprocessor symbol announcing "Linux"
-// ---------------------------------------------------
-// Linux:
-// #if SABER_PLATFORM(LINUX) || SABER_PLATFORM(ANDROID)...
+#pragma endregion ()
+
+#elif defined(__linux__) // Clang/GCC-specific preprocessor symbol announcing "Linux"
+// ------------------------------------------------------------------
+#pragma region Linux: Xcode toolset detection
 
 	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	1
 	// Not yet...
@@ -313,6 +315,8 @@
 	#define SABER_DEBUG	(!defined(NDEBUG))
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
+
+#pragma endregion ()
 
 #else
 #error "Unsupported toolset"
