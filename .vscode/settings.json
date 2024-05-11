@@ -1,5 +1,12 @@
 {
 	"files.associations": {
 		"stdexcept": "cpp"
+	},
+	"cmake.configureSettings": {
+		
+		"CMAKE_BUILD_TYPE": "${buildType}",
+		"SABER_BUILD_TESTS": true,
+		"SABER_BUILD_BENCHMARKS": false,
+		"SABER_BUILD_DOCS": false,
 	}
 }
