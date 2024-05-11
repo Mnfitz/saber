@@ -19,19 +19,11 @@ option(SABER_BUILD_DOCS "Build Doxygen Documentation" OFF)
 # Add saber headers to #include searchpath
 include_directories(include)
 
-if(SABER_BUILD_TESTS)
-	# Must be top-level or test won't be found.
-	include(CTest) # enable_testing() invoked here!
-	add_subdirectory(test)
-endif() # SABER_BUILD_TESTS
-
-# if(SABER_BUILD_DOCS)
-#	add_subdirectory(doc/assets) # Build docset assets
-#	add_subdirectory(doc/doxygen) # Build docset doxygen output
-# endif() # SABER_BUILD_DOCS
-
 # Gather headers into an interface library.
-file(GLOB_RECURSE HEADER_FILES "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/*.h")
+file(GLOB_RECURSE HEADER_FILES
+	"${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/*.h"
+	"${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp")
+	
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -56,3 +48,14 @@ install(EXPORT ${PROJECT_NAME_LOWER}_targets
 
 # Install the headers at a standard cmake location.
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+if(SABER_BUILD_TESTS)
+	# Must be top-level or test won't be found.
+	include(CTest) # enable_testing() invoked here!
+	add_subdirectory(test)
+endif() # SABER_BUILD_TESTS
+
+# if(SABER_BUILD_DOCS)
+#	add_subdirectory(doc/assets) # Build docset assets
+#	add_subdirectory(doc/doxygen) # Build docset doxygen output
+# endif() # SABER_BUILD_DOCS

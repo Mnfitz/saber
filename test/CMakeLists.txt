@@ -3,6 +3,22 @@ message(STATUS "Building saber/test/...")
 include(FetchContent)
 include(${PROJECT_SOURCE_DIR}/cmake/cxxflags_common.cmake)
 
+set(CMAKE_CXX_STANDARD 17)
+
+if (MSVC)
+	add_definitions(-DNOMINMAX=1 -DWIN32_LEAN_AND_MEAN=1)
+	add_link_options(/NATVIS:${CMAKE_SOURCE_DIR}/natvis/saber.natvis)
+
+	# For some unknown reason, 'RelWithDebInfo' compiles with '/Ob1' as opposed to '/Ob2' which prevents inlining of
+	# functions not marked 'inline'. The reason we prefer 'RelWithDebInfo' over 'Release' is to get debug info, so manually
+	# revert to the desired (and default) inlining behavior as that exercises more interesting code paths
+	if ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+		# TODO: This is currently blocked by an apparent Clang bug: https://github.com/llvm/llvm-project/issues/59690
+		# replace_cxx_flag("/Ob1" "/Ob2")
+		replace_cxx_flag("/Ob1" "/Ob2")
+	endif() # STREQUAL "RelWithDebInfo"
+endif() # MSVC
+
 if(SABER_BUILD_TESTS)
 
 	FetchContent_Declare(
@@ -12,11 +28,37 @@ if(SABER_BUILD_TESTS)
 
 	FetchContent_MakeAvailable(Catch2)
 
-	add_executable(sabre_test saber_test.cpp)
+	set(SOURCE_FILES
+		${CMAKE_CURRENT_SOURCE_DIR}/saber_test.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
+
+	add_executable(saber_test ${SOURCE_FILES})
+
+	# Saber unittest source files will appear in an IDE folder called "test"
+	source_group(
+		TREE "${PROJECT_SOURCE_DIR}/test"
+		PREFIX "test"
+		FILES ${SOURCE_FILES})	
+
+	# All projects need to reference the Saber headers
+	include_directories(${PROJECT_SOURCE_DIR}/include)
+
+	# Create a customized structure to hold header files when viewed through the IDE
+	# Saber header files will appear in an IDE folder called "include/saber"
+	source_group(
+		TREE "${PROJECT_SOURCE_DIR}/include"
+		PREFIX "include"
+		FILES ${HEADER_FILES})
+
+	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
+
+	# find_package(Catch2 CONFIG REQUIRED)
+	link_libraries(Catch2::Catch2WithMain)
+
 	# Catch2 provides a main function as executable entry point.
 	# Private since there is no need to surface these libraries in the binary.
-	target_link_libraries(sabre_test PRIVATE Catch2 Catch2WithMain)
-	add_test(NAME sabre_test COMMAND test)
+	target_link_libraries(saber_test PRIVATE Catch2 Catch2WithMain)
+	add_test(NAME saber_test COMMAND test)
 
 endif() # SABER_BUILD_TESTS
 
@@ -34,9 +76,9 @@ endif() # SABER_BUILD_TESTS
 #
 #	FetchContent_MakeAvailable(googlebenchmark googletest)
 #
-#	add_executable(sabre_benchmark benchmark.cpp benchmark_common.h)
-#	add_test(NAME sabre_benchmark COMMAND test)
-#	target_link_libraries(sabre_benchmark PUBLIC benchmark::benchmark)
+#	add_executable(saber_benchmark benchmark.cpp benchmark_common.h)
+#	add_test(NAME saber_benchmark COMMAND test)
+#	target_link_libraries(saber_benchmark PUBLIC benchmark::benchmark)
 #
 #	add_executable(saber_baseline benchmark_baseline.cpp benchmark_common.h)
 #	add_test(NAME saber_baseline COMMAND test)
@@ -60,41 +102,6 @@ endif() # SABER_BUILD_TESTS
 #
 #	add_definitions(-DCATCH_CONFIG_FAST_COMPILE -DWIL_FAST_BUILD)
 #endif() # FAST_BUILD
-
-# All projects need to reference the Saber headers
-include_directories(${PROJECT_SOURCE_DIR}/include)
-
-# Create a customized structure to hold header files when viewed through the IDE
-# Header files will appear in an IDE folder called "Header Files"
-source_group(
-	TREE "include/${PROJECT_SOURCE_DIR}"
-	PREFIX "Header Files"
-	FILES ${HEADER_LIST})
-
-include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
-
-set(COMMON_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/saber_test.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../natvis/saber.natvis)
-
-# find_package(Catch2 CONFIG REQUIRED)
-link_libraries(Catch2::Catch2WithMain)
-
-set(CMAKE_CXX_STANDARD 17)
-
-if (MSVC)
-	add_definitions(-DNOMINMAX=1 -DWIN32_LEAN_AND_MEAN=1)
-	add_link_options(/NATVIS:${CMAKE_SOURCE_DIR}/natvis/saber.natvis)
-
-	# For some unknown reason, 'RelWithDebInfo' compiles with '/Ob1' as opposed to '/Ob2' which prevents inlining of
-	# functions not marked 'inline'. The reason we prefer 'RelWithDebInfo' over 'Release' is to get debug info, so manually
-	# revert to the desired (and default) inlining behavior as that exercises more interesting code paths
-	if ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-		# TODO: This is currently blocked by an apparent Clang bug: https://github.com/llvm/llvm-project/issues/59690
-		# replace_cxx_flag("/Ob1" "/Ob2")
-		replace_cxx_flag("/Ob1" "/Ob2")
-	endif() # STREQUAL "RelWithDebInfo"
-endif() # MSVC
 
 #add_subdirectory(win32)
 #add_subdirectory(osx)
