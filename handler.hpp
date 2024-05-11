@@ -7,6 +7,11 @@
 
 namespace saber {
 
+/// @brief ValueHandler takes in a reference to a variable and a value which the variable will be assigned.
+/// When the ValueHandler is destructed, it will revert the variable back to it's original state
+/// This can be used while performing thread operations.
+/// @param inValue The variable which the Value Handler will manage
+/// @param inNewValue The value which will be assigned to inValue for the duration of the ValueHandler's lifetime
 template<typename T>
 class ValueHandler
 {
@@ -22,7 +27,7 @@ public:
 
     ~ValueHandler()
     {
-        Reset();
+        Reset(); // called by dtor: Must be noexcept
     }
 
     // RO5 Methods
@@ -39,7 +44,7 @@ public:
         }
     }
 
-    // Move Operand
+    // Move Operator
     /// @brief Assign this with data moved from inputted shared_ptr
     /// @param ioMove shared_ptr which will have its data swapped with this
     /// @return this
@@ -48,9 +53,6 @@ public:
         // Moving to self should be a NOP
         if (this != &ioMove)
         {
-            // Reset/delete the old value which was moved
-            //reset(); // noexcept requires us to leave as a turd
-            // swap allows for noexcept move assign
             std::swap(mValue, ioMove.mValue);
             std::swap(mSaved, ioMove.mSaved);
         }
@@ -61,6 +63,8 @@ public:
     ValueHandler(const ValueHandler& inCopy) = delete;
     ValueHandler& operator=(const ValueHandler& inCopy) = delete;
 
+    /// @brief Revert the handled value back to its original state. 
+    /// This operation can only be performed once
     void Reset() noexcept
     {
         if (mSaved)
