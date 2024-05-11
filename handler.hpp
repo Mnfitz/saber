@@ -3,6 +3,7 @@
 #define SABER_HANDLER_HPP
 
 //std
+#include <memory>
 #include <optional>
 
 namespace saber {
@@ -79,6 +80,26 @@ private:
     std::optional<T> mSaved;
 
 }; // class ValueHandler
+
+template<typename T>
+class ReferenceHandler
+{
+public:
+    // ctor stores a copy of the variable's stored data
+    ReferenceHandler(T* inReference) :
+        mReference{inReference};
+    {
+        // Do nothing
+    }
+
+    ~ReferenceHandler()
+    {
+        Reset(); // called by dtor: Must be noexcept
+    }
+
+private:
+    std::unique_ptr<T> mReference;
+}; // class ReferenceHandler
 
 }// namespace saber
 
