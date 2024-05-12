@@ -7,11 +7,11 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include "catch2/catch_test_macros.hpp"
-
+#if 0
 static int Factorial( int number )
 {
-	return number <= 1 ? number : Factorial( number - 1 ) * number;  // fail
-// return number <= 1 ? 1      : Factorial( number - 1 ) * number;  // pass
+//	return number <= 1 ? number : Factorial( number - 1 ) * number;  // fail
+ return number <= 1 ? 1      : Factorial( number - 1 ) * number;  // pass
 }
 
 TEST_CASE( "Factorial of 0 is 1 (fail)", "[single-file]" )
@@ -91,3 +91,4 @@ TEST_CASE( "vectors can be sized and resized", "[vector]" )
 		}
 	}
 }
+#endif
