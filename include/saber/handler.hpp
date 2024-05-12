@@ -3,6 +3,7 @@
 #define SABER_HANDLER_HPP
 
 //std
+#include <memory>
 #include <optional>
 
 namespace saber {
@@ -79,6 +80,68 @@ private:
     std::optional<T> mSaved;
 
 }; // class ValueHandler
+
+template<typename T>
+class ReferenceHandler
+{
+public:
+    // ctor stores a copy of the variable's stored data
+    ReferenceHandler(T* inReference) :
+        mReference{inReference}
+    {
+        // Do nothing
+    }
+
+    ReferenceHandler() = default;
+
+    ~ReferenceHandler() = default;
+
+    // Move Ctor
+    /// @brief Construct this with data moved from inputted ReferenceHandler
+    /// @param ioMove ReferenceHandler which will have its data swapped with this, nullifying it 
+    ReferenceHandler(ReferenceHandler&& ioMove) noexcept
+    {
+        if (ioMove)
+        {
+            // swap allows for noexcept move ctor
+            std::swap(mReference, ioMove.mReference);
+        }
+    }
+
+    // Move Operator
+    /// @brief Assign this with data moved from inputted ReferenceHandler
+    /// @param ioMove ReferenceHandler which will have its data swapped with this
+    /// @return this
+    ReferenceHandler& operator=(ReferenceHandler&& ioMove) noexcept
+    {
+        // Moving to self should be a NOP
+        if (this != &ioMove)
+        {
+            // swap allows for noexcept move assign
+            std::swap(mReference, ioMove.mReference);
+        }
+        return *this;
+    }
+
+    operator bool()
+    {
+        return (mReference != nullptr);
+    }
+
+    T* Get()
+    {
+        return mReference.get();
+    }
+
+    void Reset() noexcept
+    {
+        mReference.reset();
+    }
+
+private:
+    std::unique_ptr<T> mReference{nullptr};
+}; // class ReferenceHandler
+
 
 }// namespace saber
 
