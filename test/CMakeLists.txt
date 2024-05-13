@@ -1,54 +1,31 @@
+cmake_minimum_required(VERSION 3.6)
+
 message(STATUS "Building saber/test/...")
 
 include(FetchContent)
-include(${PROJECT_SOURCE_DIR}/cmake/cxxflags_common.cmake)
 
-set(CMAKE_CXX_STANDARD 17)
-
-if (MSVC)
-	add_definitions(-DNOMINMAX=1 -DWIN32_LEAN_AND_MEAN=1)
-	add_link_options(/NATVIS:${CMAKE_SOURCE_DIR}/natvis/saber.natvis)
-
-	# For some unknown reason, 'RelWithDebInfo' compiles with '/Ob1' as opposed to '/Ob2' which prevents inlining of
-	# functions not marked 'inline'. The reason we prefer 'RelWithDebInfo' over 'Release' is to get debug info, so manually
-	# revert to the desired (and default) inlining behavior as that exercises more interesting code paths
-	if ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-		# TODO: This is currently blocked by an apparent Clang bug: https://github.com/llvm/llvm-project/issues/59690
-		# replace_cxx_flag("/Ob1" "/Ob2")
-		replace_cxx_flag("/Ob1" "/Ob2")
-	endif() # STREQUAL "RelWithDebInfo"
-endif() # MSVC
-
+#
+# Saber "unit test" app (saber_test) defined here
+#
 if(SABER_BUILD_TESTS)
 
+	# saber_test depends on `Catch2` test framework
 	FetchContent_Declare(
 		Catch2
 		GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
 		GIT_TAG			v3.6.0)
-
 	FetchContent_MakeAvailable(Catch2)
 
+	# saber_test source files...
 	set(SOURCE_FILES
+#		${CMAKE_CURRENT_SOURCE_DIR}/handler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/saber_test.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
-	add_executable(saber_test ${SOURCE_FILES})
-
-	# Saber unittest source files will appear in an IDE folder called "test"
-	source_group(
-		TREE "${PROJECT_SOURCE_DIR}/test"
-		PREFIX "test"
-		FILES ${SOURCE_FILES})	
-
-	# All projects need to reference the Saber headers
-	include_directories(${PROJECT_SOURCE_DIR}/include)
-
-	# Create a customized structure to hold header files when viewed through the IDE
-	# Saber header files will appear in an IDE folder called "include/saber"
-	source_group(
-		TREE "${PROJECT_SOURCE_DIR}/include"
-		PREFIX "include"
-		FILES ${HEADER_FILES})
+	add_executable(saber_test
+		${HEADER_FILES}
+		${SOURCE_FILES}
+		${PROJECT_SOURCE_DIR}/CMakeLists.txt)
 
 	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
 
@@ -60,6 +37,25 @@ if(SABER_BUILD_TESTS)
 	target_link_libraries(saber_test PRIVATE Catch2 Catch2WithMain)
 	add_test(NAME saber_test COMMAND test)
 
+	# Make the Visual Studio .vcxproj files look prettier...
+	if(MSVC)
+		# TRICKY jfitz 12may2024: Making `source_groups` appear in the VS IDE
+		# A `source_group` directive will only take effect if the FILES
+		# specified are also dependencies of the `add_executable`
+
+		# Source files will appear in an IDE folder called "test"
+		source_group(
+			TREE "${PROJECT_SOURCE_DIR}/test"
+			PREFIX "test"
+			FILES ${SOURCE_FILES})	
+
+		# Header files will appear in an IDE folder called "include"
+		source_group(
+			TREE "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}"
+			PREFIX "include/${PROJECT_NAME}"
+			FILES ${HEADER_FILES})
+
+	endif() # MSVC
 endif() # SABER_BUILD_TESTS
 
 #if(SABER_BUILD_BENCHMARKS)
@@ -93,7 +89,7 @@ endif() # SABER_BUILD_TESTS
 #endif() # SABER_BUILD_BENCHMARKS
 
 # The build pipelines have limitations that local development environments do not, so turn a few knobs
-#if (${FAST_BUILD})
+#if(${FAST_BUILD})
 #	if (MSVC)
 #		replace_cxx_flag("/GR" "/GR-") # Disables RTTI
 #	else()
