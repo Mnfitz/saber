@@ -20,6 +20,7 @@ if(SABER_BUILD_TESTS)
 	set(SOURCE_FILES
 #		${CMAKE_CURRENT_SOURCE_DIR}/handler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/saber_test.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/handler.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
 	add_executable(saber_test
