@@ -3,10 +3,51 @@
 #define SABER_HANDLER_HPP
 
 //std
+#include <cstdio>
 #include <memory>
 #include <optional>
 
 namespace saber {
+
+namespace detail {
+
+template<typename T>
+struct Deleter
+{
+    void operator()(T* inDelete)
+    {
+#if 1
+        // We don't use raw delete, since unique_ptr defaults to 
+        // using default_delete. We should follow this pattern as well
+        //delete inDelete;
+        // Specify constexpr since we never modify deleter
+        constexpr std::default_delete<T> deleter{};
+        deleter(inDelete);
+#else 
+        // TRICKY mnfitz 18may2024: Lambda wrapper for static_assert()
+        // If we want to prevent use of a primary template definition, 
+        // so that only specializations will compile, we must wrap the
+        // static assert in a lambda. Otherwise, the static_assert()
+        // will always give us compile errors at every usage of our template
+        // class, whether it's specialized or not.
+        auto mustBeSpecialized = []()
+        {
+            static_assert(false, "You must provide your own Deleter<T> specialization when using ReferenceHandler");
+        };
+#endif
+    }
+};
+
+template<> // NOTE: no typename T
+struct Deleter<std::FILE*> // specialization!
+{
+    void operator()(std::FILE* inFile) const
+    {
+        std::fclose(inFile);
+    }
+};
+
+} // namespace detail
 
 /// @brief ValueHandler takes in a reference to a variable and a value which the variable will be assigned.
 /// When the ValueHandler is destructed, it will revert the variable back to it's original state
@@ -139,7 +180,8 @@ public:
     }
 
 private:
-    std::unique_ptr<T> mReference{nullptr};
+    //std::unique_ptr<T> mReference{nullptr};
+    std::unique_ptr<T, detail::Deleter<T>> mReference{};
 }; // class ReferenceHandler
 
 
