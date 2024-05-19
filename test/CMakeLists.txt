@@ -55,6 +55,7 @@ if(SABER_BUILD_TESTS)
 			PREFIX "include/${PROJECT_NAME}"
 			FILES ${HEADER_FILES})
 
+		add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 	endif() # MSVC
 endif() # SABER_BUILD_TESTS
 

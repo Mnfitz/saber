@@ -29,6 +29,7 @@
 #include "saber/handler.hpp"
 
 // std
+#include <cstdio>
 #include <type_traits>
 
 TEST_CASE( "saber::ValueHandler", "[saber]" )
@@ -96,7 +97,7 @@ TEST_CASE( "saber::ValueHandler", "[saber]" )
 	}
 }
 
-TEST_CASE("saber::ReferenceHandler", "[saber]")
+TEST_CASE("saber::ReferenceHandler allocated memory", "[saber]")
 {
 	SECTION("Delete std::vector Via Reset()")
 	{
@@ -147,5 +148,45 @@ TEST_CASE("saber::ReferenceHandler", "[saber]")
 		saber::ReferenceHandler<std::vector<std::string>> emptyHandler{std::move(refHandler)};
 		REQUIRE(refHandler.Get() == nullptr);
 		REQUIRE(emptyHandler.Get() == ref3);
+	}
+}
+
+TEST_CASE("saber::ReferenceHandler std::FILE", "[saber]")
+{
+	SECTION("Delete std::FILE Via Reset()")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+
+		REQUIRE(refHandler.Get() == testFile);
+
+		refHandler.Reset();
+		REQUIRE(refHandler.Get() == nullptr);
+	}
+	
+	SECTION("Move Construct for std::FILE")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+
+		REQUIRE(refHandler.Get() == testFile);
+
+		saber::ReferenceHandler<std::FILE> emptyHandler{std::move(refHandler)};
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == testFile);
+	}
+
+	SECTION("Move Assign for std::FILE")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+		saber::ReferenceHandler<std::FILE> emptyHandler{};
+
+		REQUIRE(refHandler.Get() == testFile);
+		REQUIRE(emptyHandler.Get() == nullptr);
+
+		emptyHandler = std::move(refHandler);
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == testFile);
 	}
 }

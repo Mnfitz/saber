@@ -42,7 +42,7 @@ struct Deleter
 
 // Template specialization of deleter for type std::FILE
 template<> // NOTE: no typename T
-struct Deleter<std::FILE*> // specialization!
+struct Deleter<std::FILE> // specialization!
 {
     void operator()(std::FILE* inFile) const noexcept
     {
