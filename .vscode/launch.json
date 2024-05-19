@@ -11,7 +11,7 @@
             "request": "launch",
 
             "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
-            "args": [], 
+            "args": ["--success", "--break"], 
             "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false // Set to true to stop program execution at the first line of code
         },
@@ -22,7 +22,7 @@
             "request": "launch",
 
             "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
-            "args": [], 
+            "args": ["--success", "--break"], 
             "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false, // Set to true to stop program execution at the first line of code
             "preLaunchTask": "build", // tasks.json: {"label": "build"}

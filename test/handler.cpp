@@ -28,9 +28,25 @@
 // saber
 #include "saber/handler.hpp"
 
+// std
+#include <cstdio>
+#include <type_traits>
+
 TEST_CASE( "saber::ValueHandler", "[saber]" )
 {
 	int test1 = 0;
+
+	SECTION("ValueHandler Not Movable or Copyable")
+	{
+		constexpr bool kIsCopyConstructable = std::is_trivially_copy_constructible_v<saber::ValueHandler<int>>;
+		REQUIRE(!kIsCopyConstructable);
+		constexpr bool kIsCopyAssignable = std::is_trivially_copy_assignable_v<saber::ValueHandler<int>>;
+		REQUIRE(!kIsCopyAssignable);
+		constexpr bool kIsMoveConstructable = std::is_trivially_move_constructible_v<saber::ValueHandler<int>>;
+		REQUIRE(!kIsMoveConstructable);
+		constexpr bool kIsMoveAssignable = std::is_trivially_move_assignable_v<saber::ValueHandler<int>>;
+		REQUIRE(!kIsMoveAssignable);
+	}
 
 	SECTION("Save/Restore Via Destructor")
 	{
@@ -78,5 +94,99 @@ TEST_CASE( "saber::ValueHandler", "[saber]" )
 		
 		testHandler.Reset();
 		REQUIRE(original == test2);
+	}
+}
+
+TEST_CASE("saber::ReferenceHandler allocated memory", "[saber]")
+{
+	SECTION("Delete std::vector Via Reset()")
+	{
+		std::vector<std::string> test{"a","b","c"};
+		auto test4 = std::make_unique<std::vector<std::string>>(test);
+		auto ref1 = test4.release();
+
+		saber::ReferenceHandler<std::vector<std::string>> refHandler{ref1};
+		REQUIRE(refHandler.Get() == ref1);
+
+		refHandler.Reset();
+		REQUIRE(refHandler.Get() == nullptr);
+	}
+	
+	SECTION("ReferenceHandler Not Copyable")
+	{
+		constexpr bool kIsCopyConstructable = std::is_trivially_copy_constructible_v<saber::ReferenceHandler<int>>;
+		REQUIRE(!kIsCopyConstructable);
+		constexpr bool kIsCopyAssignable = std::is_trivially_copy_assignable_v<saber::ReferenceHandler<int>>;
+		REQUIRE(!kIsCopyAssignable);
+	}
+
+	SECTION("ReferenceHandler Move Assign")
+	{
+		std::vector<std::string> test{"a","b","c"};
+		auto test5 = std::make_unique<std::vector<std::string>>(test);
+		auto ref2 = test5.release();
+		saber::ReferenceHandler<std::vector<std::string>> refHandler{ref2};
+		saber::ReferenceHandler<std::vector<std::string>> emptyHandler{};
+
+		REQUIRE(refHandler.Get() == ref2);
+		REQUIRE(emptyHandler.Get() == nullptr);
+
+		emptyHandler = std::move(refHandler);
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == ref2);
+	}
+
+	SECTION("ReferenceHandler Move Construct")
+	{
+		std::vector<std::string> test{"a","b","c"};
+		auto test6 = std::make_unique<std::vector<std::string>>(test);
+		auto ref3 = test6.release();
+		saber::ReferenceHandler<std::vector<std::string>> refHandler{ref3};
+
+		REQUIRE(refHandler.Get() == ref3);
+
+		saber::ReferenceHandler<std::vector<std::string>> emptyHandler{std::move(refHandler)};
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == ref3);
+	}
+}
+
+TEST_CASE("saber::ReferenceHandler std::FILE", "[saber]")
+{
+	SECTION("Delete std::FILE Via Reset()")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+
+		REQUIRE(refHandler.Get() == testFile);
+
+		refHandler.Reset();
+		REQUIRE(refHandler.Get() == nullptr);
+	}
+	
+	SECTION("Move Construct for std::FILE")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+
+		REQUIRE(refHandler.Get() == testFile);
+
+		saber::ReferenceHandler<std::FILE> emptyHandler{std::move(refHandler)};
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == testFile);
+	}
+
+	SECTION("Move Assign for std::FILE")
+	{
+		std::FILE* testFile = std::fopen("./saber_test.exe", "r");
+		saber::ReferenceHandler<std::FILE> refHandler{testFile};
+		saber::ReferenceHandler<std::FILE> emptyHandler{};
+
+		REQUIRE(refHandler.Get() == testFile);
+		REQUIRE(emptyHandler.Get() == nullptr);
+
+		emptyHandler = std::move(refHandler);
+		REQUIRE(refHandler.Get() == nullptr);
+		REQUIRE(emptyHandler.Get() == testFile);
 	}
 }
