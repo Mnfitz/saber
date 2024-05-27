@@ -4,27 +4,28 @@ message(STATUS "Building saber/test/...")
 
 include(FetchContent)
 
-#
-# Saber "unit test" app (saber_test) defined here
-#
-if(SABER_BUILD_TESTS)
+# Both saber_unittest and saber_benchmark depend on `Catch2` test framework
+FetchContent_Declare(
+	Catch2
+	GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
+	GIT_TAG			v3.6.0)
 
-	# saber_test depends on `Catch2` test framework
-	FetchContent_Declare(
-		Catch2
-		GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
-		GIT_TAG			v3.6.0)
+#
+# Saber "unit test" app (saber_unittest) defined here
+#
+if(SABER_BUILD_UNITTESTS)
+
 	FetchContent_MakeAvailable(Catch2)
 
-	# saber_test source files...
-	set(SOURCE_FILES
-		${CMAKE_CURRENT_SOURCE_DIR}/handler.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/saber_test.cpp
+	# saber_unittest source files...
+	set(SOURCE_FILES_UNITTEST
+		${CMAKE_CURRENT_SOURCE_DIR}/handler_unittest.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/saber_unittest.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
-	add_executable(saber_test
+	add_executable(saber_unittest
 		${HEADER_FILES}
-		${SOURCE_FILES}
+		${SOURCE_FILES_UNITTEST}
 		${PROJECT_SOURCE_DIR}/CMakeLists.txt)
 
 	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
@@ -34,8 +35,8 @@ if(SABER_BUILD_TESTS)
 
 	# Catch2 provides a main function as executable entry point.
 	# Private since there is no need to surface these libraries in the binary.
-	target_link_libraries(saber_test PRIVATE Catch2 Catch2WithMain)
-	add_test(NAME saber_test COMMAND test)
+	target_link_libraries(saber_unittest PRIVATE Catch2 Catch2WithMain)
+	add_test(NAME saber_unittest COMMAND test)
 
 	# Make the Visual Studio .vcxproj files look prettier...
 	if(MSVC)
@@ -47,7 +48,7 @@ if(SABER_BUILD_TESTS)
 		source_group(
 			TREE "${PROJECT_SOURCE_DIR}/test"
 			PREFIX "test"
-			FILES ${SOURCE_FILES})	
+			FILES ${SOURCE_FILES_UNITTEST})	
 
 		# Header files will appear in an IDE folder called "include"
 		source_group(
@@ -55,11 +56,13 @@ if(SABER_BUILD_TESTS)
 			PREFIX "include/${PROJECT_NAME}"
 			FILES ${HEADER_FILES})
 
+		# Turn off warnings caused by ReferenceHandler<std::FILE>/std::fopen() usage
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
-	endif() # MSVC
-endif() # SABER_BUILD_TESTS
 
-#if(SABER_BUILD_BENCHMARKS)
+	endif() # MSVC
+endif() # SABER_BUILD_UNITTESTS
+
+if(SABER_BUILD_BENCHMARKS)
 #
 #	FetchContent_Declare(
 #		googlebenchmark
@@ -73,9 +76,49 @@ endif() # SABER_BUILD_TESTS
 #
 #	FetchContent_MakeAvailable(googlebenchmark googletest)
 #
-#	add_executable(saber_benchmark benchmark.cpp benchmark_common.h)
-#	add_test(NAME saber_benchmark COMMAND test)
-#	target_link_libraries(saber_benchmark PUBLIC benchmark::benchmark)
+
+	FetchContent_MakeAvailable(Catch2)
+
+	# saber_benchmark source files...
+	set(SOURCE_FILES_BENCHMARK
+		${CMAKE_CURRENT_SOURCE_DIR}/handler_benchmark.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/saber_benchmark.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
+
+	add_executable(saber_benchmark
+		${HEADER_FILES}
+		${SOURCE_FILES_BENCHMARK}
+		${PROJECT_SOURCE_DIR}/CMakeLists.txt)
+
+	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
+
+	# find_package(Catch2 CONFIG REQUIRED)
+	link_libraries(Catch2::Catch2WithMain)
+
+	# Catch2 provides a main function as executable entry point.
+	# Private since there is no need to surface these libraries in the binary.
+	target_link_libraries(saber_benchmark PRIVATE Catch2 Catch2WithMain)
+	add_test(NAME saber_benchmark COMMAND test)
+
+	# Make the Visual Studio .vcxproj files look prettier...
+	if(MSVC)
+		# TRICKY jfitz 12may2024: Making `source_groups` appear in the VS IDE
+		# A `source_group` directive will only take effect if the FILES
+		# specified are also dependencies of the `add_executable`
+
+		# Source files will appear in an IDE folder called "test"
+		source_group(
+			TREE "${PROJECT_SOURCE_DIR}/test"
+			PREFIX "test"
+			FILES ${SOURCE_FILES_BENCHMARK})	
+
+		# Header files will appear in an IDE folder called "include"
+		source_group(
+			TREE "${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}"
+			PREFIX "include/${PROJECT_NAME}"
+			FILES ${HEADER_FILES})
+
+	endif() # MSVC
 #
 #	add_executable(saber_baseline benchmark_baseline.cpp benchmark_common.h)
 #	add_test(NAME saber_baseline COMMAND test)
@@ -87,7 +130,7 @@ endif() # SABER_BUILD_TESTS
 #		DESTINATION ${CMAKE_CURRENT_BINARY_DIR} 
 #		USE_SOURCE_PERMISSIONS)
 #
-#endif() # SABER_BUILD_BENCHMARKS
+endif() # SABER_BUILD_BENCHMARKS
 
 # The build pipelines have limitations that local development environments do not, so turn a few knobs
 #if(${FAST_BUILD})

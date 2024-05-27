@@ -10,7 +10,7 @@
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
+            "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
             "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false // Set to true to stop program execution at the first line of code
@@ -21,7 +21,7 @@
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
+            "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
             "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false, // Set to true to stop program execution at the first line of code
@@ -34,19 +34,19 @@
             "request": "launch",
             
             "windows": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "gdb"
             },
             "osx": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "lldb"
             },
             "linux": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "gdb"
@@ -65,19 +65,19 @@
             "request": "launch",
             
             "windows": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test.exe",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "gdb"
             },
             "osx": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "lldb"
             },
             "linux": {
-                "program": "${workspaceFolder}/build/test/Debug/saber_test",  
+                "program": "${workspaceFolder}/build/test/Debug/saber_unittest",  
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "gdb"

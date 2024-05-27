@@ -11,7 +11,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include(GNUInstallDirs)
 
 # From ./.vscode/settings.json: "cmake.configureSettings"
-option(SABER_BUILD_TESTS "Build Unit Tests" OFF)
+option(SABER_BUILD_UNITTESTS "Build Unit Tests" OFF)
 option(SABER_BUILD_BENCHMARKS "Build Benchmarks" OFF)
 option(SABER_BUILD_DOCS "Build Doxygen Documentation" OFF)
 
@@ -54,20 +54,21 @@ install(EXPORT ${PROJECT_NAME_LOWER}_targets
 # Install the headers at a standard cmake location.
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-if(SABER_BUILD_TESTS)
+if(SABER_BUILD_UNITTESTS)
+	enable_testing()
 	# Must be top-level or test won't be found.
 	include(CTest) # enable_testing() invoked here!
 	add_subdirectory(test)
 
 	if(MSVC)
 		# REVISIT j3fitz 12may2024: Why doesn't `VS_STARTUP_PROJECT` work?
-		# Figure this out later. In the meantime, you must manually set `saber_test`
+		# Figure this out later. In the meantime, you must manually set `saber_unittest`
 		# as `Startup Project`, from within Visual Studio IDE.
 
-		# Set saber_test target as the `startup project` for the generated .sln file
-		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT saber_test)
+		# Set saber_unittest target as the `startup project` for the generated .sln file
+		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT saber_unittest)
 	endif() # MSVC
-endif() # SABER_BUILD_TESTS
+endif() # SABER_BUILD_UNITTESTS
 
 # if(SABER_BUILD_DOCS)
 #	add_subdirectory(doc/assets) # Build docset assets
