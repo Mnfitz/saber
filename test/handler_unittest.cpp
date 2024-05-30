@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <type_traits>
 
-TEST_CASE( "saber::ValueHandler", "[saber]" )
+TEST_CASE("saber::ValueHandler", "[saber]")
 {
 	int test1 = 0;
 
@@ -52,8 +52,22 @@ TEST_CASE( "saber::ValueHandler", "[saber]" )
 	{
 		REQUIRE(test1 == 0);
 		{
-			saber::ValueHandler<int> testHandler{ test1, 1 };
+			saber::ValueHandler<int> testHandler{test1, 1};
 			REQUIRE(test1 == 1);
+		}
+
+		REQUIRE(test1 == 0);
+		try
+		{
+			saber::ValueHandler<int> testHandler{test1, 2};
+			REQUIRE(test1 == 2);
+
+			throw std::runtime_error{"Some exception"};
+			REQUIRE(!"Should never be called");
+		}
+		catch (...)
+		{
+			REQUIRE(test1 == 0);		
 		}
 		REQUIRE(test1 == 0);
 	}
@@ -80,6 +94,20 @@ TEST_CASE( "saber::ValueHandler", "[saber]" )
 		{
 			saber::ValueHandler<std::vector<std::string>> testHandler{ test2, test3 };
 			REQUIRE(test3 == test2);
+		}
+
+		REQUIRE(original == test2);
+		try
+		{
+			saber::ValueHandler<std::vector<std::string>> testHandler{test2, test3};
+			REQUIRE(test3 == test2);
+
+			throw std::runtime_error{"Some other exception"};
+			REQUIRE(!"Should never be called");
+		}
+		catch (...)
+		{
+			REQUIRE(original == test2);		
 		}
 		REQUIRE(original == test2);
 	}

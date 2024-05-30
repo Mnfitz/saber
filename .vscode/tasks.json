@@ -2,59 +2,75 @@
 
 {
 	"version": "2.0.0",
-    "options": {
-        // WARNING: Make sure that your ~/.bashrc doesn't manually set
-        // a current working directory for you; eg. 'cd' command.
-        // Otherwise, it will undo this "cwd" tuple and you 
-        // will get the error "make failed with code 2."
-        "cwd": "${workspaceFolder}",
-    },
+		"options": {
+				// WARNING: Make sure that your ~/.bashrc doesn't manually set
+				// a current working directory for you; eg. 'cd' command.
+				// Otherwise, it will undo this "cwd" tuple and you 
+				// will get the error "make failed with code 2."
+				"cwd": "${workspaceFolder}",
+		},
 	"tasks": [
-        {
-            "label": "build",
-            "type": "shell",
-            "command": "cmake --build ./build",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "regenerate/build",
-            "type": "shell",
-            "windows": { "command": "cmake -S . -B ./build && cmake --build ./build"},
-            "osx": { "command": "cmake -G \"Xcode\" -DIOS=OFF -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_BUILD_TYPE=Debug -S . -B ./build && cmake --build ./build" },
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            }
-        },
-        {
-            "label": "regenerate/build iOS",
-            "type": "shell",
-            "command": "cmake -DIOS=ON -S . -B ./build && cmake --build ./build",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            }
-        },
-        {
-            "label": "clean",
-            "type": "shell",
-            "command": "cmake --build ./build --target clean",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            }
-        },
-        {
-            "label": "test",
-            "type": "shell",
-            "command": "(cd ./build && ctest --verbose)",
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            }
-        }
-    ]
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "cmake --build ./build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "regenerate/build",
+			"type": "shell",
+			"windows": {
+				"command": "cmake -G \"Visual Studio 17 2022\" -S . -B ./build && cmake --build ./build"
+			},
+			"osx": {
+				"command": "cmake -G \"Xcode\" -DIOS=OFF -DCMAKE_SYSTEM_NAME=Darwin -S . -B ./build && cmake --build ./build"
+			},
+			"linux": {
+				"command": "cmake -G \"Unix Makefiles\" -S . -B ./build && cmake --build ./build"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "regenerate/build iOS",
+			"type": "shell",
+			"windows": {
+				"command": "echo \"iOS builds not supported on Windows!\""
+			},
+			"osx": {
+				"command": "cmake -G \"Xcode\" -DIOS=ON -DCMAKE_SYSTEM_NAME=Darwin -S . -B ./build && cmake --build ./build"
+			},
+			"linux": {
+				"command": "echo \"iOS builds not supported on Linux!\""
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "clean",
+			"type": "shell",
+			"command": "cmake --build ./build --target clean",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "test",
+			"type": "shell",
+			"command": "(cd ./build && ctest -C Debug --verbose)",
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		}
+	]
 }
