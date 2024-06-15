@@ -5,6 +5,8 @@ project(
 	VERSION		1.0
 	DESCRIPTION	"Saber Utilities C++ Header Library")
 
+message(STATUS "Building saber/...")
+
 # Organizes project into folders to reduce clutter
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
