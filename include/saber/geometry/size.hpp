@@ -10,6 +10,7 @@ namespace saber::geometry {
 // 2. Separate function declaration and definition vs java style combined
 // 3. Has-a: naked types or std::tuple or std::array
 // 4. Include guards should incorperate namespace location
+// 5. Build up binary free operators from class operators +=, etc
 
 template<typename T>
 class Size
