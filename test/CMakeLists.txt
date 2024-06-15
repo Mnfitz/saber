@@ -19,6 +19,7 @@ if(SABER_BUILD_UNITTESTS)
 
 	# saber_unittest source files...
 	set(SOURCE_FILES_UNITTEST
+		${CMAKE_CURRENT_SOURCE_DIR}/geometry_unittest.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/handler_unittest.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/saber_unittest.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
