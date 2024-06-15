@@ -22,7 +22,7 @@ public:
     ~Size() = default;
 
     // RO5 is all default implemented
-    Size(Size&& ioMove) = default;
+    Size(Size&& ioMove) noexcept = default;
     Size& operator=(Size&& ioMove) noexcept = default;
 
     Size(const Size& inCopy) = default;
