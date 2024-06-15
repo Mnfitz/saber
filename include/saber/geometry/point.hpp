@@ -20,7 +20,7 @@ public:
     ~Point() = default;
 
     // RO5 is all default implemented
-    Point(Point&& ioMove) = default;
+    Point(Point&& ioMove) noexcept = default;
     Point& operator=(Point&& ioMove) noexcept = default;
 
     Point(const Point& inCopy) = default;
