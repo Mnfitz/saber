@@ -27,6 +27,7 @@
 
 // saber
 #include "saber/geometry/point.hpp"
+#include "saber/geometry/size.hpp"
 
 // std
 #include <cstdio>
@@ -78,5 +79,54 @@ TEST_CASE("saber::geometry::point", "[saber]")
         saber::geometry::Point<int> point2 = std::move(point1);
 		REQUIRE(point2.X() == 1);
 		REQUIRE(point2.Y() == 2);
+	}
+}
+
+TEST_CASE("saber::geometry::size", "[saber]")
+{
+	SECTION("Default Construct")
+	{
+		saber::geometry::Size<int> size{};
+		REQUIRE(size.Width() == 0);
+		REQUIRE(size.Height() == 0);
+	}
+
+	SECTION("Alt Construct")
+	{
+		saber::geometry::Size<int> size{1, 2};
+		REQUIRE(size.Width() == 1);
+		REQUIRE(size.Height() == 2);
+	}
+
+    SECTION("Copy Construct")
+	{
+		saber::geometry::Size<int> size1{1,2};
+        saber::geometry::Size<int> size2{size1};
+		REQUIRE(size2.Width() == 1);
+		REQUIRE(size2.Height() == 2);
+	}
+
+    SECTION("Copy Assign")
+	{
+		saber::geometry::Size<int> size1{1,2};
+        saber::geometry::Size<int> size2 = size1;
+		REQUIRE(size2.Width() == 1);
+		REQUIRE(size2.Height() == 2);
+	}
+
+    SECTION("Move Construct")
+	{
+		saber::geometry::Size<int> size1{1,2};
+        saber::geometry::Size<int> size2{std::move(size1)};
+		REQUIRE(size2.Width() == 1);
+		REQUIRE(size2.Height() == 2);
+	}
+
+    SECTION("Move Assign")
+	{
+		saber::geometry::Size<int> size1{1,2};
+        saber::geometry::Size<int> size2 = std::move(size1);
+		REQUIRE(size2.Width() == 1);
+		REQUIRE(size2.Height() == 2);
 	}
 }
