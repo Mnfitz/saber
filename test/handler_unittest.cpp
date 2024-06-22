@@ -77,6 +77,7 @@ TEST_CASE("saber::ValueHandler", "[saber]")
 		REQUIRE(test1 == 0);
 		
 		saber::ValueHandler<int> testHandler{ test1, 10 };
+		//saber::ValueHandler<int> failHandler{int{3}, 10};
 		REQUIRE(test1 == 10);
 		
 		testHandler.Reset();
