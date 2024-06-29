@@ -32,7 +32,7 @@ inline ToType ConvertTo(const FromType& inValue)
 template<>
 struct ConvertTraits<std::tuple<int, int>, std::array<float, 2>>
 {
-    std::tuple<int, int> operator()(const std::array<float, 2>& inValue)
+    std::tuple<int, int> operator()(const std::array<float, 2>& inValue) const
     {
         auto tuple = std::make_tuple(
             static_cast<int>(inValue.at(0)),
