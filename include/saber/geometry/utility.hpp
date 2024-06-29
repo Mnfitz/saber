@@ -10,18 +10,20 @@
 namespace saber {
 namespace detail {
 
-//Converts from Point to Size
+// Converts from Point to Size
 template<typename T>
 struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
 {
     geometry::Size<T> operator()(const geometry::Point<T>& inValue) const
     {
+        // REVISIT mnfitz29jun2024: Which is better, C++17 "assignment" from initializer list or using "constructor{}"
+        // Look at the release builds and check the compiler generated instructions to make the determination
         geometry::Size<T> size = {inValue.X(), inValue.Y()};
         return size;
     }
 };
 
-// COnverts from Size to Point
+// Converts from Size to Point
 template<typename T>
 struct ConvertTraits<geometry::Point<T>, geometry::Size<T>>
 {
