@@ -16,9 +16,8 @@ struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
 {
     geometry::Size<T> operator()(const geometry::Point<T>& inValue) const
     {
-        // REVISIT mnfitz29jun2024: Which is better, C++17 "assignment" from initializer list or using "constructor{}"
-        // Look at the release builds and check the compiler generated instructions to make the determination
-        geometry::Size<T> size = {inValue.X(), inValue.Y()};
+        // C++17 is smart enough to convert assignment to in-place constructor
+        geometry::Size<T> size{inValue.X(), inValue.Y()};
         return size;
     }
 };
@@ -29,7 +28,8 @@ struct ConvertTraits<geometry::Point<T>, geometry::Size<T>>
 {
     geometry::Point<T> operator()(const geometry::Size<T>& inValue) const
     {
-        geometry::Point<T> point = {inValue.Width(), inValue.Height()};
+        // C++17 is smart enough to convert assignment to in-place constructor
+        geometry::Point<T> point{inValue.Width(), inValue.Height()};
         return point;
     }
 };
