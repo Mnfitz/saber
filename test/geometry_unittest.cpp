@@ -28,6 +28,7 @@
 // saber
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
+#include "saber/geometry/utility.hpp"
 
 // std
 #include <cstdio>
@@ -128,5 +129,24 @@ TEST_CASE("saber::geometry::size", "[saber]")
         saber::geometry::Size<int> size2 = std::move(size1);
 		REQUIRE(size2.Width() == 1);
 		REQUIRE(size2.Height() == 2);
+	}
+}
+
+TEST_CASE("saber::geometry::utility", "[saber]")
+{
+	SECTION("Size -> Point")
+	{
+		saber::geometry::Size<int> size{1,2};
+		auto point = saber::ConvertTo<saber::geometry::Point<int>>(size);
+		REQUIRE(point.X() == 1);
+		REQUIRE(point.Y() == 2);
+	}
+
+	SECTION("Point -> Size")
+	{
+		saber::geometry::Point<int> point{1,2};
+		auto size = saber::ConvertTo<saber::geometry::Size<int>>(point);
+		REQUIRE(size.Width() == 1);
+		REQUIRE(size.Height() == 2);
 	}
 }
