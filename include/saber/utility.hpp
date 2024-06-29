@@ -11,7 +11,7 @@ template<typename ToType, typename FromType>
 struct ConvertTraits
 {
     // Return a |ToType| as converted from |FromType|
-	ToType operator()(const FromType& inValue);
+	ToType operator()(const FromType& inValue) const;
 };
 
 } // namespace detail
