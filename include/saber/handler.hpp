@@ -73,6 +73,10 @@ public:
         mValue = std::move(inNewValue);
     }
 
+    /// @brief Allowing for a R-Value to be input as an L-Value is a bug, since the R-Value goes out of scope 
+    /// immediately and the valuehandler cannot outlive the reference provided
+    ValueHandler(T&& inValue, T inNewValue) = delete;
+
     ~ValueHandler()
     {
         Reset(); // called by dtor: Must be noexcept
