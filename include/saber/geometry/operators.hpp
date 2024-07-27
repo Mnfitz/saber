@@ -17,10 +17,11 @@ namespace saber::geometry {
 /// @param inRHS: Right hand side argument 
 /// @return Sum result
 template<typename T>
-inline T operator+(const T& inLHS, const T& inRHS)
+inline constexpr T operator+(const T& inLHS, const T& inRHS)
 {
-    constexpr bool kHasOperatorPlusAssign = std::is_same_v<decltype(std::declval<T&>() += std::declval<T>()), T&>;
-    static_assert(kHasOperatorPlusAssign, "T must provide operator+=()");
+    // Incomprehensible c++ incantation to detect if T implements operator+=()
+    constexpr bool kHasOperatorPlusAssign = std::is_same_v<T&, decltype(std::declval<T&>() += std::declval<T>())>;
+    static_assert(kHasOperatorPlusAssign, "T does not support operator+");
 
     T result = inLHS;
     result += inRHS;
@@ -37,10 +38,11 @@ inline T operator+(const T& inLHS, const T& inRHS)
 /// @param inRHS: Right hand side argument 
 /// @return Difference result
 template<typename T>
-inline T operator-(const T& inLHS, const T& inRHS)
+inline constexpr T operator-(const T& inLHS, const T& inRHS)
 {
-    constexpr bool kHasOperatorMinusAssign = std::is_same_v<decltype(std::declval<T&>() -= std::declval<T>()), T&>;
-    static_assert(kHasOperatorMinusAssign, "T must provide operator-=()");
+    // Incomprehensible c++ incantation to detect if T implements operator-=()
+    constexpr bool kHasOperatorMinusAssign = std::is_same_v<T&, decltype(std::declval<T&>() -= std::declval<T>())>;
+    static_assert(kHasOperatorMinusAssign, "T does not support operator-");
 
     T result = inLHS;
     result -= inRHS;
@@ -57,10 +59,11 @@ inline T operator-(const T& inLHS, const T& inRHS)
 /// @param inRHS: Right hand side argument 
 /// @return Product result
 template<typename T>
-inline T operator*(const T& inLHS, const T& inRHS)
+inline constexpr T operator*(const T& inLHS, const T& inRHS)
 {
-    constexpr bool kHasOperatorMultAssign = std::is_same_v<decltype(std::declval<T&>() *= std::declval<T>()), T&>;
-    static_assert(kHasOperatorMultAssign, "T must provide operator*=()");
+    // Incomprehensible c++ incantation to detect if T implements operator*=()
+    constexpr bool kHasOperatorMultAssign = std::is_same_v<T&, decltype(std::declval<T&>() *= std::declval<T>())>; 
+    static_assert(kHasOperatorMultAssign, "T does not support operator*");
 
     T result = inLHS;
     result *= inRHS;
@@ -77,10 +80,11 @@ inline T operator*(const T& inLHS, const T& inRHS)
 /// @param inRHS: Right hand side argument 
 /// @return Quotient result
 template<typename T>
-inline T operator/(const T& inLHS, const T& inRHS)
+inline constexpr T operator/(const T& inLHS, const T& inRHS)
 {
-    constexpr bool kHasOperatorDivAssign = std::is_same_v<decltype(std::declval<T&>() /= std::declval<T>()), T&>;
-    static_assert(kHasOperatorDivAssign, "T must provide operator/=()");
+    // Incomprehensible c++ incantation to detect if T implements operator/=()
+    constexpr bool kHasOperatorDivAssign = std::is_same_v<T&, decltype(std::declval<T&>() /= std::declval<T>())>;
+    static_assert(kHasOperatorDivAssign, "T does not support operator/");
 
     T result = inLHS;
     result /= inRHS;
