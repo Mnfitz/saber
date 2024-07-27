@@ -19,26 +19,26 @@ template<typename T>
 class Size 
 {
 public: 
-    Size(T inWidth, T inHeight);
+    constexpr Size(T inWidth, T inHeight);
 
-    Size() = default;
+    constexpr Size() = default;
     ~Size() = default;
 
     // RO5 is all default implemented
-    Size(Size&& ioMove) noexcept = default;
-    Size& operator=(Size&& ioMove) noexcept = default;
+    constexpr Size(Size&& ioMove) noexcept = default;
+    constexpr Size& operator=(Size&& ioMove) noexcept = default;
 
-    Size(const Size& inCopy) = default;
-    Size& operator=(const Size& inCopy) = default;
+    constexpr Size(const Size& inCopy) = default;
+    constexpr Size& operator=(const Size& inCopy) = default;
 
-    T Width() const;
-    T Height() const;
+    constexpr T Width() const;
+    constexpr T Height() const;
 
     // Mathematical operations
-    Size& operator+=(const Size& inSize);
-    Size& operator-=(const Size& inSize);
-    Size& operator*=(const Size& inSize);
-    Size& operator/=(const Size& inSize);
+    constexpr Size& operator+=(const Size& inSize);
+    constexpr Size& operator-=(const Size& inSize);
+    constexpr Size& operator*=(const Size& inSize);
+    constexpr Size& operator/=(const Size& inSize);
 
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
@@ -51,7 +51,7 @@ private:
 // Inline Class Functions
 
 template<typename T>
-inline Size<T>::Size(T inWidth, T inHeight) :
+inline constexpr Size<T>::Size(T inWidth, T inHeight) :
     mWidth{inWidth},
     mHeight{inHeight}
 {
@@ -59,13 +59,13 @@ inline Size<T>::Size(T inWidth, T inHeight) :
 }
 
 template<typename T>
-inline T Size<T>::Width() const
+inline constexpr T Size<T>::Width() const
 {
     return mWidth;
 }
 
 template<typename T>
-inline T Size<T>::Height() const
+inline constexpr T Size<T>::Height() const
 {
     return mHeight;
 }
@@ -73,7 +73,7 @@ inline T Size<T>::Height() const
 // Mathematical operations
 
 template<typename T>
-inline Size<T>& Size<T>::operator+=(const Size& inSize)
+inline constexpr Size<T>& Size<T>::operator+=(const Size& inSize)
 {
     mWidth += inSize.mWidth;
     mHeight += inSize.mHeight;
@@ -81,7 +81,7 @@ inline Size<T>& Size<T>::operator+=(const Size& inSize)
 }
 
 template<typename T>
-inline Size<T>& Size<T>::operator-=(const Size& inSize)
+inline constexpr Size<T>& Size<T>::operator-=(const Size& inSize)
 {
     mWidth -= inSize.mWidth;
     mHeight -= inSize.mHeight;
@@ -89,7 +89,7 @@ inline Size<T>& Size<T>::operator-=(const Size& inSize)
 }
 
 template<typename T>
-inline Size<T>& Size<T>::operator*=(const Size& inSize)
+inline constexpr Size<T>& Size<T>::operator*=(const Size& inSize)
 {
     mWidth *= inSize.mWidth;
     mHeight *= inSize.mHeight;
@@ -97,7 +97,7 @@ inline Size<T>& Size<T>::operator*=(const Size& inSize)
 }
 
 template<typename T>
-inline Size<T>& Size<T>::operator/=(const Size& inSize)
+inline constexpr Size<T>& Size<T>::operator/=(const Size& inSize)
 {
     mWidth /= inSize.mWidth;
     mHeight /= inSize.mHeight;
