@@ -40,6 +40,10 @@ public:
     Size& operator*=(const Size& inSize);
     Size& operator/=(const Size& inSize);
 
+     // Logical operators
+    bool operator==(const Size& inSize);
+    bool operator!=(const Size& inSize);
+
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
 
@@ -102,6 +106,21 @@ inline Size<T>& Size<T>::operator/=(const Size& inSize)
     mWidth /= inSize.mWidth;
     mHeight /= inSize.mHeight;
     return *this;
+}
+
+// Logical operators
+template<typename T>
+inline bool Size<T>::operator==(const Size& inSize)
+{
+    bool result = (mWidth == inSize.mWidth) && (mHeight == inSize.mHeight);
+    return result;
+}
+
+template<typename T>
+inline bool Size<T>::operator!=(const Size& inSize)
+{
+    bool result = !(*this == inSize);
+    return result;
 }
 
 }// namespace saber::geometry

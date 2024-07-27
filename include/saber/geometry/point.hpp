@@ -38,6 +38,10 @@ public:
     Point& operator*=(const Point& inPoint);
     Point& operator/=(const Point& inPoint);
 
+    // Logical operators
+    bool operator==(const Point& inPoint);
+    bool operator!=(const Point& inPoint);
+
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
 
@@ -100,6 +104,21 @@ inline Point<T>& Point<T>::operator/=(const Point& inPoint)
     mX /= inPoint.mX;
     mY /= inPoint.mY;
     return *this;
+}
+
+// Logical operators
+template<typename T>
+inline bool Point<T>::operator==(const Point& inPoint)
+{
+    bool result = (mX == inPoint.mX) && (mY == inPoint.mY);
+    return result;
+}
+
+template<typename T>
+inline bool Point<T>::operator!=(const Point& inPoint)
+{
+    bool result = !(*this == inPoint);
+    return result;
 }
 
 }// namespace saber::geometry
