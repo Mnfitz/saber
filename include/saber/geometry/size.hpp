@@ -2,6 +2,9 @@
 #define SABER_GEOMETRY_SIZE_HPP
 #pragma once
 
+// saber
+#include "saber/geometry/operators.hpp"
+
 namespace saber::geometry {
 
 // REVIEW mnfitz 15jun2024:
@@ -13,7 +16,7 @@ namespace saber::geometry {
 // 5. Build up binary free operators from class operators +=, etc
 
 template<typename T>
-class Size
+class Size 
 {
 public: 
     Size(T inWidth, T inHeight);
@@ -74,7 +77,7 @@ inline Size<T>& Size<T>::operator+=(const Size& inSize)
 {
     mWidth += inSize.mWidth;
     mHeight += inSize.mHeight;
-    return this;
+    return *this;
 }
 
 template<typename T>
@@ -82,7 +85,7 @@ inline Size<T>& Size<T>::operator-=(const Size& inSize)
 {
     mWidth -= inSize.mWidth;
     mHeight -= inSize.mHeight;
-    return this;
+    return *this;
 }
 
 template<typename T>
@@ -90,51 +93,15 @@ inline Size<T>& Size<T>::operator*=(const Size& inSize)
 {
     mWidth *= inSize.mWidth;
     mHeight *= inSize.mHeight;
-    return this;
+    return *this;
 }
 
 template<typename T>
 inline Size<T>& Size<T>::operator/=(const Size& inSize)
 {
-    mWidth = inSize.mWidth;
-    mHeight = inSize.mHeight;
-    return this;
-}
-
-// Inline Free Functions
-
-/// @brief Binary Operator that adds 2 input sizes returning a result size
-/// Use it like this: 
-/// ```
-/// auto resultSize = size1 + size2;
-/// ```
-/// @tparam T underlying type for the `Size<T>` class
-/// @param inLHS: Left hand side Size argument
-/// @param inRHS: Right hand side Size argument 
-/// @return size result
-template<typename T>
-inline Size<T> operator+(const Size<T>& inLHS, const Size<T>& inRHS)
-{
-    Size<T> outSize = inLHS;
-    outSize += inRHS;
-    return outSize;
-}
-
-/// @brief Binary Operator that subtracts 2 input sizes returning a result size
-/// Use it like this: 
-/// ```
-/// auto resultSize = size1 - size2;
-/// ```
-/// @tparam T underlying type for the `Size<T>` class
-/// @param inLHS: Left hand side Size argument
-/// @param inRHS: Right hand side Size argument 
-/// @return size result
-template<typename T>
-inline Size<T> operator-(const Size<T>& inLHS, const Size<T>& inRHS)
-{
-    Size<T> outSize = inLHS;
-    outSize -= inRHS;
-    return outSize;
+    mWidth /= inSize.mWidth;
+    mHeight /= inSize.mHeight;
+    return *this;
 }
 
 }// namespace saber::geometry

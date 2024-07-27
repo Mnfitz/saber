@@ -2,6 +2,9 @@
 #define SABER_GEOMETRY_POINT_HPP
 #pragma once
 
+// saber
+#include "saber/geometry/operators.hpp"
+
 namespace saber::geometry {
 
 // REVIEW mnfitz 15jun2024:
@@ -72,7 +75,7 @@ inline Point<T>& Point<T>::operator+=(const Point& inPoint)
 {
     mX += inPoint.mX;
     mY += inPoint.mY;
-    return this;
+    return *this;
 }
 
 template<typename T>
@@ -80,7 +83,7 @@ inline Point<T>& Point<T>::operator-=(const Point& inPoint)
 {
     mX -= inPoint.mX;
     mY -= inPoint.mY;
-    return this;
+    return *this;
 }
 
 template<typename T>
@@ -88,51 +91,15 @@ inline Point<T>& Point<T>::operator*=(const Point& inPoint)
 {
     mX *= inPoint.mX;
     mY *= inPoint.mY;
-    return this;
+    return *this;
 }
 
 template<typename T>
 inline Point<T>& Point<T>::operator/=(const Point& inPoint)
 {
-    mX = inPoint.mX;
-    mY = inPoint.mY;
-    return this;
-}
-
-// Inline Free Functions
-
-/// @brief Binary Operator that adds 2 input points returning a result point
-/// Use it like this: 
-/// ```
-/// auto resultPoint = point1 + point2;
-/// ```
-/// @tparam T underlying type for the `Point<T>` class
-/// @param inLHS: Left hand side Point argument
-/// @param inRHS: Right hand side Point argument 
-/// @return point result
-template<typename T>
-inline Point<T> operator+(const Point<T>& inLHS, const Point<T>& inRHS)
-{
-    Point<T> outPoint = inLHS;
-    outPoint += inRHS;
-    return outPoint;
-}
-
-/// @brief Binary Operator that subtracts 2 input points returning a result point
-/// Use it like this: 
-/// ```
-/// auto resultPoint = point1 - point2;
-/// ```
-/// @tparam T underlying type for the `Point<T>` class
-/// @param inLHS: Left hand side Point argument
-/// @param inRHS: Right hand side Point argument 
-/// @return point result
-template<typename T>
-inline Point<T> operator-(const Point<T>& inLHS, const Point<T>& inRHS)
-{
-    Point<T> outPoint = inLHS;
-    outPoint -= inRHS;
-    return outPoint;
+    mX /= inPoint.mX;
+    mY /= inPoint.mY;
+    return *this;
 }
 
 }// namespace saber::geometry
