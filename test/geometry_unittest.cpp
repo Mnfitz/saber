@@ -191,36 +191,36 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 
 	SECTION("Size + Size")
 	{
-		saber::geometry::Size<int> size1{1,2};
-		saber::geometry::Size<int> size2{1,2};
-		auto result = size1 + size2;
+		constexpr saber::geometry::Size<int> size1{1,2};
+		constexpr saber::geometry::Size<int> size2{1,2};
+		constexpr auto result = size1 + size2;
 		REQUIRE(result.Width() == 2);
 		REQUIRE(result.Height() == 4);
 	}
 
 	SECTION("Size - Size")
 	{
-		saber::geometry::Size<int> size1{2,4};
-		saber::geometry::Size<int> size2{1,2};
-		auto result = size1 - size2;
+		constexpr saber::geometry::Size<int> size1{2,4};
+		constexpr saber::geometry::Size<int> size2{1,2};
+		constexpr auto result = size1 - size2;
 		REQUIRE(result.Width() == 1);
 		REQUIRE(result.Height() == 2);
 	}
 
 	SECTION("Size * Size")
 	{
-		saber::geometry::Size<int> size1{1,2};
-		saber::geometry::Size<int> size2{1,2};
-		auto result = size1 * size2;
+		constexpr saber::geometry::Size<int> size1{1,2};
+		constexpr saber::geometry::Size<int> size2{1,2};
+		constexpr auto result = size1 * size2;
 		REQUIRE(result.Width() == 1);
 		REQUIRE(result.Height() == 4);
 	}
 
 	SECTION("Size / Size")
 	{
-		saber::geometry::Size<int> size1{2,4};
-		saber::geometry::Size<int> size2{1,2};
-		auto result = size1 / size2;
+		constexpr saber::geometry::Size<int> size1{2,4};
+		constexpr saber::geometry::Size<int> size2{1,2};
+		constexpr auto result = size1 / size2;
 		REQUIRE(result.Width() == 2);
 		REQUIRE(result.Height() == 2);
 	}
@@ -266,36 +266,36 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 
 	SECTION("Point + Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{1,2};
-		auto result = Point1 + Point2;
+		constexpr saber::geometry::Point<int> Point1{1,2};
+		constexpr saber::geometry::Point<int> Point2{1,2};
+		constexpr auto result = Point1 + Point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 4);
 	}
 
 	SECTION("Point - Point")
 	{
-		saber::geometry::Point<int> Point1{2,4};
-		saber::geometry::Point<int> Point2{1,2};
-		auto result = Point1 - Point2;
+		constexpr saber::geometry::Point<int> Point1{2,4};
+		constexpr saber::geometry::Point<int> Point2{1,2};
+		constexpr auto result = Point1 - Point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 2);
 	}
 
 	SECTION("Point * Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{1,2};
-		auto result = Point1 * Point2;
+		constexpr saber::geometry::Point<int> Point1{1,2};
+		constexpr saber::geometry::Point<int> Point2{1,2};
+		constexpr auto result = Point1 * Point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 4);
 	}
 
 	SECTION("Point / Point")
 	{
-		saber::geometry::Point<int> Point1{2,4};
-		saber::geometry::Point<int> Point2{1,2};
-		auto result = Point1 / Point2;
+		constexpr saber::geometry::Point<int> Point1{2,4};
+		constexpr saber::geometry::Point<int> Point2{1,2};
+		constexpr auto result = Point1 / Point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 2);
 	}

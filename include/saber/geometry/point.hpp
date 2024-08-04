@@ -17,26 +17,26 @@ template<typename T>
 class Point
 {
 public: 
-    Point(T inX, T inY);
+    constexpr Point(T inX, T inY);
 
-    Point() = default;
+    constexpr Point() = default;
     ~Point() = default;
 
     // RO5 is all default implemented
-    Point(Point&& ioMove) noexcept = default;
-    Point& operator=(Point&& ioMove) noexcept = default;
+    constexpr Point(Point&& ioMove) noexcept = default;
+    constexpr Point& operator=(Point&& ioMove) noexcept = default;
 
-    Point(const Point& inCopy) = default;
-    Point& operator=(const Point& inCopy) = default;
+    constexpr Point(const Point& inCopy) = default;
+    constexpr Point& operator=(const Point& inCopy) = default;
 
-    T X() const;
-    T Y() const;
+    constexpr T X() const;
+    constexpr T Y() const;
 
     // Mathematical operations
-    Point& operator+=(const Point& inPoint);
-    Point& operator-=(const Point& inPoint);
-    Point& operator*=(const Point& inPoint);
-    Point& operator/=(const Point& inPoint);
+    constexpr Point& operator+=(const Point& inPoint);
+    constexpr Point& operator-=(const Point& inPoint);
+    constexpr Point& operator*=(const Point& inPoint);
+    constexpr Point& operator/=(const Point& inPoint);
 
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
@@ -49,7 +49,7 @@ private:
 // Inline Class Functions
 
 template<typename T>
-inline Point<T>::Point(T inX, T inY) :
+inline constexpr Point<T>::Point(T inX, T inY) :
     mX{inX},
     mY{inY}
 {
@@ -57,13 +57,13 @@ inline Point<T>::Point(T inX, T inY) :
 }
 
 template<typename T>
-inline T Point<T>::X() const
+inline constexpr T Point<T>::X() const
 {
     return mX;
 }
 
 template<typename T>
-inline T Point<T>::Y() const
+inline constexpr T Point<T>::Y() const
 {
     return mY;
 }
@@ -71,7 +71,7 @@ inline T Point<T>::Y() const
 // Mathematical operations
 
 template<typename T>
-inline Point<T>& Point<T>::operator+=(const Point& inPoint)
+inline constexpr Point<T>& Point<T>::operator+=(const Point& inPoint)
 {
     mX += inPoint.mX;
     mY += inPoint.mY;
@@ -79,7 +79,7 @@ inline Point<T>& Point<T>::operator+=(const Point& inPoint)
 }
 
 template<typename T>
-inline Point<T>& Point<T>::operator-=(const Point& inPoint)
+inline constexpr Point<T>& Point<T>::operator-=(const Point& inPoint)
 {
     mX -= inPoint.mX;
     mY -= inPoint.mY;
@@ -87,7 +87,7 @@ inline Point<T>& Point<T>::operator-=(const Point& inPoint)
 }
 
 template<typename T>
-inline Point<T>& Point<T>::operator*=(const Point& inPoint)
+inline constexpr Point<T>& Point<T>::operator*=(const Point& inPoint)
 {
     mX *= inPoint.mX;
     mY *= inPoint.mY;
@@ -95,7 +95,7 @@ inline Point<T>& Point<T>::operator*=(const Point& inPoint)
 }
 
 template<typename T>
-inline Point<T>& Point<T>::operator/=(const Point& inPoint)
+inline constexpr Point<T>& Point<T>::operator/=(const Point& inPoint)
 {
     mX /= inPoint.mX;
     mY /= inPoint.mY;
