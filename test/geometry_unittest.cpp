@@ -224,6 +224,22 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 		REQUIRE(result.Width() == 2);
 		REQUIRE(result.Height() == 2);
 	}
+
+	SECTION("Size == Size")
+	{
+		saber::geometry::Size<int> Size1{1,2};
+		saber::geometry::Size<int> Size2{1,2};
+		auto result = Size1 == Size2;
+		REQUIRE(result);
+	}
+
+	SECTION("Size != Size")
+	{
+		saber::geometry::Size<int> Size1{1,2};
+		saber::geometry::Size<int> Size2{2,4};
+		auto result = Size1 != Size2;
+		REQUIRE(result);
+	}
 }
 
 TEST_CASE("saber::geometry::operators Point", "[saber]")
@@ -298,5 +314,21 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		constexpr auto result = Point1 / Point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 2);
+	}
+
+	SECTION("Point == Point")
+	{
+		saber::geometry::Point<int> Point1{1,2};
+		saber::geometry::Point<int> Point2{1,2};
+		auto result = Point1 == Point2;
+		REQUIRE(result);
+	}
+
+	SECTION("Point != Point")
+	{
+		saber::geometry::Point<int> Point1{1,2};
+		saber::geometry::Point<int> Point2{2,4};
+		auto result = Point1 != Point2;
+		REQUIRE(result);
 	}
 }

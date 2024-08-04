@@ -102,6 +102,21 @@ inline constexpr Point<T>& Point<T>::operator/=(const Point& inPoint)
     return *this;
 }
 
+// Class Related Functions
+template<typename T>
+inline bool operator==(const Point<T>& inLHS, const Point<T>& inRHS)
+{
+    bool result = (inLHS.X() == inRHS.X()) && (inLHS.Y() == inRHS.Y());
+    return result;
+}
+
+template<typename T>
+inline bool operator!=(const Point<T>& inLHS, const Point<T>& inRHS)
+{
+    bool result = !(inLHS == inRHS);
+    return result;
+}
+
 }// namespace saber::geometry
 
 #endif // SABER_GEOMETRY_POINT_HPP
