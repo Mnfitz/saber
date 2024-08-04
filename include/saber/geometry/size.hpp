@@ -40,10 +40,6 @@ public:
     Size& operator*=(const Size& inSize);
     Size& operator/=(const Size& inSize);
 
-     // Logical operators
-    bool operator==(const Size& inSize);
-    bool operator!=(const Size& inSize);
-
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
 
@@ -108,18 +104,18 @@ inline Size<T>& Size<T>::operator/=(const Size& inSize)
     return *this;
 }
 
-// Logical operators
+// Class Related Functions
 template<typename T>
-inline bool Size<T>::operator==(const Size& inSize)
+inline bool operator==(const Size<T>& inLHS, const Size<T>& inRHS)
 {
-    bool result = (mWidth == inSize.mWidth) && (mHeight == inSize.mHeight);
+    bool result = (inLHS.Width() == inRHS.Width()) && (inLHS.Height() == inRHS.Height());
     return result;
 }
 
 template<typename T>
-inline bool Size<T>::operator!=(const Size& inSize)
+inline bool operator!=(const Size<T>& inLHS, const Size<T>& inRHS)
 {
-    bool result = !(*this == inSize);
+    bool result = !(inLHS == inRHS);
     return result;
 }
 

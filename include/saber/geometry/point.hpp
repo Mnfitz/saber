@@ -38,10 +38,6 @@ public:
     Point& operator*=(const Point& inPoint);
     Point& operator/=(const Point& inPoint);
 
-    // Logical operators
-    bool operator==(const Point& inPoint);
-    bool operator!=(const Point& inPoint);
-
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
 
@@ -106,18 +102,18 @@ inline Point<T>& Point<T>::operator/=(const Point& inPoint)
     return *this;
 }
 
-// Logical operators
+// Class Related Functions
 template<typename T>
-inline bool Point<T>::operator==(const Point& inPoint)
+inline bool operator==(const Point<T>& inLHS, const Point<T>& inRHS)
 {
-    bool result = (mX == inPoint.mX) && (mY == inPoint.mY);
+    bool result = (inLHS.X() == inRHS.X()) && (inLHS.Y() == inRHS.Y());
     return result;
 }
 
 template<typename T>
-inline bool Point<T>::operator!=(const Point& inPoint)
+inline bool operator!=(const Point<T>& inLHS, const Point<T>& inRHS)
 {
-    bool result = !(*this == inPoint);
+    bool result = !(inLHS == inRHS);
     return result;
 }
 
