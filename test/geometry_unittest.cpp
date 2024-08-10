@@ -29,6 +29,7 @@
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/utility.hpp"
+#include "saber/geometry/comparator.hpp"
 
 // std
 #include <cstdio>
@@ -330,5 +331,44 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		saber::geometry::Point<int> Point2{2,4};
 		auto result = Point1 != Point2;
 		REQUIRE(result);
+	}
+}
+
+TEST_CASE("saber::geometry::comparator float", "[saber]")
+{
+	SECTION("float == float")
+	{
+		float test1 = 3.6f;
+		saber::geometry::Comparator test{test1};
+		float test2 = 3 * 1.20f;
+ 		auto result = test(test2);
+		REQUIRE(result);
+	}
+
+	SECTION("double == double")
+	{
+		double test1 = 3.6;
+		saber::geometry::Comparator test{test1};
+		double test2 = 3 * 1.20;
+ 		auto result = test(test2);
+		REQUIRE(result);
+	}
+
+	SECTION("float != float")
+	{
+		float test1 = 3.59f;
+		saber::geometry::Comparator test{test1};
+		float test2 = 3 * 1.20f;
+ 		auto result = test(test2);
+		REQUIRE(!result);
+	}
+
+	SECTION("double != double")
+	{
+		double test1 = 3.59;
+		saber::geometry::Comparator test{test1};
+		double test2 = 3 * 1.20;
+ 		auto result = test(test2);
+		REQUIRE(!result);
 	}
 }
