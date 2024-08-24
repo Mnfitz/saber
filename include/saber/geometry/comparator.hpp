@@ -2,11 +2,6 @@
 #define SABER_GEOMETRY_COMPARATOR_HPP
 #pragma once
 
-// saber
-#include "saber/utility.hpp"
-#include "saber/geometry/point.hpp"
-#include "saber/geometry/size.hpp"
-
 // std
 #include <algorithm>
 #include <cmath>
@@ -16,7 +11,7 @@ namespace saber {
 namespace geometry {
 namespace detail {
 
-bool CompareInexact(float inLHS, float inRHS)
+inline bool CompareInexact(float inLHS, float inRHS)
 {
     // magnitude: the further we get away from 0, the more inexactness we allow
     const float magnitude = std::max(std::max(std::abs(inLHS), std::abs(inRHS)), 1.0f); 
@@ -25,11 +20,11 @@ bool CompareInexact(float inLHS, float inRHS)
     // epsilon: minimal permitted amount of inexactness
     const float epsilon = std::numeric_limits<float>::epsilon() * magnitude;
     // isEqual: equality occurs if the difference is within a scaled epsilon
-    const bool isEqual = difference < epsilon; // some arbirtary small number
+    const bool isEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
     return isEqual;
 }
 
-bool CompareInexact(double inLHS, double inRHS)
+inline bool CompareInexact(double inLHS, double inRHS)
 {
     // magnitude: the further we get away from 0, the more inexactness we allow
     const double magnitude = std::max(std::max(std::abs(inLHS), std::abs(inRHS)), 1.0); 
@@ -38,7 +33,7 @@ bool CompareInexact(double inLHS, double inRHS)
     // epsilon: minimal permitted amount of inexactness
     const double epsilon = std::numeric_limits<double>::epsilon() * magnitude;
     // isEqual: equality occurs if the difference is within a scaled epsilon
-    const bool isEqual = difference < epsilon; // some arbirtary small number
+    const bool isEqual = difference <= epsilon; // some arbirtary small number
     return isEqual;
 }
 
@@ -50,8 +45,8 @@ struct Comparator
 {
 public:
     Comparator(const T& inLHS) :
-        mLHS{inLHS}
     {
+        mLHS = inLHS;
         // Do nothing
     };
 
@@ -62,7 +57,7 @@ public:
     }
 
 private:
-    T mLHS{};
+    T& mLHS{};
 };
 
 // float specialization
