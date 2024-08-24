@@ -45,8 +45,8 @@ struct Comparator
 {
 public:
     Comparator(const T& inLHS) :
+        mLHS{inLHS}
     {
-        mLHS = inLHS;
         // Do nothing
     };
 
@@ -57,7 +57,9 @@ public:
     }
 
 private:
-    T& mLHS{};
+    // Const reference because you want to guarantee to 
+    // the caller that his value isn't going to be modified
+    const T& mLHS{}; 
 };
 
 // float specialization
@@ -79,7 +81,9 @@ public:
     }
 
 private:
-    float mLHS{};
+    // Non-const, because it's our own value; copied from the caller and 
+    // const data members prevent Ro5 move construct and move assign
+    float mLHS{}; 
 };
 
 // double specialization
@@ -101,6 +105,8 @@ public:
     }
 
 private:
+    // Non-const, because it's our own value; copied from the caller and 
+    // const data members prevent Ro5 move construct and move assign
     double mLHS{};
 };
     
