@@ -59,6 +59,7 @@ public:
 private:
     // Const reference because you want to guarantee to 
     // the caller that his value isn't going to be modified
+    // Note: a reference member disqualifies this class from Ro5 move construct, move assign
     const T& mLHS{}; 
 };
 
