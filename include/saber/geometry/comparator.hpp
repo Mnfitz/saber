@@ -110,6 +110,118 @@ private:
     // const data members prevent Ro5 move construct and move assign
     double mLHS{};
 };
+
+////////////////////////////////////////
+
+inline bool IsComparator(float inLHS, float inRHS)
+{
+    Comparator comparison{inLHS};
+    const bool result = comparison(inRHS);
+    return result;
+}
+
+inline bool IsComparator(double inLHS, double inRHS)
+{
+    Comparator comparison{inLHS};
+    const bool result = comparison(inRHS);
+    return result;
+}
+
+////////////////////////////////////////
+
+inline bool IsApproxEQ(float inLHS, float inRHS)
+{
+    Comparator comparison{inLHS};
+    const bool result = comparison(inRHS);
+    return result;
+}
+
+inline bool IsApproxNE(float inLHS, float inRHS)
+{
+    Comparator comparison{inLHS};
+    const bool result = comparison(inRHS);
+    return result;
+}
+
+inline bool IsApproxGE(float inLHS, float inRHS)
+{
+    Comparator comparison{inLHS};
+    const bool result = comparison(inRHS);
+    return result;
+}
+
+template<typename T>
+struct ApproxEQ
+{
+public:
+    ApproxEQ(const T& inLHS) :
+        mLHS{inLHS}
+    {
+        // Do nothing
+    };
+
+    bool operator()(const T& inRHS) const
+    {
+        bool result = mLHS == inRHS;
+        return result;
+    }
+
+private:
+    // Const reference because you want to guarantee to 
+    // the caller that his value isn't going to be modified
+    // Note: a reference member disqualifies this class from Ro5 move construct, move assign
+    const T& mLHS{}; 
+};
+
+////////////////////////////////////////
+
+class Inexact
+{
+    static bool IsEQ(float inLHS, float inRHS)
+    {
+        Comparator comparison{inLHS};
+        const bool result = comparison(inRHS);
+        return result;
+    }
+
+    static bool IsNE(float inLHS, float inRHS)
+    {
+        Comparator comparison{inLHS};
+        const bool result = comparison(inRHS);
+        return result;
+    }
+
+    static bool IsGE(float inLHS, float inRHS)
+    {
+        Comparator comparison{inLHS};
+        const bool result = comparison(inRHS);
+        return result;
+    }
+
+    template<typename T>
+    struct EQ
+    {
+    public:
+        EQ(const T& inLHS) :
+            mLHS{inLHS}
+        {
+            // Do nothing
+        };
+
+        bool operator()(const T& inRHS) const
+        {
+            bool result = mLHS == inRHS;
+            return result;
+        }
+
+    private:
+        // Const reference because you want to guarantee to 
+        // the caller that his value isn't going to be modified
+        // Note: a reference member disqualifies this class from Ro5 move construct, move assign
+        const T& mLHS{}; 
+    };
+};
+
     
 } // namespace geometry
 } // namespace saber
