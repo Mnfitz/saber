@@ -1,202 +1,36 @@
-#ifndef SABER_GEOMETRY_COMPARATOR_HPP
-#define SABER_GEOMETRY_COMPARATOR_HPP
+#ifndef SABER_INEXACT_HPP
+#define SABER_INEXACT_HPP
 #pragma once
 
 // std
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <cassert>
+#include <type_traits>
 
 namespace saber {
-namespace geometry {
-namespace detail {
-
-inline bool CompareInexact(float inLHS, float inRHS)
-{
-    // magnitude: the further we get away from 0, the more inexactness we allow
-    const float magnitude = std::max(std::max(std::abs(inLHS), std::abs(inRHS)), 1.0f); 
-    // difference: compare the 2 numbers
-    const float difference = std::abs(inLHS - inRHS);
-    // epsilon: minimal permitted amount of inexactness
-    const float epsilon = std::numeric_limits<float>::epsilon() * magnitude;
-    // isEqual: equality occurs if the difference is within a scaled epsilon
-    const bool isEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
-    return isEqual;
-}
-
-inline bool CompareInexact(double inLHS, double inRHS)
-{
-    // magnitude: the further we get away from 0, the more inexactness we allow
-    const double magnitude = std::max(std::max(std::abs(inLHS), std::abs(inRHS)), 1.0); 
-    // difference: compare the 2 numbers
-    const double difference = std::abs(inLHS - inRHS);
-    // epsilon: minimal permitted amount of inexactness
-    const double epsilon = std::numeric_limits<double>::epsilon() * magnitude;
-    // isEqual: equality occurs if the difference is within a scaled epsilon
-    const bool isEqual = difference <= epsilon; // some arbirtary small number
-    return isEqual;
-}
-
-} // namespace detail
-
-// Primary template
-template<typename T>
-struct Comparator
-{
-public:
-    Comparator(const T& inLHS) :
-        mLHS{inLHS}
-    {
-        // Do nothing
-    };
-
-    bool operator()(const T& inRHS) const
-    {
-        bool result = mLHS == inRHS;
-        return result;
-    }
-
-private:
-    // Const reference because you want to guarantee to 
-    // the caller that his value isn't going to be modified
-    // Note: a reference member disqualifies this class from Ro5 move construct, move assign
-    const T& mLHS{}; 
-};
-
-// float specialization
-template<>
-struct Comparator<float>
-{
-public:
-    //ctor
-    Comparator(float inLHS) :
-        mLHS{inLHS}
-    {
-        // Do nothing
-    };
-
-    bool operator()(float inRHS) const
-    {
-        bool result = detail::CompareInexact(mLHS, inRHS);
-        return result;
-    }
-
-private:
-    // Non-const, because it's our own value; copied from the caller and 
-    // const data members prevent Ro5 move construct and move assign
-    float mLHS{}; 
-};
-
-// double specialization
-template<>
-struct Comparator<double>
-{
-public:
-    //ctor
-    Comparator(double inLHS) :
-        mLHS{inLHS}
-    {
-        // Do nothing
-    };
-
-    bool operator()(double inRHS) const
-    {
-        bool result = detail::CompareInexact(mLHS, inRHS);
-        return result;
-    }
-
-private:
-    // Non-const, because it's our own value; copied from the caller and 
-    // const data members prevent Ro5 move construct and move assign
-    double mLHS{};
-};
-
-////////////////////////////////////////
-
-inline bool IsComparator(float inLHS, float inRHS)
-{
-    Comparator comparison{inLHS};
-    const bool result = comparison(inRHS);
-    return result;
-}
-
-inline bool IsComparator(double inLHS, double inRHS)
-{
-    Comparator comparison{inLHS};
-    const bool result = comparison(inRHS);
-    return result;
-}
-
-////////////////////////////////////////
-
-inline bool IsApproxEQ(float inLHS, float inRHS)
-{
-    Comparator comparison{inLHS};
-    const bool result = comparison(inRHS);
-    return result;
-}
-
-inline bool IsApproxNE(float inLHS, float inRHS)
-{
-    Comparator comparison{inLHS};
-    const bool result = comparison(inRHS);
-    return result;
-}
-
-inline bool IsApproxGE(float inLHS, float inRHS)
-{
-    Comparator comparison{inLHS};
-    const bool result = comparison(inRHS);
-    return result;
-}
-
-template<typename T>
-struct ApproxEQ
-{
-public:
-    ApproxEQ(const T& inLHS) :
-        mLHS{inLHS}
-    {
-        // Do nothing
-    };
-
-    bool operator()(const T& inRHS) const
-    {
-        bool result = mLHS == inRHS;
-        return result;
-    }
-
-private:
-    // Const reference because you want to guarantee to 
-    // the caller that his value isn't going to be modified
-    // Note: a reference member disqualifies this class from Ro5 move construct, move assign
-    const T& mLHS{}; 
-};
-
-////////////////////////////////////////
 
 class Inexact
 {
-    static bool IsEQ(float inLHS, float inRHS)
+public:
+    template<typename T>
+    static bool IsEQ(T inLHS, T inRHS)
     {
-        Comparator comparison{inLHS};
-        const bool result = comparison(inRHS);
+        EQ equal{inLHS};
+        const bool result = equal(inRHS);
         return result;
     }
 
-    static bool IsNE(float inLHS, float inRHS)
+    /*
+    template<typename T>
+    static bool IsNE(T inLHS, T inRHS)
     {
-        Comparator comparison{inLHS};
-        const bool result = comparison(inRHS);
+        EQ unequal{inLHS};
+        const bool result = unequal(inRHS);
         return result;
     }
-
-    static bool IsGE(float inLHS, float inRHS)
-    {
-        Comparator comparison{inLHS};
-        const bool result = comparison(inRHS);
-        return result;
-    }
+    */
 
     template<typename T>
     struct EQ
@@ -205,13 +39,22 @@ class Inexact
         EQ(const T& inLHS) :
             mLHS{inLHS}
         {
+            bool assertion = std::is_floating_point<T>::value;
+            assert(assertion);
             // Do nothing
         };
 
         bool operator()(const T& inRHS) const
         {
-            bool result = mLHS == inRHS;
-            return result;
+            // magnitude: the further we get away from 0, the more inexactness we allow
+            const T magnitude = std::max<T>(std::max<T>(std::abs(mLHS), std::abs(inRHS)), 1.0f); 
+            // difference: compare the 2 numbers
+            const T difference = std::abs(mLHS - inRHS);
+            // epsilon: minimal permitted amount of inexactness
+            const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
+            // isEqual: equality occurs if the difference is within a scaled epsilon
+            const bool isEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
+            return isEqual;
         }
 
     private:
@@ -220,10 +63,9 @@ class Inexact
         // Note: a reference member disqualifies this class from Ro5 move construct, move assign
         const T& mLHS{}; 
     };
+
 };
 
-    
-} // namespace geometry
 } // namespace saber
 
-#endif // SABER_GEOMETRY_COMPARATOR_HPP
+#endif // SABER_INEXACT_HPP
