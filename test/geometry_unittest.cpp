@@ -29,7 +29,7 @@
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/utility.hpp"
-#include "saber/geometry/comparator.hpp"
+#include "saber/inexact.hpp"
 
 // std
 #include <cstdio>
@@ -334,41 +334,85 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 	}
 }
 
-TEST_CASE("saber::geometry::comparator float", "[saber]")
+TEST_CASE("saber::geometry::Inexact::Eq float", "[saber]")
 {
-	SECTION("float == float")
+	SECTION("float Eq float")
 	{
 		float test1 = 3.6f;
-		saber::geometry::Comparator test{test1};
 		float test2 = 3 * 1.20f;
- 		auto result = test(test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 		REQUIRE(result);
 	}
 
-	SECTION("double == double")
+	SECTION("double Eq double")
 	{
 		double test1 = 3.6;
-		saber::geometry::Comparator test{test1};
 		double test2 = 3 * 1.20;
- 		auto result = test(test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 		REQUIRE(result);
 	}
 
-	SECTION("float != float")
+	SECTION("float !Eq float")
 	{
 		float test1 = 3.59f;
-		saber::geometry::Comparator test{test1};
 		float test2 = 3 * 1.20f;
- 		auto result = test(test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
+
 		REQUIRE(!result);
 	}
 
-	SECTION("double != double")
+	SECTION("double !Eq double")
 	{
 		double test1 = 3.59;
-		saber::geometry::Comparator test{test1};
 		double test2 = 3 * 1.20;
- 		auto result = test(test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 		REQUIRE(!result);
 	}
+}
+
+TEST_CASE("saber::geometry::Inexact::Ee float", "[saber]")
+{
+	SECTION("float Ne float")
+	{
+		float test1 = 3.59f;
+		float test2 = 3 * 1.20f;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(result);
+	}
+
+	SECTION("double Ne double")
+	{
+		double test1 = 3.59;
+		double test2 = 3 * 1.20;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(result);
+	}
+
+	SECTION("float !Ne float")
+	{
+		float test1 = 3.6f;
+		float test2 = 3 * 1.20f;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+
+		REQUIRE(!result);
+	}
+
+	SECTION("double !Ne double")
+	{
+		double test1 = 3.6;
+		double test2 = 3 * 1.20;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(!result);
+	}
+
+	/* 
+	// Compile time test only
+	SECTION("Non-Float FAIL TEST")
+	{
+		std::string test1 = "fail";
+		std::string test2 = "test";
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(!result);
+	}
+	*/
 }
