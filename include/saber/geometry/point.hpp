@@ -3,6 +3,7 @@
 #pragma once
 
 // saber
+#include "saber/inexact.hpp"
 #include "saber/geometry/operators.hpp"
 
 namespace saber::geometry {
@@ -106,14 +107,32 @@ inline constexpr Point<T>& Point<T>::operator/=(const Point& inPoint)
 template<typename T>
 inline bool operator==(const Point<T>& inLHS, const Point<T>& inRHS)
 {
-    bool result = (inLHS.X() == inRHS.X()) && (inLHS.Y() == inRHS.Y());
+    bool result = false;
+    if constexpr (std::is_floating_point_v<T>)
+    {
+        result = Inexact::IsEq(inLHS.X(), inRHS.X()) && Inexact::IsEq(inLHS.Y(), inRHS.Y());
+    }
+    else
+    {
+        result = (inLHS.X() == inRHS.X()) && (inLHS.Y() == inRHS.Y());
+    }
+
     return result;
 }
 
 template<typename T>
 inline bool operator!=(const Point<T>& inLHS, const Point<T>& inRHS)
 {
-    bool result = !(inLHS == inRHS);
+    bool result = false;
+    if constexpr (std::is_floating_point_v<T>)
+    {
+        result = Inexact::IsNe(inLHS.X(), inRHS.X()) || Inexact::IsNe(inLHS.Y(), inRHS.Y());
+    }
+    else
+    {
+        result = (inLHS.X() != inRHS.X()) || (inLHS.Y() != inRHS.Y());
+    }
+    
     return result;
 }
 
