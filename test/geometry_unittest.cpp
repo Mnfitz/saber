@@ -404,4 +404,15 @@ TEST_CASE("saber::geometry::Inexact::Ee float", "[saber]")
  		auto result = saber::Inexact::IsNe(test1, test2);
 		REQUIRE(!result);
 	}
+
+	/* 
+	// Compile time test only
+	SECTION("Non-Float FAIL TEST")
+	{
+		std::string test1 = "fail";
+		std::string test2 = "test";
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(!result);
+	}
+	*/
 }

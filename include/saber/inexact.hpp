@@ -3,8 +3,6 @@
 #pragma once
 
 // std
-//#include <algorithm>
-//#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
@@ -40,8 +38,7 @@ public:
             mLHS{inLHS}
         {
             constexpr bool isFloatingPoint = std::is_floating_point<T>::value;
-            static_assert(isFloatingPoint, "Not a floating point input");
-            // Do nothing
+            static_assert(isFloatingPoint, "Eq only supports floating point types");
         };
 
         bool operator()(const T& inRHS) const
@@ -72,8 +69,7 @@ public:
             mLHS{inLHS}
         {
             constexpr bool isFloatingPoint = std::is_floating_point<T>::value;
-            static_assert(isFloatingPoint, "Not a floating point input");
-            // Do nothing
+            static_assert(isFloatingPoint, "Ne only supports floating point types");
         };
 
         bool operator()(const T& inRHS) const
