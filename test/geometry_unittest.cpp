@@ -334,38 +334,74 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 	}
 }
 
-TEST_CASE("saber::geometry::inexact::EQ float", "[saber]")
+TEST_CASE("saber::geometry::Inexact::Eq float", "[saber]")
 {
-	SECTION("float == float")
+	SECTION("float Eq float")
 	{
 		float test1 = 3.6f;
 		float test2 = 3 * 1.20f;
- 		auto result = saber::Inexact::IsEQ(test1, test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 		REQUIRE(result);
 	}
 
-	SECTION("double == double")
+	SECTION("double Eq double")
 	{
 		double test1 = 3.6;
 		double test2 = 3 * 1.20;
- 		auto result = saber::Inexact::IsEQ(test1, test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 		REQUIRE(result);
 	}
 
-	SECTION("float != float")
+	SECTION("float !Eq float")
 	{
 		float test1 = 3.59f;
 		float test2 = 3 * 1.20f;
- 		auto result = saber::Inexact::IsEQ(test1, test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
 
 		REQUIRE(!result);
 	}
 
-	SECTION("double != double")
+	SECTION("double !Eq double")
 	{
 		double test1 = 3.59;
 		double test2 = 3 * 1.20;
- 		auto result = saber::Inexact::IsEQ(test1, test2);
+ 		auto result = saber::Inexact::IsEq(test1, test2);
+		REQUIRE(!result);
+	}
+}
+
+TEST_CASE("saber::geometry::Inexact::Ee float", "[saber]")
+{
+	SECTION("float Ne float")
+	{
+		float test1 = 3.59f;
+		float test2 = 3 * 1.20f;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(result);
+	}
+
+	SECTION("double Ne double")
+	{
+		double test1 = 3.59;
+		double test2 = 3 * 1.20;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+		REQUIRE(result);
+	}
+
+	SECTION("float !Ne float")
+	{
+		float test1 = 3.6f;
+		float test2 = 3 * 1.20f;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
+
+		REQUIRE(!result);
+	}
+
+	SECTION("double !Ne double")
+	{
+		double test1 = 3.6;
+		double test2 = 3 * 1.20;
+ 		auto result = saber::Inexact::IsNe(test1, test2);
 		REQUIRE(!result);
 	}
 }

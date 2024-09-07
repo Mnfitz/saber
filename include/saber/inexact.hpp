@@ -3,11 +3,13 @@
 #pragma once
 
 // std
-#include <algorithm>
+//#include <algorithm>
+//#include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
-#include <cassert>
 #include <type_traits>
+#include <utility>
 
 namespace saber {
 
@@ -15,32 +17,30 @@ class Inexact
 {
 public:
     template<typename T>
-    static bool IsEQ(T inLHS, T inRHS)
+    static bool IsEq(T inLHS, T inRHS)
     {
-        EQ equal{inLHS};
-        const bool result = equal(inRHS);
+        Eq isEqual{inLHS};
+        const bool result = isEqual(inRHS);
         return result;
     }
-
-    /*
+    
     template<typename T>
-    static bool IsNE(T inLHS, T inRHS)
+    static bool IsNe(T inLHS, T inRHS)
     {
-        EQ unequal{inLHS};
-        const bool result = unequal(inRHS);
+        Ne isNotEqual{inLHS};
+        const bool result = isNotEqual(inRHS);
         return result;
     }
-    */
-
+    
     template<typename T>
-    struct EQ
+    struct Eq
     {
     public:
-        EQ(const T& inLHS) :
+        Eq(const T& inLHS) :
             mLHS{inLHS}
         {
-            bool assertion = std::is_floating_point<T>::value;
-            assert(assertion);
+            constexpr bool isFloatingPoint = std::is_floating_point<T>::value;
+            static_assert(isFloatingPoint, "Not a floating point input");
             // Do nothing
         };
 
@@ -52,9 +52,35 @@ public:
             const T difference = std::abs(mLHS - inRHS);
             // epsilon: minimal permitted amount of inexactness
             const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
-            // isEqual: equality occurs if the difference is within a scaled epsilon
-            const bool isEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
-            return isEqual;
+            // IsEqual: equality occurs if the difference is within a scaled epsilon
+            const bool IsEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
+            return IsEqual;
+        }
+
+    private:
+        // Const reference because you want to guarantee to 
+        // the caller that his value isn't going to be modified
+        // Note: a reference member disqualifies this class from Ro5 move construct, move assign
+        const T& mLHS{}; 
+    };
+
+    template<typename T>
+    struct Ne
+    {
+    public:
+        Ne(const T& inLHS) :
+            mLHS{inLHS}
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point<T>::value;
+            static_assert(isFloatingPoint, "Not a floating point input");
+            // Do nothing
+        };
+
+        bool operator()(const T& inRHS) const
+        {
+            Eq isEqual{mLHS};
+            const bool isNotEqual = !isEqual(inRHS);
+            return isNotEqual;
         }
 
     private:
