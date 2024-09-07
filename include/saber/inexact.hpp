@@ -37,7 +37,6 @@ public:
         Eq(const T& inLHS) :
             mLHS{inLHS}
         {
-            //constexpr bool isFloatingPoint = std::is_floating_point<T>::value;
             constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
             static_assert(isFloatingPoint, "Eq only supports floating point types");
         };
