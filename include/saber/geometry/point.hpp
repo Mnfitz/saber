@@ -15,7 +15,7 @@ namespace saber::geometry {
 // 3. Has-a: naked types or std::tuple or std::array
 
 template<typename T>
-class Point
+class Point //: private EqualityOperators<Point<T>> // CRTP Curiously Recurring Template Pattern
 {
 public: 
     constexpr Point(T inX, T inY);
@@ -38,6 +38,11 @@ public:
     constexpr Point& operator-=(const Point& inPoint);
     constexpr Point& operator*=(const Point& inPoint);
     constexpr Point& operator/=(const Point& inPoint);
+
+private:
+    constexpr bool IsEqual(const Point& inPoint) const;
+    friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
+    friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
 
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
@@ -103,36 +108,18 @@ inline constexpr Point<T>& Point<T>::operator/=(const Point& inPoint)
     return *this;
 }
 
-// Class Related Functions
 template<typename T>
-inline bool operator==(const Point<T>& inLHS, const Point<T>& inRHS)
+inline constexpr bool Point<T>::IsEqual(const Point& inPoint) const
 {
     bool result = false;
     if constexpr (std::is_floating_point_v<T>)
     {
-        result = Inexact::IsEq(inLHS.X(), inRHS.X()) && Inexact::IsEq(inLHS.Y(), inRHS.Y());
+        result = Inexact::IsEq(X(), inPoint.X()) && Inexact::IsEq(Y(), inPoint.Y());
     }
     else
     {
-        result = (inLHS.X() == inRHS.X()) && (inLHS.Y() == inRHS.Y());
+        result = (X() == inPoint.X()) && (Y() == inPoint.Y());
     }
-
-    return result;
-}
-
-template<typename T>
-inline bool operator!=(const Point<T>& inLHS, const Point<T>& inRHS)
-{
-    bool result = false;
-    if constexpr (std::is_floating_point_v<T>)
-    {
-        result = Inexact::IsNe(inLHS.X(), inRHS.X()) || Inexact::IsNe(inLHS.Y(), inRHS.Y());
-    }
-    else
-    {
-        result = (inLHS.X() != inRHS.X()) || (inLHS.Y() != inRHS.Y());
-    }
-    
     return result;
 }
 

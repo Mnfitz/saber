@@ -16,7 +16,7 @@ namespace saber::geometry {
 // 5. Build up binary free operators from class operators +=, etc
 
 template<typename T>
-class Size 
+class Size //: private EqualityOperators<Size<T>> // CRTP Curiously Recurring Template Pattern
 {
 public: 
     constexpr Size(T inWidth, T inHeight);
@@ -39,6 +39,11 @@ public:
     constexpr Size& operator-=(const Size& inSize);
     constexpr Size& operator*=(const Size& inSize);
     constexpr Size& operator/=(const Size& inSize);
+
+private:
+    constexpr bool IsEqual(const Size& inSize) const;
+    friend constexpr bool operator==<Size>(const Size& inLHS, const Size& inRHS);
+    friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
 
     // REVISIT mnfitz 15jun2024:
     // Figure out operators supporting scalar operations
@@ -104,18 +109,18 @@ inline constexpr Size<T>& Size<T>::operator/=(const Size& inSize)
     return *this;
 }
 
-// Class Related Functions
 template<typename T>
-inline bool operator==(const Size<T>& inLHS, const Size<T>& inRHS)
+inline constexpr bool Size<T>::IsEqual(const Size& inSize) const
 {
-    bool result = (inLHS.Width() == inRHS.Width()) && (inLHS.Height() == inRHS.Height());
-    return result;
-}
-
-template<typename T>
-inline bool operator!=(const Size<T>& inLHS, const Size<T>& inRHS)
-{
-    bool result = !(inLHS == inRHS);
+    bool result = false;
+    if constexpr (std::is_floating_point_v<T>)
+    {
+        result = Inexact::IsEq(Width(), inSize.Width()) && Inexact::IsEq(Height(), inSize.Height());
+    }
+    else
+    {
+        result = (Width() == inSize.Width()) && (Height() == inSize.Height());
+    }
     return result;
 }
 
