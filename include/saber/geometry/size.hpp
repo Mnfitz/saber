@@ -16,7 +16,7 @@ namespace saber::geometry {
 // 5. Build up binary free operators from class operators +=, etc
 
 template<typename T>
-class Size //: private EqualityOperators<Size<T>> // CRTP Curiously Recurring Template Pattern
+class Size // CRTP Curiously Recurring Template Pattern
 {
 public: 
     constexpr Size(T inWidth, T inHeight);
@@ -123,6 +123,39 @@ inline constexpr bool Size<T>::IsEqual(const Size& inSize) const
     }
     return result;
 }
+
+// Structured Binding Support
+
+template<std::size_t Index, typename T>
+inline T get(const Size<T>& inSize)
+{
+    static_assert(Index < 2, "Unexpected Index for Size<T>");
+
+    T result{};
+    if constexpr (Index == 0)
+    {
+        result = inSize.Width();
+    }
+    else if constexpr (Index == 1)
+    {
+        result = inSize.Height();
+    }
+    return result;
+}
+
+template<typename T>
+struct std::tuple_size<Size<T>>
+{
+    // Number of elements in Size<T>'s structured binding
+    static constexpr std::size_t value = 2;
+};
+
+template<std::size_t Index, typename T>
+struct std::tuple_element<Index, Size<T>>
+{
+    // Type of elements in Size<T>'s structured binding
+    using type = T;
+};
 
 }// namespace saber::geometry
 

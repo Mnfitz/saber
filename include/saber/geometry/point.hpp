@@ -6,6 +6,9 @@
 #include "saber/inexact.hpp"
 #include "saber/geometry/operators.hpp"
 
+// std
+#include <utility>
+
 namespace saber::geometry {
 
 // REVIEW mnfitz 15jun2024:
@@ -122,6 +125,40 @@ inline constexpr bool Point<T>::IsEqual(const Point& inPoint) const
     }
     return result;
 }
+
+// Structured Binding Support
+
+template<std::size_t Index, typename T>
+inline T get(const Point<T>& inPoint)
+{
+    static_assert(Index < 2, "Unexpected Index for Point<T>");
+
+    T result{};
+    if constexpr (Index == 0)
+    {
+        result = inPoint.X();
+    }
+    else if constexpr (Index == 1)
+    {
+        result = inPoint.Y();
+    }
+
+    return result;
+}
+
+template<typename T>
+struct std::tuple_size<Point<T>>
+{
+    // Number of elements in Point<T>'s structured binding
+    static constexpr std::size_t value = 2;
+};
+
+template<std::size_t Index, typename T>
+struct std::tuple_element<Index, Point<T>>
+{
+    // Type of elements in Point<T>'s structured
+    using type = T;
+};
 
 }// namespace saber::geometry
 
