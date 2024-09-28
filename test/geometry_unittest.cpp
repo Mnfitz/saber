@@ -82,6 +82,14 @@ TEST_CASE("saber::geometry::point", "[saber]")
 		REQUIRE(point2.X() == 1);
 		REQUIRE(point2.Y() == 2);
 	}
+
+	SECTION("Structured Binding")
+	{
+		saber::geometry::Point<int> point{1,2};
+		const auto [x, y] = point; // accessor: structured binding!
+		REQUIRE(x == 1);
+		REQUIRE(y == 2);
+	}
 }
 
 TEST_CASE("saber::geometry::size", "[saber]")
@@ -130,6 +138,14 @@ TEST_CASE("saber::geometry::size", "[saber]")
         saber::geometry::Size<int> size2 = std::move(size1);
 		REQUIRE(size2.Width() == 1);
 		REQUIRE(size2.Height() == 2);
+	}
+	
+	SECTION("Structured Binding")
+	{
+		saber::geometry::Size<int> size{1,2};
+		const auto [height, width] = size; // accessor: structured binding!
+		REQUIRE(height == 1);
+		REQUIRE(width == 2);
 	}
 }
 
