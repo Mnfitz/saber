@@ -228,18 +228,28 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 
 	SECTION("Size == Size")
 	{
-		saber::geometry::Size<int> Size1{1,2};
-		saber::geometry::Size<int> Size2{1,2};
-		auto result = Size1 == Size2;
+		saber::geometry::Size<int> size1{1,2};
+		saber::geometry::Size<int> size2{1,2};
+		auto result = size1 == size2;
 		REQUIRE(result);
+
+		saber::geometry::Size<double> size3{1.0,2.0};
+		saber::geometry::Size<double> size4{1.0,2.0};
+		auto result2 = size3 == size4;
+		REQUIRE(result2);
 	}
 
 	SECTION("Size != Size")
 	{
-		saber::geometry::Size<int> Size1{1,2};
-		saber::geometry::Size<int> Size2{2,4};
-		auto result = Size1 != Size2;
+		saber::geometry::Size<int> size1{1,2};
+		saber::geometry::Size<int> size2{2,2};
+		auto result = size1 != size2;
 		REQUIRE(result);
+
+		saber::geometry::Size<double> size3{1.0,2.0};
+		saber::geometry::Size<double> size4{2.0,2.0};
+		auto result2 = size3 != size4;
+		REQUIRE(result2);
 	}
 }
 
@@ -247,90 +257,100 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 {
 	SECTION("Point += Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{1,2};
-		Point1 += Point2;
-		REQUIRE(Point1.X() == 2);
-		REQUIRE(Point1.Y() == 4);
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{1,2};
+		point1 += point2;
+		REQUIRE(point1.X() == 2);
+		REQUIRE(point1.Y() == 4);
 	}
 
 	SECTION("Point -= Point")
 	{
-		saber::geometry::Point<int> Point1{2,4};
-		saber::geometry::Point<int> Point2{1,2};
-		Point1 -= Point2;
-		REQUIRE(Point1.X() == 1);
-		REQUIRE(Point1.Y() == 2);
+		saber::geometry::Point<int> point1{2,4};
+		saber::geometry::Point<int> point2{1,2};
+		point1 -= point2;
+		REQUIRE(point1.X() == 1);
+		REQUIRE(point1.Y() == 2);
 	}
 
 	SECTION("Point *= Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{1,2};
-		Point1 *= Point2;
-		REQUIRE(Point1.X() == 1);
-		REQUIRE(Point1.Y() == 4);
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{1,2};
+		point1 *= point2;
+		REQUIRE(point1.X() == 1);
+		REQUIRE(point1.Y() == 4);
 	}
 
 	SECTION("Point /= Point")
 	{
-		saber::geometry::Point<int> Point1{2,4};
-		saber::geometry::Point<int> Point2{1,2};
-		Point1 /= Point2;
-		REQUIRE(Point1.X() == 2);
-		REQUIRE(Point1.Y() == 2);
+		saber::geometry::Point<int> point1{2,4};
+		saber::geometry::Point<int> point2{1,2};
+		point1 /= point2;
+		REQUIRE(point1.X() == 2);
+		REQUIRE(point1.Y() == 2);
 	}
 
 	SECTION("Point + Point")
 	{
-		constexpr saber::geometry::Point<int> Point1{1,2};
-		constexpr saber::geometry::Point<int> Point2{1,2};
-		constexpr auto result = Point1 + Point2;
+		constexpr saber::geometry::Point<int> point1{1,2};
+		constexpr saber::geometry::Point<int> point2{1,2};
+		constexpr auto result = point1 + point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 4);
 	}
 
 	SECTION("Point - Point")
 	{
-		constexpr saber::geometry::Point<int> Point1{2,4};
-		constexpr saber::geometry::Point<int> Point2{1,2};
-		constexpr auto result = Point1 - Point2;
+		constexpr saber::geometry::Point<int> point1{2,4};
+		constexpr saber::geometry::Point<int> point2{1,2};
+		constexpr auto result = point1 - point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 2);
 	}
 
 	SECTION("Point * Point")
 	{
-		constexpr saber::geometry::Point<int> Point1{1,2};
-		constexpr saber::geometry::Point<int> Point2{1,2};
-		constexpr auto result = Point1 * Point2;
+		constexpr saber::geometry::Point<int> point1{1,2};
+		constexpr saber::geometry::Point<int> point2{1,2};
+		constexpr auto result = point1 * point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 4);
 	}
 
 	SECTION("Point / Point")
 	{
-		constexpr saber::geometry::Point<int> Point1{2,4};
-		constexpr saber::geometry::Point<int> Point2{1,2};
-		constexpr auto result = Point1 / Point2;
+		saber::geometry::Point<int> point1{2,4};
+		saber::geometry::Point<int> point2{1,2};
+		auto result = point1 / point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 2);
 	}
 
 	SECTION("Point == Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{1,2};
-		auto result = Point1 == Point2;
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{1,2};
+		auto result = point1 == point2;
 		REQUIRE(result);
+
+		saber::geometry::Point<float> point3{1.0f,2.0f};
+		saber::geometry::Point<float> point4{1.0f,2.0f};		
+		auto result2 = point3 == point4;
+		REQUIRE(result2);
 	}
 
 	SECTION("Point != Point")
 	{
-		saber::geometry::Point<int> Point1{1,2};
-		saber::geometry::Point<int> Point2{2,4};
-		auto result = Point1 != Point2;
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{2,4};
+		auto result = point1 != point2;
 		REQUIRE(result);
+
+		saber::geometry::Point<float> point3{1.0f,2.0f};
+		saber::geometry::Point<float> point4{2.0f,4.0f};
+		auto result2 = point3 != point4;
+		REQUIRE(result2);
 	}
 }
 

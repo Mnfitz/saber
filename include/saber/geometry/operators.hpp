@@ -91,6 +91,28 @@ inline constexpr T operator/(const T& inLHS, const T& inRHS)
     return result;
 }
 
+template<typename T>
+inline constexpr bool operator==(const T& inLHS, const T& inRHS)
+{
+    // Incomprehensible c++ incantation to detect if T implements IsEqual()
+    constexpr bool kHasOperatorEqual = std::is_same_v<bool, decltype(std::declval<T&>().IsEqual(std::declval<T>()))>;
+    static_assert(kHasOperatorEqual, "T does not support operator==");
+
+    const bool result = inLHS.IsEqual(inRHS);
+    return result;
+}
+
+template<typename T>
+inline constexpr bool operator!=(const T& inLHS, const T& inRHS)
+{
+    // Incomprehensible c++ incantation to detect if T implements IsEqual()
+    constexpr bool kHasOperatorEqual = std::is_same_v<bool, decltype(std::declval<T&>().IsEqual(std::declval<T>()))>;
+    static_assert(kHasOperatorEqual, "T does not support operator!=");
+
+    const bool result = !inLHS.IsEqual(inRHS);
+    return result;
+}
+
 } // namespace saber::geometry
 
 #endif //SABER_GEOMETRY_OPERATORS_HPP
