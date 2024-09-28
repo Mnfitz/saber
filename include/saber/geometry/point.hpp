@@ -15,7 +15,7 @@ namespace saber::geometry {
 // 3. Has-a: naked types or std::tuple or std::array
 
 template<typename T>
-class Point //: private EqualityOperators<Point<T>> // CRTP Curiously Recurring Template Pattern
+class Point // CRTP Curiously Recurring Template Pattern
 {
 public: 
     constexpr Point(T inX, T inY);
