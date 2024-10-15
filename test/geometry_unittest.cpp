@@ -90,6 +90,22 @@ TEST_CASE("saber::geometry::point", "[saber]")
 		REQUIRE(x == 1);
 		REQUIRE(y == 2);
 	}
+	
+// REVISIT mnfitz 14oct2024: std::tie needs reference(?) support from structured bindings
+	// SECTION("Structured Binding tie()")
+	// {
+	// 	saber::geometry::Point<int> point{1,2};
+	// 	int x{};
+	// 	int y{};
+	// 	//std::tie(x, y) = point; // accessor: structured binding!
+	// 	/*
+	// 	std::tie(x, std::ignore)
+	// 	std::tie(std::ignore, y)
+	// 	*/
+	// 	REQUIRE(x == 1);
+	// 	REQUIRE(y == 2);
+	// }
+	// 
 }
 
 TEST_CASE("saber::geometry::size", "[saber]")
@@ -143,9 +159,9 @@ TEST_CASE("saber::geometry::size", "[saber]")
 	SECTION("Structured Binding")
 	{
 		saber::geometry::Size<int> size{1,2};
-		const auto [height, width] = size; // accessor: structured binding!
-		REQUIRE(height == 1);
-		REQUIRE(width == 2);
+		const auto [width, height] = size; // accessor: structured binding!
+		REQUIRE(width == 1);
+		REQUIRE(height == 2);
 	}
 }
 

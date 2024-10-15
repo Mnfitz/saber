@@ -16,7 +16,7 @@ namespace saber::geometry {
 // 5. Build up binary free operators from class operators +=, etc
 
 template<typename T>
-class Size // CRTP Curiously Recurring Template Pattern
+class Size 
 {
 public: 
     constexpr Size(T inWidth, T inHeight);
@@ -124,11 +124,16 @@ inline constexpr bool Size<T>::IsEqual(const Size& inSize) const
     return result;
 }
 
+// TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
+#ifdef __cpp_structured_bindings
+
 // Structured Binding Support
 
+// Prefer free function over class method
 template<std::size_t Index, typename T>
 inline T get(const Size<T>& inSize)
 {
+    static_assert(2 == std::tuple_size<Size<T>>::value); // Use own std::tuple_size<> specialization
     static_assert(Index < 2, "Unexpected Index for Size<T>");
 
     T result{};
@@ -144,18 +149,20 @@ inline T get(const Size<T>& inSize)
 }
 
 template<typename T>
-struct std::tuple_size<Size<T>>
+struct std::tuple_size<Size<T>> // Partial template specialization for: Size<T>
 {
     // Number of elements in Size<T>'s structured binding
     static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Size<T>>
+struct std::tuple_element<Index, Size<T>> // Partial template specialization for: Size<T>
 {
     // Type of elements in Size<T>'s structured binding
     using type = T;
 };
+
+#endif // __cpp_structured_bindings
 
 }// namespace saber::geometry
 

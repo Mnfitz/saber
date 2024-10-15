@@ -18,7 +18,7 @@ namespace saber::geometry {
 // 3. Has-a: naked types or std::tuple or std::array
 
 template<typename T>
-class Point // CRTP Curiously Recurring Template Pattern
+class Point 
 {
 public: 
     constexpr Point(T inX, T inY);
@@ -126,11 +126,16 @@ inline constexpr bool Point<T>::IsEqual(const Point& inPoint) const
     return result;
 }
 
-// Structured Binding Support
+// TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
+#ifdef __cpp_structured_bindings
 
+// Structured Binding Support 
+
+// Prefer free function over class method
 template<std::size_t Index, typename T>
 inline T get(const Point<T>& inPoint)
 {
+    static_assert(2 == std::tuple_size<Point<T>>::value); // Use own std::tuple_size<> specialization
     static_assert(Index < 2, "Unexpected Index for Point<T>");
 
     T result{};
@@ -147,18 +152,20 @@ inline T get(const Point<T>& inPoint)
 }
 
 template<typename T>
-struct std::tuple_size<Point<T>>
+struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T>
 {
     // Number of elements in Point<T>'s structured binding
     static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Point<T>>
+struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T>
 {
     // Type of elements in Point<T>'s structured
     using type = T;
 };
+
+#endif //__cpp_structured_bindings
 
 }// namespace saber::geometry
 
