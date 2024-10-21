@@ -1,0 +1,8 @@
+# Top-most EditorConfig file
+root = true
+
+# Apply settings to all C++ source and header files
+[*.{c++,cc,cpp,cxx,h,h++,hh,hpp,hxx,inl,ipp,tlh,tli}]
+# Indentation settings
+indent_style = tab
+indent_size = 4

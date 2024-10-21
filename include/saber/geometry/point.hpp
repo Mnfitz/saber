@@ -59,8 +59,6 @@ private:
     // Figure out operators supporting scalar operations
 
 private:
-    T mX{};
-    T mY{};
     ImplType mImpl{};
 }; // class Point<>
 
@@ -90,33 +88,28 @@ inline constexpr T Point<T, ImplType>::Y() const
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator+=(const Point& inPoint)
 {
-    // mImpl += inPoint.mImpl;
-    mX += inPoint.mX;
-    mY += inPoint.mY;
+    mImpl += inPoint.mImpl;
     return *this;
 }
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator-=(const Point& inPoint)
 {
-    mX -= inPoint.mX;
-    mY -= inPoint.mY;
+    mImpl -= inPoint.mImpl;
     return *this;
 }
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator*=(const Point& inPoint)
 {
-    mX *= inPoint.mX;
-    mY *= inPoint.mY;
+    mImpl *= inPoint.mImpl;
     return *this;
 }
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator/=(const Point& inPoint)
 {
-    mX /= inPoint.mX;
-    mY /= inPoint.mY;
+    mImpl /= inPoint.mImpl;
     return *this;
 }
 

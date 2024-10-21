@@ -21,7 +21,7 @@ struct Impl2
         constexpr Scalar(T inFirst, T inSecond):
             mTuple(inFirst, inSecond)
         {
-            
+
         }
 
         template<std::size_t Index>
@@ -30,6 +30,35 @@ struct Impl2
             static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
             return std::get<Index>(mTuple);
         }
+
+        constexpr Scalar& operator+=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) += inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<1>(mTuple) += inRHS.Get<1>();
+            return *this;
+        }
+
+        constexpr Scalar& operator-=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) -= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<1>(mTuple) -= inRHS.Get<1>();
+            return *this;
+        }
+
+        constexpr Scalar& operator*=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) *= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<1>(mTuple) *= inRHS.Get<1>();
+            return *this;
+        }
+
+        constexpr Scalar& operator/=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) /= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<1>(mTuple) /= inRHS.Get<1>();
+            return *this;
+        }
+
     private:
         std::tuple<T,T> mTuple{}; // 2 is assumed
     };
@@ -53,6 +82,35 @@ struct Impl2
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             return mArray[Index];
         }
+
+        constexpr Simd& operator+=(const Simd& inRHS)
+        {
+            mArray[0] += inRHS.mArray[0];
+            mArray[1] += inRHS.mArray[1];
+            return *this;
+        }
+
+        constexpr Simd& operator-=(const Simd& inRHS)
+        {
+            mArray[0] -= inRHS.mArray[0];
+            mArray[1] -= inRHS.mArray[1];
+            return *this;
+        }
+
+        constexpr Simd& operator*=(const Simd& inRHS)
+        {
+            mArray[0] *= inRHS.mArray[0];
+            mArray[1] *= inRHS.mArray[1];
+            return *this;
+        }
+
+        constexpr Simd& operator/=(const Simd& inRHS)
+        {
+            mArray[0] /= inRHS.mArray[0];
+            mArray[1] /= inRHS.mArray[1];
+            return *this;
+        }
+
     private:
         std::array<T,2> mArray{}; // 2 is assumed
     };
