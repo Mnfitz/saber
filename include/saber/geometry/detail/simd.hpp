@@ -20,7 +20,7 @@ struct Simd;
 ///     |----------|----------|----------|----------|
 ///     |  int[0]  |  int[1]  |  int[2]  |  int[3]  |
 ///
-/// For T=`double`:
+/// For T=`double`: 
 ///     |        0-63         |       64-127        |
 ///     |---------------------|---------------------|
 ///     |      double[0]      |      double[1]      |
@@ -30,7 +30,7 @@ template<typename T>
 struct Simd<128, T> :
 	public SimdTraits<128, T> // is-a: SimdTraits<128, T>
 {
-	using SimdTraits<128, T>::SimdType; // Expose `SimdType` as our own
+	using typename SimdTraits<128, T>::SimdType; // Expose `SimdType` as our own
 
 	/// @brief Load 4 elements of type`<T>` from memory specified by `inAddr`.
 	/// @code{.cpp}
@@ -42,7 +42,7 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param inAddr Address of &elements[4] to load
 	/// @return Vector type`<T>` of loaded elements
-	static SimdType Load4(const T* inAddr)
+	static constexpr SimdType Load4(const T* inAddr)
 	{
 		static_assert(sizeof(SimdType) >= 4*sizeof(T) , "4 elements of type<T> are too large to fit in 128bit SimdType");
 		SimdType load4{}; // zero
@@ -64,7 +64,7 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param inAddr Address of &elements[2] to load
 	/// @return Vector type`<T>` of loaded elements
-	static SimdType Load2(const T* inAddr)
+	static constexpr SimdType Load2(const T* inAddr)
 	{
 		SimdType load2{}; // zero
 		load2[0] = inAddr[0];
@@ -82,7 +82,7 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param inAddr Address of &element[1] to load
 	/// @return Vector type`<T>` of loaded elements
-	static SimdType Load1(const T* inAddr)
+	static constexpr SimdType Load1(const T* inAddr)
 	{
 		SimdType load1{}; // zero
 		load1[0] = inAddr[0];
@@ -98,7 +98,7 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param outAddr Address to store &elements[4]
 	/// @param inStore4 Vector type`<T>` of elements to store
-	static void Store4(T* outAddr, SimdType inStore4)
+	static constexpr void Store4(T* outAddr, SimdType inStore4)
 	{
 		static_assert(sizeof(SimdType) >= 4*sizeof(T), "128bit SimdType is too small to contain 4 elements of type<T>");
 		outAddr[0] = inStore4[0];
@@ -117,7 +117,7 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param outAddr Address to store &elements[2]
 	/// @param inStore2 Vector type`<T>` of elements to store
-	static void Store2(T* outAddr, SimdType inStore2)
+	static constexpr void Store2(T* outAddr, SimdType inStore2)
 	{
 		outAddr[0] = inStore2[0];
 		outAddr[1] = inStore2[1];
@@ -132,79 +132,91 @@ struct Simd<128, T> :
 	/// @endcode
 	/// @param outAddr Address to store &element[1]
 	/// @param inStore1 Vector type`<T>` of elements to store
-	static void Store1(T* outAddr, SimdType inStore1)
+	static constexpr void Store1(T* outAddr, SimdType inStore1)
 	{
 		outAddr[0] = inStore1[0];
 	}
 
-	/// @brief Add all vector type`<T>` elements in `inRhs` to `inLhs`.
+	/// @brief Add all vector type`<T>` elements in `inRHS` to `inLHS`.
 	/// @code{.cpp}
 	/// for (i = 0; i < MAX; ++i)
-	///     SimdType[i] = inLhs[i] + inRhs[i];
+	///     SimdType[i] = inLHS[i] + inRHS[i];
 	/// return SimdType;
 	/// @endcode
-	/// @param inLhs Left hand side vector term
-	/// @param inRhs Right hand side vector term
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
 	/// @return Result vector type`<T>`
-	static SimdType Add(SimdType inLhs, SimdType inRhs)
+	static constexpr SimdType Add(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType add{};
-		constexpr std::size_t kMax = (sizeof(SimdType)/sizeof(T));
-		for (std::size_t i = 0; i < kMax; ++i)
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
 		{
-			add[i] = inLhs[i] + inRhs[i];
+			add[i] = inLHS[i] + inRHS[i];
 		}
 		return add;
 	}
 
-	/// @brief Subtract all vector type`<T>` elements in `inRhs` from `inLhs`.
+	/// @brief Subtract all vector type`<T>` elements in `inRHS` from `inLHS`.
 	/// @code{.cpp}
 	/// for (i = 0; i < MAX; ++i)
-	///     SimdType[i] = inLhs[i] - inRhs[i];
+	///     SimdType[i] = inLHS[i] - inRHS[i];
 	/// return SimdType;
 	/// @endcode
-	/// @param inLhs Left hand side vector term
-	/// @param inRhs Right hand side vector term
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
 	/// @return Result vector type`<T>`
-	static SimdType Sub(SimdType inLhs, SimdType inRhs)
+	static constexpr SimdType Sub(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType sub{};
-		// TODO
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			sub[i] = inLHS[i] - inRHS[i];
+		}
 		return sub;
 	}
 
-	/// @brief Multiply all vector type`<T>` elements in `inRhs` to `inLhs`.
+	/// @brief Multiply all vector type`<T>` elements in `inRHS` to `inLHS`.
 	/// @code{.cpp}
 	/// for (i = 0; i < MAX; ++i)
-	///     SimdType[i] = inLhs[i] * inRhs[i];
+	///     SimdType[i] = inLHS[i] * inRHS[i];
 	/// return SimdType;
 	/// @endcode
-	/// @param inLhs Left hand side vector term
-	/// @param inRhs Right hand side vector term
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
 	/// @return Result vector type`<T>`
-	static SimdType Mul(SimdType inLhs, SimdType inRhs)
+	static constexpr SimdType Mul(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType mul{};
-		// TODO
-		return add;
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			mul[i] = inLHS[i] * inRHS[i];
+		}
+		return mul;
 	}
 
-	/// @brief Divide all vector type`<T>` elements in `inRhs` from `inLhs`.
+	/// @brief Divide all vector type`<T>` elements in `inRHS` from `inLHS`.
 	/// @code{.cpp}
 	/// for (i = 0; i < MAX; ++i)
-	///     SimdType[i] = inLhs[i] / inRhs[i];
+	///     SimdType[i] = inLHS[i] / inRHS[i];
 	/// return SimdType;
 	/// @endcode
-	/// @param inLhs Left hand side vector term
-	/// @param inRhs Right hand side vector term
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
 	/// @return Result vector type`<T>`
-	static SimdType Div(SimdType inLhs, SimdType inRhs)
+	static constexpr SimdType Div(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType div{};
-		// TODO
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			div[i] = (inRHS[i] != 0 ? (inLHS[i] / inRHS[i]) : 0);
+		}
 		return div;
 	}
 }; // struct Simd<128, T>
+
+// Type alias: partial template specialization for 128 Simd API
+template<typename T>
+using Simd128 = detail::Simd<128, T>;
 
 } // namespace saber::geometry::detail
 

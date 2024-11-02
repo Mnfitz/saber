@@ -23,11 +23,15 @@ namespace saber::geometry::detail {
 template<int NBits, typename T>
 struct SimdTraits
 {
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = (NBits/8)/sizeof(T);
+
 	/// @brief Underlying type of a SIMD element
 	using ValueType = T;
 
 	/// @brief Platform-specific type of a SIMD vector of elements
-	using SimdType = std::array<T, (NBits/8)/sizeof(T)); // As many `T`'s that will fit in NBits
+	using SimdType = std::array<T, kSize>; // As many `T`'s that will fit in NBits
+
 }; // struct SimdTraits<>
 
 #pragma endregion {}

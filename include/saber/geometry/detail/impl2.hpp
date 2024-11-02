@@ -5,6 +5,9 @@
 #include <array>
 #include <tuple>
 
+// saber
+#include "saber/geometry/detail/simd.hpp"
+
 namespace saber::geometry::detail {
 
 template<typename T>
@@ -21,7 +24,7 @@ struct Impl2
         constexpr Scalar(T inFirst, T inSecond):
             mTuple(inFirst, inSecond)
         {
-
+            
         }
 
         template<std::size_t Index>
@@ -33,8 +36,8 @@ struct Impl2
 
         constexpr Scalar& operator+=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) += inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
-            std::get<1>(mTuple) += inRHS.Get<1>();
+            std::get<0>(mTuple) += std::get<0>(inRHS.mTuple); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<1>(mTuple) += std::get<1>(inRHS.mTuple);
             return *this;
         }
 
@@ -85,29 +88,37 @@ struct Impl2
 
         constexpr Simd& operator+=(const Simd& inRHS)
         {
-            mArray[0] += inRHS.mArray[0];
-            mArray[1] += inRHS.mArray[1];
+            auto lhs = Simd128<T>::Load2(&mArray[0]);
+            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+            auto result = Simd128<T>::Add(lhs, rhs);
+            Simd128<T>::Store2(&mArray[0], result);
             return *this;
         }
 
         constexpr Simd& operator-=(const Simd& inRHS)
         {
-            mArray[0] -= inRHS.mArray[0];
-            mArray[1] -= inRHS.mArray[1];
+            auto lhs = Simd128<T>::Load2(&mArray[0]);
+            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+            auto result = Simd128<T>::Sub(lhs, rhs);
+            Simd128<T>::Store2(&mArray[0], result);
             return *this;
         }
 
         constexpr Simd& operator*=(const Simd& inRHS)
         {
-            mArray[0] *= inRHS.mArray[0];
-            mArray[1] *= inRHS.mArray[1];
+            auto lhs = Simd128<T>::Load2(&mArray[0]);
+            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+            auto result = Simd128<T>::Mul(lhs, rhs);
+            Simd128<T>::Store2(&mArray[0], result);
             return *this;
         }
 
         constexpr Simd& operator/=(const Simd& inRHS)
         {
-            mArray[0] /= inRHS.mArray[0];
-            mArray[1] /= inRHS.mArray[1];
+            auto lhs = Simd128<T>::Load2(&mArray[0]);
+            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+            auto result = Simd128<T>::Div(lhs, rhs);
+            Simd128<T>::Store2(&mArray[0], result);
             return *this;
         }
 
