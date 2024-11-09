@@ -7,6 +7,11 @@
 // std
 #include <array>
 
+#if SABER_CPU(X86)
+// sse
+#include <emmintrin.h>
+#endif
+
 namespace saber::geometry::detail {
 
 // ------------------------------------------------------------------
@@ -36,8 +41,6 @@ struct SimdTraits
 
 #pragma endregion {}
 
-} // namespace saber::geometry::detail
-
 #if SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
 
 // Template specializations of `SimdTraits<>` for each supported CPU.
@@ -49,6 +52,51 @@ struct SimdTraits
 #if SABER_CPU(X86)
 
 // Platform-specific SIMD definitions for X86...
+
+// int
+template<>
+struct SimdTraits<128, int>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 4;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = int;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128i;  // vector of int
+
+}; // struct SimdTraits<>
+
+// float
+template<>
+struct SimdTraits<128, float>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 4;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = float;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128; // vector of float
+
+}; // struct SimdTraits<>
+
+// double
+template<>
+struct SimdTraits<128, double>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 2;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = double;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128d; // vector of double
+
+}; // struct SimdTraits<>
 
 #endif // SABER_CPU(X86)
 #pragma endregion {}
@@ -83,5 +131,7 @@ struct SimdTraits
 
 #endif // 0
 #endif // SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
+
+} // namespace saber::geometry::detail
 
 #endif // SABER_GEOMETRY_DETAIL_SIMD_TRAITS_HPP
