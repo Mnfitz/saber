@@ -10,6 +10,11 @@
 
 namespace saber::geometry::detail {
 
+template<typename Lambda, int=(Lambda{}(), 0)>
+constexpr bool is_constexpr(Lambda) { return false; }
+
+constexpr bool is_constexpr(...) { return true; }
+
 template<typename T>
 struct Impl2
 {
@@ -88,10 +93,22 @@ struct Impl2
 
         constexpr Simd& operator+=(const Simd& inRHS)
         {
-            auto lhs = Simd128<T>::Load2(&mArray[0]);
-            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-            auto result = Simd128<T>::Add(lhs, rhs);
-            Simd128<T>::Store2(&mArray[0], result);
+            constexpr auto lambda = [](){return 0;};
+            if (is_constexpr(lambda))
+            {
+                Scalar lhs{Get<0>(), Get<1>()};
+                const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                lhs += rhs;
+                mArray[0] = lhs.Get<0>();
+                mArray[1] = lhs.Get<1>(); 
+            }
+            else
+            {
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
+                auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+                auto result = Simd128<T>::Add(lhs, rhs);
+                Simd128<T>::Store2(&mArray[0], result);
+            }
             return *this;
         }
 
