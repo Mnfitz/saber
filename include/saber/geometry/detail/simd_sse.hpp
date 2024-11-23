@@ -112,14 +112,21 @@ using typename SimdTraits<128, int>::SimdType; // Expose `SimdType` as our own
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Result vector type`<int>`
-
-    /*
-	static constexpr SimdType Div(SimdType inLHS, SimdType inRHS)
+	static SimdType Div(SimdType inLHS, SimdType inRHS)
 	{
-		// SSE does not implement integer division, therefore, 
-        // default to primary template to do it the hard way. 
+		// Note: Intel SSE does not support SIMD integer division
+		// Therefore, we do it the hard way
+		std::array<int, 4> lhs{};
+		std::array<int, 4> rhs{};
+		Store4(lhs.data(), inLHS);
+		Store4(rhs.data(), inRHS);
+		lhs.at(0) = (rhs.at(0) != 0 ? lhs.at(0) / rhs.at(0) : 0);
+		lhs.at(1) = (rhs.at(1) != 0 ? lhs.at(1) / rhs.at(1) : 0);
+		lhs.at(2) = (rhs.at(2) != 0 ? lhs.at(2) / rhs.at(2) : 0);
+		lhs.at(3) = (rhs.at(3) != 0 ? lhs.at(3) / rhs.at(3) : 0);
+		auto div = Load4(lhs.data());
+		return div;
 	}
-    */
 };
 
 // float

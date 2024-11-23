@@ -4,16 +4,12 @@
 // std
 #include <array>
 #include <tuple>
+#include <type_traits>
 
 // saber
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
-
-template<typename Lambda, int=(Lambda{}(), 0)>
-constexpr bool is_constexpr(Lambda) { return false; }
-
-constexpr bool is_constexpr(...) { return true; }
 
 template<typename T>
 struct Impl2
@@ -41,28 +37,28 @@ struct Impl2
 
         constexpr Scalar& operator+=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) += std::get<0>(inRHS.mTuple); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<0>(mTuple) += std::get<0>(inRHS.mTuple);
             std::get<1>(mTuple) += std::get<1>(inRHS.mTuple);
             return *this;
         }
 
         constexpr Scalar& operator-=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) -= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<0>(mTuple) -= inRHS.Get<0>();
             std::get<1>(mTuple) -= inRHS.Get<1>();
             return *this;
         }
 
         constexpr Scalar& operator*=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) *= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<0>(mTuple) *= inRHS.Get<0>();
             std::get<1>(mTuple) *= inRHS.Get<1>();
             return *this;
         }
 
         constexpr Scalar& operator/=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) /= inRHS.Get<0>(); // REVISIT mnfitz 20oct2024: Investigate why std::get<>(inRHS) doesn't work
+            std::get<0>(mTuple) /= inRHS.Get<0>();
             std::get<1>(mTuple) /= inRHS.Get<1>();
             return *this;
         }
@@ -93,49 +89,112 @@ struct Impl2
 
         constexpr Simd& operator+=(const Simd& inRHS)
         {
-            constexpr auto lambda = [](){return 0;};
-            if (is_constexpr(lambda))
+            // NOTE: SIMD intrinsic functions lack a constexpr implementation; contaminating our interface
+            // Use std::is_constant_evaluated() to protect our interface so it can remain constexpr
+            // std::is_constant_evaulated() is only available in c++20 or later
+            // Only in c++ 20 or later, can operator+= deliver a constexpr result
+            do 
             {
-                Scalar lhs{Get<0>(), Get<1>()};
-                const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
-                lhs += rhs;
-                mArray[0] = lhs.Get<0>();
-                mArray[1] = lhs.Get<1>(); 
-            }
-            else
-            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{Get<0>(), Get<1>()};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    lhs += rhs;
+                    mArray[0] = lhs.Get<0>();
+                    mArray[1] = lhs.Get<1>(); 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
                 auto lhs = Simd128<T>::Load2(&mArray[0]);
                 auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
                 auto result = Simd128<T>::Add(lhs, rhs);
                 Simd128<T>::Store2(&mArray[0], result);
-            }
+            } while (false);
+
             return *this;
         }
 
         constexpr Simd& operator-=(const Simd& inRHS)
         {
-            auto lhs = Simd128<T>::Load2(&mArray[0]);
-            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-            auto result = Simd128<T>::Sub(lhs, rhs);
-            Simd128<T>::Store2(&mArray[0], result);
+            // protect our interface so it can remain constexpr
+             do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{Get<0>(), Get<1>()};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    lhs -= rhs;
+                    mArray[0] = lhs.Get<0>();
+                    mArray[1] = lhs.Get<1>(); 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
+                auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+                auto result = Simd128<T>::Sub(lhs, rhs);
+                Simd128<T>::Store2(&mArray[0], result);
+            } while (false);
+
             return *this;
         }
 
         constexpr Simd& operator*=(const Simd& inRHS)
         {
-            auto lhs = Simd128<T>::Load2(&mArray[0]);
-            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-            auto result = Simd128<T>::Mul(lhs, rhs);
-            Simd128<T>::Store2(&mArray[0], result);
+             // protect our interface so it can remain constexpr
+             do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{Get<0>(), Get<1>()};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    lhs *= rhs;
+                    mArray[0] = lhs.Get<0>();
+                    mArray[1] = lhs.Get<1>(); 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
+                auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+                auto result = Simd128<T>::Mul(lhs, rhs);
+                Simd128<T>::Store2(&mArray[0], result);
+            } while (false);
+
             return *this;
         }
 
         constexpr Simd& operator/=(const Simd& inRHS)
         {
-            auto lhs = Simd128<T>::Load2(&mArray[0]);
-            auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-            auto result = Simd128<T>::Div(lhs, rhs);
-            Simd128<T>::Store2(&mArray[0], result);
+             // protect our interface so it can remain constexpr
+             do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{Get<0>(), Get<1>()};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    lhs /= rhs;
+                    mArray[0] = lhs.Get<0>();
+                    mArray[1] = lhs.Get<1>(); 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
+                auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+                auto result = Simd128<T>::Div(lhs, rhs);
+                Simd128<T>::Store2(&mArray[0], result);
+            } while (false);
+
             return *this;
         }
 

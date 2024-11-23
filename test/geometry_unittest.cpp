@@ -226,36 +226,73 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 	{
 		constexpr saber::geometry::Size<int> size1{1,2};
 		constexpr saber::geometry::Size<int> size2{1,2};
-		constexpr auto result = size1 + size2;
-		REQUIRE(result.Width() == 2);
-		REQUIRE(result.Height() == 4);
+		
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
+		constexpr auto result1 = size1 + size2;
+		REQUIRE(result1.Width() == 2);
+		REQUIRE(result1.Height() == 4);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = size1 + size2;
+		REQUIRE(result2.Width() == 2);
+		REQUIRE(result2.Height() == 4);
 	}
 
 	SECTION("Size - Size")
 	{
 		constexpr saber::geometry::Size<int> size1{2,4};
 		constexpr saber::geometry::Size<int> size2{1,2};
-		constexpr auto result = size1 - size2;
-		REQUIRE(result.Width() == 1);
-		REQUIRE(result.Height() == 2);
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
+		constexpr auto result1 = size1 - size2;
+		REQUIRE(result1.Width() == 1);
+		REQUIRE(result1.Height() == 2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = size1 - size2;
+		REQUIRE(result2.Width() == 1);
+		REQUIRE(result2.Height() == 2);
 	}
 
 	SECTION("Size * Size")
 	{
 		constexpr saber::geometry::Size<int> size1{1,2};
 		constexpr saber::geometry::Size<int> size2{1,2};
+		
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
 		constexpr auto result = size1 * size2;
 		REQUIRE(result.Width() == 1);
 		REQUIRE(result.Height() == 4);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = size1 * size2;
+		REQUIRE(result2.Width() == 1);
+		REQUIRE(result2.Height() == 4);
+
 	}
 
 	SECTION("Size / Size")
 	{
 		constexpr saber::geometry::Size<int> size1{2,4};
 		constexpr saber::geometry::Size<int> size2{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
 		constexpr auto result = size1 / size2;
 		REQUIRE(result.Width() == 2);
 		REQUIRE(result.Height() == 2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = size1 / size2;
+		REQUIRE(result2.Width() == 2);
+		REQUIRE(result2.Height() == 2);
 	}
 
 	SECTION("Size == Size")
@@ -327,36 +364,72 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 	{
 		constexpr saber::geometry::Point<int> point1{1,2};
 		constexpr saber::geometry::Point<int> point2{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
 		constexpr auto result = point1 + point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 4);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = point1 + point2;
+		REQUIRE(result2.X() == 2);
+		REQUIRE(result2.Y() == 4);
 	}
 
 	SECTION("Point - Point")
 	{
 		constexpr saber::geometry::Point<int> point1{2,4};
 		constexpr saber::geometry::Point<int> point2{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
 		constexpr auto result = point1 - point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = point1 - point2;
+		REQUIRE(result2.X() == 1);
+		REQUIRE(result2.Y() == 2);
 	}
 
 	SECTION("Point * Point")
 	{
 		constexpr saber::geometry::Point<int> point1{1,2};
 		constexpr saber::geometry::Point<int> point2{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
 		constexpr auto result = point1 * point2;
 		REQUIRE(result.X() == 1);
 		REQUIRE(result.Y() == 4);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = point1 * point2;
+		REQUIRE(result2.X() == 1);
+		REQUIRE(result2.Y() == 4);
 	}
 
 	SECTION("Point / Point")
 	{
-		saber::geometry::Point<int> point1{2,4};
-		saber::geometry::Point<int> point2{1,2};
-		auto result = point1 / point2;
+		constexpr saber::geometry::Point<int> point1{2,4};
+		constexpr saber::geometry::Point<int> point2{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
+		constexpr auto result = point1 / point2;
 		REQUIRE(result.X() == 2);
 		REQUIRE(result.Y() == 2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = point1 / point2;
+		REQUIRE(result2.X() == 2);
+		REQUIRE(result2.Y() == 2);
 	}
 
 	SECTION("Point == Point")
