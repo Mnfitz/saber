@@ -17,7 +17,7 @@ if (MSVC)
 	# Addn'l -D #defines to make #include<windows.h> less painful
 	add_definitions(-DNOMINMAX=1 -DWIN32_LEAN_AND_MEAN=1)
 	add_compile_options(
-        # Be as strict as reasonably possible, since we want to support consumers using strict warning levels
+        # Use strict warning levels
         /W4 /WX)
 
 	# For some unknown reason, 'RelWithDebInfo' compiles with '/Ob1' as opposed to '/Ob2' which prevents inlining of
