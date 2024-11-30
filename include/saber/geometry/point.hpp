@@ -5,10 +5,7 @@
 // saber
 #include "saber/inexact.hpp"
 #include "saber/geometry/operators.hpp"
-#if 1
-// SUPERHACK mnfitz 19oct2024: Temp fix to get impl2 off the ground FIXME!!!
 #include "saber/geometry/detail/impl2.hpp" 
-#endif
 
 // std
 #include <utility>

@@ -3,9 +3,7 @@
 #pragma once
 
 // sse
-#include <emmintrin.h>
 #include <immintrin.h>
-#include <xmmintrin.h>
 
 namespace saber::geometry::detail {
 

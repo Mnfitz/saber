@@ -64,7 +64,7 @@ struct Impl2
         }
 
     private:
-        std::tuple<T,T> mTuple{}; // 2 is assumed
+        std::tuple<T,T> mTuple{}; // Impl2: so 2 elements are assumed
     };
 
     class Simd
@@ -92,7 +92,7 @@ struct Impl2
             // NOTE: SIMD intrinsic functions lack a constexpr implementation; contaminating our interface
             // Use std::is_constant_evaluated() to protect our interface so it can remain constexpr
             // std::is_constant_evaulated() is only available in c++20 or later
-            // Only in c++ 20 or later, can operator+= deliver a constexpr result
+            // Only in c++ 20 or later, can operator+= deliver a compile-time result
             do 
             {
 #if __cpp_lib_is_constant_evaluated
@@ -199,7 +199,7 @@ struct Impl2
         }
 
     private:
-        std::array<T,2> mArray{}; // 2 is assumed
+        std::array<T,2> mArray{}; // Impl2: so 2 elements are assumed
     };
 }; // struct Impl2<>
 
