@@ -5,6 +5,7 @@ message(STATUS "Building saber/test/...")
 include(FetchContent)
 
 # Both saber_unittest and saber_benchmark depend on `Catch2` test framework
+# See: https://github.com/catchorg/Catch2/blob/v2.x/docs/cmake-integration.md#cmake-target
 FetchContent_Declare(
 	Catch2
 	GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
@@ -15,6 +16,8 @@ FetchContent_Declare(
 #
 if(SABER_BUILD_UNITTESTS)
 
+	# Clone Catch2 (if needed)...
+	# FetchContent typically places this clone at: ./build/_deps/.
 	FetchContent_MakeAvailable(Catch2)
 
 	# saber_unittest source files...

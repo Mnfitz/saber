@@ -1,9 +1,11 @@
 {
+	"cmake.loggingLevel": "trace",
+	"cmake.sourceDirectory": "${workspaceFolder}/.",
 	"cmake.configureSettings": {
 		"CMAKE_BUILD_TYPE": "${buildType}",
 		"SABER_BUILD_UNITTESTS": true,
 		"SABER_BUILD_BENCHMARKS": true,
-		"SABER_BUILD_DOCS": false,
+		"SABER_BUILD_DOCS": true,
 	},
 	"files.associations": {
 		"stdexcept": "cpp",
