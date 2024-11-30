@@ -86,6 +86,7 @@ if(SABER_BUILD_BENCHMARKS)
 
 	# saber_benchmark source files...
 	set(SOURCE_FILES_BENCHMARK
+		${CMAKE_CURRENT_SOURCE_DIR}/geometry_benchmark.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/handler_benchmark.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/saber_benchmark.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
