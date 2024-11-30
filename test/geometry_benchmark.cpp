@@ -42,7 +42,7 @@ saber::geometry::Point<float> sFloatPoint{};
 saber::geometry::Point<double> sDoublePoint{};
 saber::geometry::Point<int> sIntPoint{};
 
-TEST_CASE("saber::geometry", "[saber]")
+TEST_CASE("saber::geometry::Point", "[saber]")
 {
 	int gauranteedNotConstexpr = 0;
 	{
@@ -237,6 +237,206 @@ TEST_CASE("saber::geometry", "[saber]")
 		intPoint /= intPoint / intPoint2;
 		sIntPoint /= intPoint;
 	};
+}
 
-	std::cout << sFloatPoint.Y() << doublePoint3.Y() << intPoint3.Y() << std::endl;
+saber::geometry::Size<float> sFloatSize{};
+saber::geometry::Size<double> sDoubleSize{};
+saber::geometry::Size<int> sIntSize{};
+
+
+TEST_CASE("saber::geometry::Size", "[saber]")
+{
+	int gauranteedNotConstexpr = 0;
+	{
+		// Get current time
+		std::time_t t = std::time(nullptr);
+		std::tm* now = std::localtime(&t);
+		const auto dayOfWeek = now->tm_wday;
+		gauranteedNotConstexpr = dayOfWeek + 1; // +1: -> [1...8]
+	}
+
+	saber::geometry::Size<float> floatSize1{static_cast<float>(gauranteedNotConstexpr), -static_cast<float>(gauranteedNotConstexpr)};
+	saber::geometry::Size<float> floatSize2{2.0f, -3.0f};
+
+	BENCHMARK("saber::geometry::Size<float> operator+")
+	{
+		auto floatSize = floatSize1 + floatSize2;
+		floatSize += floatSize + floatSize1;
+		floatSize += floatSize + floatSize2;
+		floatSize += floatSize + floatSize1;
+		floatSize += floatSize + floatSize2;
+		floatSize += floatSize + floatSize1;
+		floatSize += floatSize + floatSize2;
+		floatSize += floatSize + floatSize1;
+		floatSize += floatSize + floatSize2;
+		sFloatSize += floatSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<float> operator-")
+	{
+		auto floatSize = floatSize1 - floatSize2;
+		floatSize -= floatSize - floatSize1;
+		floatSize -= floatSize - floatSize2;
+		floatSize -= floatSize - floatSize1;
+		floatSize -= floatSize - floatSize2;
+		floatSize -= floatSize - floatSize1;
+		floatSize -= floatSize - floatSize2;
+		floatSize -= floatSize - floatSize1;
+		floatSize -= floatSize - floatSize2;
+		sFloatSize -= floatSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<float> operator*")
+	{
+		auto floatSize = floatSize1 * floatSize2;
+		floatSize *= floatSize * floatSize1;
+		floatSize *= floatSize * floatSize2;
+		floatSize *= floatSize * floatSize1;
+		floatSize *= floatSize * floatSize2;
+		floatSize *= floatSize * floatSize1;
+		floatSize *= floatSize * floatSize2;
+		floatSize *= floatSize * floatSize1;
+		floatSize *= floatSize * floatSize2;
+		sFloatSize *= floatSize;
+	};
+
+	floatSize1 = { 1.0f, static_cast<float>(gauranteedNotConstexpr / gauranteedNotConstexpr) };
+	floatSize2 = { 1.0f, -1.0f };
+	BENCHMARK("saber::geometry::Size<float> operator/")
+	{
+		auto floatSize = floatSize1 / floatSize2;
+		floatSize /= floatSize / floatSize1;
+		floatSize /= floatSize / floatSize2;
+		floatSize /= floatSize / floatSize1;
+		floatSize /= floatSize / floatSize2;
+		floatSize /= floatSize / floatSize1;
+		floatSize /= floatSize / floatSize2;
+		floatSize /= floatSize / floatSize1;
+		floatSize /= floatSize / floatSize2;
+		sFloatSize /= floatSize;
+	};
+
+	saber::geometry::Size<double> doubleSize1{ static_cast<double>(gauranteedNotConstexpr), -static_cast<double>(gauranteedNotConstexpr) };
+	saber::geometry::Size<double> doubleSize2{ 2.0, -3.0 };
+
+	saber::geometry::Size<double> doubleSize3{};
+	BENCHMARK("saber::geometry::Size<double> operator+")
+	{
+		auto doubleSize = doubleSize1 + doubleSize2;
+		doubleSize += doubleSize + doubleSize1;
+		doubleSize += doubleSize + doubleSize2;
+		doubleSize += doubleSize + doubleSize1;
+		doubleSize += doubleSize + doubleSize2;
+		doubleSize += doubleSize + doubleSize1;
+		doubleSize += doubleSize + doubleSize2;
+		doubleSize += doubleSize + doubleSize1;
+		doubleSize += doubleSize + doubleSize2;
+		sDoubleSize += doubleSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<double> operator-")
+	{
+		auto doubleSize = doubleSize1 - doubleSize2;
+		doubleSize -= doubleSize - doubleSize1;
+		doubleSize -= doubleSize - doubleSize2;
+		doubleSize -= doubleSize - doubleSize1;
+		doubleSize -= doubleSize - doubleSize2;
+		doubleSize -= doubleSize - doubleSize1;
+		doubleSize -= doubleSize - doubleSize2;
+		doubleSize -= doubleSize - doubleSize1;
+		doubleSize -= doubleSize - doubleSize2;
+		sDoubleSize -= doubleSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<double> operator*")
+	{
+		auto doubleSize = doubleSize1 * doubleSize2;
+		doubleSize *= doubleSize * doubleSize1;
+		doubleSize *= doubleSize * doubleSize2;
+		doubleSize *= doubleSize * doubleSize1;
+		doubleSize *= doubleSize * doubleSize2;
+		doubleSize *= doubleSize * doubleSize1;
+		doubleSize *= doubleSize * doubleSize2;
+		doubleSize *= doubleSize * doubleSize1;
+		doubleSize *= doubleSize * doubleSize2;
+		sDoubleSize *= doubleSize;
+	};
+
+	doubleSize1 = { 1.0, static_cast<double>(gauranteedNotConstexpr / gauranteedNotConstexpr) };
+	doubleSize2 = { 1.0, -1.0 };
+	BENCHMARK("saber::geometry::Size<double> operator/")
+	{
+		auto doubleSize = doubleSize1 / doubleSize2;
+		doubleSize /= doubleSize / doubleSize1;
+		doubleSize /= doubleSize / doubleSize2;
+		doubleSize /= doubleSize / doubleSize1;
+		doubleSize /= doubleSize / doubleSize2;
+		doubleSize /= doubleSize / doubleSize1;
+		doubleSize /= doubleSize / doubleSize2;
+		doubleSize /= doubleSize / doubleSize1;
+		doubleSize /= doubleSize / doubleSize2;
+		sDoubleSize /= doubleSize;
+	};
+
+	saber::geometry::Size<int> intSize1{ static_cast<int>(gauranteedNotConstexpr), -static_cast<int>(gauranteedNotConstexpr) };
+	saber::geometry::Size<int> intSize2{ 2, -3 };
+
+	saber::geometry::Size<int> intSize3{};
+	BENCHMARK("saber::geometry::Size<int> operator+")
+	{
+		auto intSize = intSize1 + intSize2;
+		intSize += intSize + intSize1;
+		intSize += intSize + intSize2;
+		intSize += intSize + intSize1;
+		intSize += intSize + intSize2;
+		intSize += intSize + intSize1;
+		intSize += intSize + intSize2;
+		intSize += intSize + intSize1;
+		intSize += intSize + intSize2;
+		sIntSize += intSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<int> operator-")
+	{
+		auto intSize = intSize1 - intSize2;
+		intSize -= intSize - intSize1;
+		intSize -= intSize - intSize2;
+		intSize -= intSize - intSize1;
+		intSize -= intSize - intSize2;
+		intSize -= intSize - intSize1;
+		intSize -= intSize - intSize2;
+		intSize -= intSize - intSize1;
+		intSize -= intSize - intSize2;
+		sIntSize -= intSize;
+	};
+
+	BENCHMARK("saber::geometry::Size<int> operator*")
+	{
+		auto intSize = intSize1 * intSize2;
+		intSize *= intSize * intSize1;
+		intSize *= intSize * intSize2;
+		intSize *= intSize * intSize1;
+		intSize *= intSize * intSize2;
+		intSize *= intSize * intSize1;
+		intSize *= intSize * intSize2;
+		intSize *= intSize * intSize1;
+		intSize *= intSize * intSize2;
+		sIntSize *= intSize;
+	};
+
+	intSize1 = { 1, static_cast<int>(gauranteedNotConstexpr / gauranteedNotConstexpr) };
+	intSize2 = { 1, -1 };
+	BENCHMARK("saber::geometry::Size<int> operator/")
+	{
+		auto intSize = intSize1 / intSize2;
+		intSize /= intSize / intSize1;
+		intSize /= intSize / intSize2;
+		intSize /= intSize / intSize1;
+		intSize /= intSize / intSize2;
+		intSize /= intSize / intSize1;
+		intSize /= intSize / intSize2;
+		intSize /= intSize / intSize1;
+		intSize /= intSize / intSize2;
+		sIntSize /= intSize;
+	};
 }
