@@ -117,16 +117,15 @@
 // accidental typos when using the public accessor macros.
 // For instance:
 //
-// BAD Definition:
-//	#define SABER_PRIVATE_PLATFORM_WIN32 1 // BAD: Macro without any parameter
-//	#define SABER_PLATFORM(platform) (SABER_PRIVATE_PLATFORM_##platform)
+// BAD Macro Definition:
+//	#define SABER_PLATFORM_WIN32 1 // BAD: Macro without any parameter
 // Use:
-//	#if SABER_PLATFORM(WIN33) // Oops! Typo->WIN33 instead of WIN32!
+//	#if SABER_PLATFORM_WIN33 // Oops! Typo->WIN33 instead of WIN32!
 //	// BAD: "Silently fails" because undefined macro is same as 0 to preprecessor!
 //
-// GOOD Definition:
-//	#define SABER_PRIVATE_PLATFORM_WIN32(platform) 1 // GOOD: Macro with unused parameter
-//	#define SABER_PLATFORM(platform) (SABER_PRIVATE_PLATFORM_##platform(platform))
+// GOOD Macro Definition:
+//	#define SABER_PLATFORM(platform) (SABER_PRIVATE_PLATFORM_##platform(unused)) // GOOD: Public macro interface
+//	#define SABER_PRIVATE_PLATFORM_WIN32(unused) 1 // GOOD: Private macro with unused parameter
 // Use:
 //	#if SABER_PLATFORM(WIN33) // Hooray! Compile error!
 //	// GOOD: Compiler gives error "undefined macro: SABER_PRIVATE_PLATFORM_WIN33()"
@@ -156,43 +155,43 @@
 
 	#include <winapifamily.h>
 	#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) // exclude UWP apps
-		#define SABER_PRIVATE_PLATFORM_WIN32(platform)	1
+		#define SABER_PRIVATE_PLATFORM_WIN32(unused)	1
 	#else
-		#define SABER_PRIVATE_PLATFORM_WIN32(platform)	0
+		#define SABER_PRIVATE_PLATFORM_WIN32(unused)	0
 		#error "Unsupported platform (msvc)"
 	#endif // WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 
-	#define SABER_PRIVATE_PLATFORM_IOS(platform)	0
-	#define SABER_PRIVATE_PLATFORM_OSX(platform)	0
-	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	0
+	#define SABER_PRIVATE_PLATFORM_IOS(unused)		0
+	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
+	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
 
-	#define SABER_PRIVATE_COMPILER_CLANG(compiler)	0
-	#define SABER_PRIVATE_COMPILER_GCC(compiler)	0
-	#define SABER_PRIVATE_COMPILER_MSVC(compiler)	1
+	#define SABER_PRIVATE_COMPILER_CLANG(unused)	0
+	#define SABER_PRIVATE_COMPILER_GCC(unused)		0
+	#define SABER_PRIVATE_COMPILER_MSVC(unused)		1
 
 	#if defined(_M_IX86) // x86 32bit
-		#define SABER_PRIVATE_ARCH_32(arch)	1
-		#define SABER_PRIVATE_ARCH_64(arch)	0
-		#define SABER_PRIVATE_CPU_ARM(cpu)	0
-		#define SABER_PRIVATE_CPU_X86(cpu)	1
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
 
 	#elif defined(_M_X64) // x86 64bit
-		#define SABER_PRIVATE_ARCH_32(arch)	0
-		#define SABER_PRIVATE_ARCH_64(arch)	1
-		#define SABER_PRIVATE_CPU_ARM(cpu)	0
-		#define SABER_PRIVATE_CPU_X86(cpu)	1
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
 
 	#elif defined(_M_ARM) // arm 32bit
-		#define SABER_PRIVATE_ARCH_32(arch)	1
-		#define SABER_PRIVATE_ARCH_64(arch)	0
-		#define SABER_PRIVATE_CPU_ARM(cpu)	1
-		#define SABER_PRIVATE_CPU_X86(cpu)	0
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
 
 	#elif defined(_M_ARM64) // arm 64bit
-		#define SABER_PRIVATE_ARCH_32(arch)	0
-		#define SABER_PRIVATE_ARCH_64(arch)	1
-		#define SABER_PRIVATE_CPU_ARM(cpu)	1
-		#define SABER_PRIVATE_CPU_X86(cpu)	0
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
 		
 	#else
 		#error "Unsupported architecture (msvc)"
@@ -209,8 +208,8 @@
 //
 //	#elif defined(__CYGWIN__) && !defined(_WIN32)
 //		// Q: New PLATFORM to describe this? Or is Linux sufficient? Investigate!
-//		#define SABER_PRIVATE_PLATFORM_CYGWIN(platform)	1
-//		#define SABER_PRIVATE_PLATFORM_LINUX(platform)	1
+//		#define SABER_PRIVATE_PLATFORM_CYGWIN(unused)	1
+//		#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
 //		// etc...
 
 #pragma endregion ()
@@ -221,40 +220,40 @@
 
 	#include <TargetConditionals.h>
 	#if TARGET_OS_MAC // OSX
-		#define SABER_PRIVATE_PLATFORM_IOS(platform)	0
-		#define SABER_PRIVATE_PLATFORM_OSX(platform)	1
+		#define SABER_PRIVATE_PLATFORM_IOS(unused)	0
+		#define SABER_PRIVATE_PLATFORM_OSX(unused)	1
 
-		#define SABER_PRIVATE_ARCH_32(arch)	0 // Never 32bit
-		#define SABER_PRIVATE_ARCH_64(arch)	1 // Always 64bit
-		#define SABER_PRIVATE_CPU_ARM(cpu)	(defined(__aarch64__))
-		#define SABER_PRIVATE_CPU_X86(cpu)	(defined(__x86_64__))
+		#define SABER_PRIVATE_ARCH_32(unused)	0 // Never 32bit
+		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
+		#define SABER_PRIVATE_CPU_ARM(unused)	(defined(__aarch64__))
+		#define SABER_PRIVATE_CPU_X86(unused)	(defined(__x86_64__))
 
 	#elif TARGET_OS_IPHONE // IOS
-		#define SABER_PRIVATE_PLATFORM_IOS(platform)	1
-		#define SABER_PRIVATE_PLATFORM_OSX(platform)	0
+		#define SABER_PRIVATE_PLATFORM_IOS(unused)	1
+		#define SABER_PRIVATE_PLATFORM_OSX(unused)	0
 
-		#define SABER_PRIVATE_ARCH_32(arch)	0 // Never 32bit
-		#define SABER_PRIVATE_ARCH_64(arch)	1 // Always 64bit
-		#define SABER_PRIVATE_CPU_ARM(cpu)	1 // Always ARM
-		#define SABER_PRIVATE_CPU_X86(cpu)	0
+		#define SABER_PRIVATE_ARCH_32(unused)	0 // Never 32bit
+		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
+		#define SABER_PRIVATE_CPU_ARM(unused)	1 // Always ARM
+		#define SABER_PRIVATE_CPU_X86(unused)	0
 
 	#elif TARGET_IPHONE_SIMULATOR // IOS (when building for simulator)
 		#define PLATFORM_NAME "ios" // Apple iOS
-		#define SABER_PRIVATE_PLATFORM_IOS(platform)	1
-		#define SABER_PRIVATE_PLATFORM_OSX(platform)	0
+		#define SABER_PRIVATE_PLATFORM_IOS(unused)	1
+		#define SABER_PRIVATE_PLATFORM_OSX(unused)	0
 
-		#define SABER_PRIVATE_ARCH_32(arch)	0 // Never 32bit
-		#define SABER_PRIVATE_ARCH_64(arch)	1 // Always 64bit
-		#define SABER_PRIVATE_CPU_ARM(cpu)	(defined(__aarch64__))
-		#define SABER_PRIVATE_CPU_X86(cpu)	(defined(__x86_64__))
+		#define SABER_PRIVATE_ARCH_32(unused)	0 // Never 32bit
+		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
+		#define SABER_PRIVATE_CPU_ARM(unused)	(defined(__aarch64__))
+		#define SABER_PRIVATE_CPU_X86(unused)	(defined(__x86_64__))
 	#endif
 
-	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	0
-	#define SABER_PRIVATE_PLATFORM_WIN32(platform)	0
+	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
+	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	0
 
-	#define SABER_PRIVATE_COMPILER_CLANG(compiler)	(defined(__clang__))
-	#define SABER_PRIVATE_COMPILER_GCC(compiler)	(defined(__GNUC__) && !defined(__clang__))
-	#define SABER_PRIVATE_COMPILER_MSVC(compiler)	0
+	#define SABER_PRIVATE_COMPILER_CLANG(unused)	(defined(__clang__))
+	#define SABER_PRIVATE_COMPILER_GCC(unused)		(defined(__GNUC__) && !defined(__clang__))
+	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
 
 	#define SABER_DEBUG	(!defined(NDEBUG))
 	#define SABER_LOG(expr)
@@ -266,51 +265,51 @@
 // ------------------------------------------------------------------
 #pragma region Linux: Xcode toolset detection
 
-	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	1
+	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
 	// Not yet...
 	//#if defined(__ANDROID__)
-	//	#define SABER_PRIVATE_PLATFORM_ANDROID(platform)	1
-	//	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	0
+	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	1
+	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
 	//#else
-	//	#define SABER_PRIVATE_PLATFORM_ANDROID(platform)	0
-	//	#define SABER_PRIVATE_PLATFORM_LINUX(platform)	1
+	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	0
+	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
 	//#endif
 
-	#define SABER_PRIVATE_PLATFORM_IOS(platform)	0
-	#define SABER_PRIVATE_PLATFORM_OSX(platform)	0
-	#define SABER_PRIVATE_PLATFORM_WIN32(platform)	0
+	#define SABER_PRIVATE_PLATFORM_IOS(unused)		0
+	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
+	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	0
 
 	#if defined(__x86_64__)
-		#define SABER_PRIVATE_ARCH_32(arch)	0
-		#define SABER_PRIVATE_ARCH_64(arch)	1
-		#define SABER_PRIVATE_CPU_ARM(cpu)	0
-		#define SABER_PRIVATE_CPU_X86(cpu)	1
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
 
 	#elif defined(__i386__)
-		#define SABER_PRIVATE_ARCH_32(arch)	1
-		#define SABER_PRIVATE_ARCH_64(arch)	0
-		#define SABER_PRIVATE_CPU_ARM(cpu)	0
-		#define SABER_PRIVATE_CPU_X86(cpu)	1
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
 
 	#elif defined(__arm__)
-		#define SABER_PRIVATE_ARCH_32(arch)	1
-		#define SABER_PRIVATE_ARCH_64(arch)	0
-		#define SABER_PRIVATE_CPU_ARM(cpu)	1
-		#define SABER_PRIVATE_CPU_X86(cpu)	0
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
 
 	#elif defined(__aarch64__)
-		#define SABER_PRIVATE_ARCH_32(arch)	0
-		#define SABER_PRIVATE_ARCH_64(arch)	1
-		#define SABER_PRIVATE_CPU_ARM(cpu)	1
-		#define SABER_PRIVATE_CPU_X86(cpu)	0
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
 
 	#else
 		#error "Unsupported architecture"
 	#endif
 
-	#define SABER_PRIVATE_COMPILER_CLANG(compiler)	(defined(__clang__))
-	#define SABER_PRIVATE_COMPILER_GCC(compiler)	(defined(__GNUC__) && !defined(__clang__))
-	#define SABER_PRIVATE_COMPILER_MSVC(compiler)	0
+	#define SABER_PRIVATE_COMPILER_CLANG(unused)	(defined(__clang__))
+	#define SABER_PRIVATE_COMPILER_GCC(unused)		(defined(__GNUC__) && !defined(__clang__))
+	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
 
 	#define SABER_DEBUG	(!defined(NDEBUG))
 	#define SABER_LOG(expr)

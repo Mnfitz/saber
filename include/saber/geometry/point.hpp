@@ -5,6 +5,7 @@
 // saber
 #include "saber/inexact.hpp"
 #include "saber/geometry/operators.hpp"
+#include "saber/geometry/detail/impl2.hpp" 
 
 // std
 #include <utility>
@@ -17,7 +18,11 @@ namespace saber::geometry {
 // 2. Separate function declaration and definition vs java style combined
 // 3. Has-a: naked types or std::tuple or std::array
 
-template<typename T>
+// template<typename T>
+// using ImplType = typename detail::Impl2<T>::Scalar;
+
+// Point<float> myFloat{5,7};
+template<typename T, typename ImplType = typename detail::Impl2<T>::Simd> // TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
 class Point 
 {
 public: 
@@ -51,68 +56,62 @@ private:
     // Figure out operators supporting scalar operations
 
 private:
-    T mX{};
-    T mY{};
-}; // class point
+    ImplType mImpl{};
+}; // class Point<>
 
 // Inline Class Functions
 
-template<typename T>
-inline constexpr Point<T>::Point(T inX, T inY) :
-    mX{inX},
-    mY{inY}
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType>::Point(T inX, T inY) :
+    mImpl{inX, inY}
 {
     // Do nothing
 }
 
-template<typename T>
-inline constexpr T Point<T>::X() const
+template<typename T, typename ImplType>
+inline constexpr T Point<T, ImplType>::X() const
 {
-    return mX;
+    return mImpl.Get<0>();
 }
 
-template<typename T>
-inline constexpr T Point<T>::Y() const
+template<typename T, typename ImplType>
+inline constexpr T Point<T, ImplType>::Y() const
 {
-    return mY;
+    return mImpl.Get<1>();
 }
 
 // Mathematical operations
 
-template<typename T>
-inline constexpr Point<T>& Point<T>::operator+=(const Point& inPoint)
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator+=(const Point& inPoint)
 {
-    mX += inPoint.mX;
-    mY += inPoint.mY;
+    mImpl += inPoint.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Point<T>& Point<T>::operator-=(const Point& inPoint)
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator-=(const Point& inPoint)
 {
-    mX -= inPoint.mX;
-    mY -= inPoint.mY;
+    mImpl -= inPoint.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Point<T>& Point<T>::operator*=(const Point& inPoint)
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator*=(const Point& inPoint)
 {
-    mX *= inPoint.mX;
-    mY *= inPoint.mY;
+    mImpl *= inPoint.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Point<T>& Point<T>::operator/=(const Point& inPoint)
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator/=(const Point& inPoint)
 {
-    mX /= inPoint.mX;
-    mY /= inPoint.mY;
+    mImpl /= inPoint.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr bool Point<T>::IsEqual(const Point& inPoint) const
+template<typename T, typename ImplType>
+inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
 {
     bool result = false;
     if constexpr (std::is_floating_point_v<T>)
@@ -135,8 +134,8 @@ inline constexpr bool Point<T>::IsEqual(const Point& inPoint) const
 template<std::size_t Index, typename T>
 inline T get(const Point<T>& inPoint)
 {
-    static_assert(2 == std::tuple_size<Point<T>>::value); // Use own std::tuple_size<> specialization
-    static_assert(Index < 2, "Unexpected Index for Point<T>");
+    static_assert(2 == std::tuple_size_v<Point<T>>); // Use own std::tuple_size<> specialization
+    static_assert(Index < 2, "Unexpected Index for Point<T, ImplType>");
 
     T result{};
     if constexpr (Index == 0)
@@ -152,16 +151,16 @@ inline T get(const Point<T>& inPoint)
 }
 
 template<typename T>
-struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T>
+struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T, ImplType>
 {
-    // Number of elements in Point<T>'s structured binding
+    // Number of elements in Point<T, ImplType>'s structured binding
     static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T>
+struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T, ImplType>
 {
-    // Type of elements in Point<T>'s structured
+    // Type of elements in Point<T, ImplType>'s structured
     using type = T;
 };
 

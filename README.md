@@ -1,3 +1,4 @@
+# saber
 <!-- YUCK:
 I want to simply use Markdown for the Saber header...
 Like this:
@@ -12,6 +13,10 @@ So to workaround this, I have to use bogus embedded HTML instead
 <h1><code>saber</code><br/>C++ Header Library of Utility Classes</h1>
 
 # `saber`<br/>C++ Header Library of Utility Classes<br/>
+
+### C++ version specific features:
+- C++17 adds structured binding for geometry classes
+- C++20 adds constexpr math for geometry classes
 
 #### External Dependencies (requiring manual install)
 - For API documentation generation

@@ -14,8 +14,7 @@ namespace saber::geometry {
 // 3. Has-a: naked types or std::tuple or std::array
 // 4. Include guards should incorperate namespace location
 // 5. Build up binary free operators from class operators +=, etc
-
-template<typename T>
+template<typename T, typename ImplType = typename detail::Impl2<T>::Simd> // TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
 class Size 
 {
 public: 
@@ -49,68 +48,63 @@ private:
     // Figure out operators supporting scalar operations
 
 private:
-    T mWidth{};
-    T mHeight{};
+    ImplType mImpl{};
+    //T mWidth{};
+    //T mHeight{};
 }; // class size
 
 // Inline Class Functions
 
-template<typename T>
-inline constexpr Size<T>::Size(T inWidth, T inHeight) :
-    mWidth{inWidth},
-    mHeight{inHeight}
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType>::Size(T inWidth, T inHeight) :
+    mImpl{inWidth, inHeight}
 {
     // Do nothing
 }
 
-template<typename T>
-inline constexpr T Size<T>::Width() const
+template<typename T, typename ImplType>
+inline constexpr T Size<T, ImplType>::Width() const
 {
-    return mWidth;
+    return mImpl.Get<0>();
 }
 
-template<typename T>
-inline constexpr T Size<T>::Height() const
+template<typename T, typename ImplType>
+inline constexpr T Size<T, ImplType>::Height() const
 {
-    return mHeight;
+    return mImpl.Get<1>();
 }
 
 // Mathematical operations
-
-template<typename T>
-inline constexpr Size<T>& Size<T>::operator+=(const Size& inSize)
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator+=(const Size& inSize)
 {
-    mWidth += inSize.mWidth;
-    mHeight += inSize.mHeight;
+    mImpl += inSize.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Size<T>& Size<T>::operator-=(const Size& inSize)
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator-=(const Size& inSize)
 {
-    mWidth -= inSize.mWidth;
-    mHeight -= inSize.mHeight;
+    mImpl -= inSize.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Size<T>& Size<T>::operator*=(const Size& inSize)
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator*=(const Size& inSize)
 {
-    mWidth *= inSize.mWidth;
-    mHeight *= inSize.mHeight;
+    mImpl *= inSize.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr Size<T>& Size<T>::operator/=(const Size& inSize)
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator/=(const Size& inSize)
 {
-    mWidth /= inSize.mWidth;
-    mHeight /= inSize.mHeight;
+    mImpl /= inSize.mImpl;
     return *this;
 }
 
-template<typename T>
-inline constexpr bool Size<T>::IsEqual(const Size& inSize) const
+template<typename T, typename ImplType>
+inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
 {
     bool result = false;
     if constexpr (std::is_floating_point_v<T>)
