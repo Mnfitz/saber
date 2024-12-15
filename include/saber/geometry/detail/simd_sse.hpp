@@ -151,9 +151,14 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 	/// @return Vector type`<float>` of loaded elements
 	static SimdType Load2(const float* inAddr)
 	{
+#if 0
         auto load2 = _mm_setzero_ps();
 		load2 =  _mm_loadl_pi(load2, reinterpret_cast<const __m64*>(inAddr));
 		return load2;
+#else
+		auto load2 = _mm_load_sd(reinterpret_cast<const double*>(inAddr));
+		return _mm_castpd_ps(load2);
+#endif
 	}
 
 	/// @brief Load 1 element of type`<float>` from memory specified by `inAddr`.
@@ -183,7 +188,11 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 	/// @param inStore2 Vector type`<float>` of elements to store
 	static void Store2(float* outAddr, SimdType inStore2)
 	{
+#if 0
         _mm_storel_pi(reinterpret_cast<__m64*>(outAddr), inStore2);
+#else
+		_mm_store_sd(reinterpret_cast<double*>(outAddr), _mm_castps_pd(inStore2));
+#endif
 	}
 
 	/// @brief Store 1 element of type`<float>` to memory specified by `outAddr`.
