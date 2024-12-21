@@ -240,6 +240,40 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 		REQUIRE(result2.Height() == 4);
 	}
 
+	SECTION("+Size")
+	{
+		constexpr saber::geometry::Size<int> size1{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
+		constexpr auto result1 = +size1;
+		REQUIRE(result1.Width() == 1);
+		REQUIRE(result1.Height() == 2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = +size1;
+		REQUIRE(result2.Width() == 1);
+		REQUIRE(result2.Height() == 2);
+	}
+
+	SECTION("-Size")
+	{
+		constexpr saber::geometry::Size<int> size1{1,2};
+
+#if __cplusplus >= 202002L // C++20 or greater
+		// Check compiletime correctness
+		constexpr auto result1 = -size1;
+		REQUIRE(result1.Width() == -1);
+		REQUIRE(result1.Height() == -2);
+#endif // __cplusplus >= 202002L
+
+		// Check runtime correctness
+		const auto result2 = -size1;
+		REQUIRE(result2.Width() == -1);
+		REQUIRE(result2.Height() == -2);
+	}
+
 	SECTION("Size - Size")
 	{
 		constexpr saber::geometry::Size<int> size1{2,4};
