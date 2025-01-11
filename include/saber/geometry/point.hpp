@@ -113,7 +113,7 @@ inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator/=(const Point&
 template<typename T, typename ImplType>
 inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
 {
-    auto result = detail::IsEqual(mImpl, inPoint.mImpl);
+    auto result = mImpl.IsEqual(inPoint.mImpl);
     return result;
 }
 

@@ -126,15 +126,16 @@ using typename SimdTraits<128, int>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
-	// mnfitz 3jan2024
-	/// @brief Multiply all vector type`<int>` elements in `inRHS` to `inLHS`.
+	/// @brief Compare two vector<int> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
-	/// @return Result vector type`<int>`
-	static SimdType IsEQ(SimdType inLHS, SimdType inRHS)
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-        auto eq = _mm_cmpeq_epi32(inLHS, inRHS);
-		return eq;
+        const auto eq = _mm_cmpeq_epi32(inLHS, inRHS);
+		const auto mask = _mm_movemask_epi8(eq);
+		const bool allEqual = (mask == 0xFFFF);
+		return allEqual;
 	}
 };
 
@@ -247,15 +248,16 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
-	// mnfitz 3jan2024
-	/// @brief Multiply all vector type`<float>` elements in `inRHS` to `inLHS`.
+	/// @brief Compare two vector<float> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
-	/// @return Result vector type`<float>`
-	static SimdType IsEQ(SimdType inLHS, SimdType inRHS)
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-        auto eq = _mm_cmpeq_ps(inLHS, inRHS);
-		return eq;
+        const auto eq = _mm_cmpeq_ps(inLHS, inRHS);
+		const auto mask = _mm_movemask_ps(eq);
+		const bool allEqual = (mask == 0xF);
+		return allEqual;
 	}
 };
 
@@ -369,15 +371,16 @@ using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our ow
 		return div;
 	}
 
-	// mnfitz 3jan2024
-	/// @brief Multiply all vector type`<double>` elements in `inRHS` to `inLHS`.
+	/// @brief Compare two vector<double> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
-	/// @return Result vector type`<double>`
-	static SimdType IsEQ(SimdType inLHS, SimdType inRHS)
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-        auto eq = _mm_cmpeq_pd(inLHS, inRHS);
-		return eq;
+        const auto eq = _mm_cmpeq_pd(inLHS, inRHS);
+		const auto mask = _mm_movemask_pd(eq);
+		const bool allEqual = (mask == 0x3);
+		return allEqual;
 	}
 };
 

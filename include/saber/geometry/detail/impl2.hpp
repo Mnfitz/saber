@@ -63,21 +63,19 @@ struct Impl2
             return *this;
         }
 
-    private:
-        // mnfitz 03jan2025
-        friend constexpr bool IsEqual(const Scalar& inLHS, const Scalar& inRHS)
+        constexpr bool IsEqual(const Scalar& inRHS) const
         {
             // Point said to copy/paste this section into the scalar portion
             bool result = false;
             if constexpr (std::is_floating_point_v<T>)
             {   
                 // Floating point comparisons are always inexact within an epsilon
-                result = Inexact::IsEq(inLHS.Get<0>(), inRHS.Get<0>()) && Inexact::IsEq(inLHS.Get<1>(), inRHS.Get<1>());
+                result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) && Inexact::IsEq(Get<1>(), inRHS.Get<1>());
             }
             else
             {
                 // Integer comparisons are always exact
-                result = (inLHS.Get<0>() == inRHS.Get<0>()) && (inLHS.Get<1>() == inRHS.Get<1>());
+                result = (Get<0>() == inRHS.Get<0>()) && (Get<1>() == inRHS.Get<1>());
             }
             return result;
         }
@@ -217,9 +215,8 @@ struct Impl2
             return *this;
         }
 
-    private:
         // mnfitz 3jan2025
-        friend constexpr bool IsEqual(const Simd& inLHS, const Simd& inRHS)
+        constexpr bool IsEqual(const Simd& inRHS) const
         {
             bool result = false;
             // protect our interface so it can remain constexpr
@@ -236,9 +233,9 @@ struct Impl2
                 }
         #endif // __cpp_lib_is_constant_evaluated
 
-                auto lhs = Simd128<T>::Load2(&inLHS.mArray[0]);
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
                 auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-                auto result = Simd128<T>::IsEQ(lhs, rhs);
+                result = Simd128<T>::IsEQ(lhs, rhs);
             } while (false);
 
             return result;
