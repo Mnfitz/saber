@@ -53,7 +53,8 @@ private:
     //T mHeight{};
 }; // class size
 
-// Inline Class Functions
+// ------------------------------------------------------------------
+#pragma region Inline Class Functions
 
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType>::Size(T inWidth, T inHeight) :
@@ -74,7 +75,11 @@ inline constexpr T Size<T, ImplType>::Height() const
     return mImpl.Get<1>();
 }
 
-// Mathematical operations
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Inline Mathematical operations
+
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator+=(const Size& inSize)
 {
@@ -118,10 +123,60 @@ inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
     return result;
 }
 
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Free Functions
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, const Size<T, ImplType>& inMagnitude)
+{
+    Size<T, ImplType> result{inSize};
+    result += inMagnitude;
+    return result;
+}
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, T inX, T inY)
+{
+    const Size<T, ImplType> magnitude{inX, inY};
+    return Enlarge(inSize, magnitude);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, T inMagnitude)
+{
+    return Enlarge(inSize, inMagnitude, inMagnitude);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, const Size<T, ImplType>& inScale)
+{
+    Size<T, ImplType> result{inSize};
+    result *= inScale;
+    return result;
+}
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inScaleX, T inScaleY)
+{
+    const Size<T, ImplType> scale{inScaleX, inScaleY};
+    return Scale(inSize, scale);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inScale)
+{
+    return Scale(inSize, inScale, inScale);
+}
+
+#pragma endregion 
+
+// ------------------------------------------------------------------
+#pragma region Structured Bindings
+
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
-
-// Structured Binding Support
 
 // Prefer free function over class method
 template<std::size_t Index, typename T>
@@ -157,6 +212,7 @@ struct std::tuple_element<Index, Size<T>> // Partial template specialization for
 };
 
 #endif // __cpp_structured_bindings
+#pragma endregion
 
 }// namespace saber::geometry
 

@@ -47,8 +47,12 @@ public:
     constexpr Point& operator*=(const Point& inPoint);
     constexpr Point& operator/=(const Point& inPoint);
 
+// Private APIs
 private:
     constexpr bool IsEqual(const Point& inPoint) const;
+
+// Friend functions
+private:
     friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
 
@@ -59,7 +63,7 @@ private:
     ImplType mImpl{};
 }; // class Point<>
 
-// Inline Class Functions
+// Inline Class Methods
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>::Point(T inX, T inY) :
@@ -123,6 +127,49 @@ inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
         result = (X() == inPoint.X()) && (Y() == inPoint.Y());
     }
     return result;
+}
+
+// Free functions 
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inTranslate)
+{
+    Point<T, ImplType> result{inPoint};
+    result += inTranslate;
+    return result;
+}
+
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, T inX, T inY)
+{
+    const Point<T, ImplType> translate{inX, inY};
+    return Translate(inPoint, translate);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, T inTranslate)
+{
+    return Translate(inPoint, inTranslate, inTranslate);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inScale)
+{
+    Point<T, ImplType> result{inPoint};
+    result *= inScale;
+    return result;
+}
+
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T inScaleX, T inScaleY)
+{
+    const Point<T, ImplType> scale{inScaleX, inScaleY};
+    return Scale(inPoint, scale);
+}
+
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T inScale)
+{
+    return Scale(inPoint, inScale, inScale);
 }
 
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
