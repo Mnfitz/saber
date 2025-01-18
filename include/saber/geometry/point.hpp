@@ -141,7 +141,7 @@ inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint,
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, T inX, T inY)
 {
-    Point<T, ImplType> translate{inX, inY};
+    const Point<T, ImplType> translate{inX, inY};
     return Translate(inPoint, translate);
 }
 
@@ -155,14 +155,14 @@ template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inScale)
 {
     Point<T, ImplType> result{inPoint};
-    result += inScale;
+    result *= inScale;
     return result;
 }
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T inScaleX, T inScaleY)
 {
-    Point<T, ImplType> scale{inScaleX, inScaleY};
+    const Point<T, ImplType> scale{inScaleX, inScaleY};
     return Scale(inPoint, scale);
 }
 
