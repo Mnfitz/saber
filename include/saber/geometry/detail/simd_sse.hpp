@@ -254,10 +254,46 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 	/// @return Return true if corresponding elements are equal, false otherwise
 	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-        const auto eq = _mm_cmpeq_ps(inLHS, inRHS);
-		const auto mask = _mm_movemask_ps(eq);
-		const bool allEqual = (mask == 0xF);
-		return allEqual;
+		/*
+			// magnitude: the further we get away from 0, the more inexactness we allow
+            const T magnitude = std::max<T>(std::max<T>(std::abs(mLHS), std::abs(inRHS)), 1.0f); 
+            // difference: compare the 2 numbers
+            const T difference = std::abs(mLHS - inRHS);
+            // epsilon: minimal permitted amount of inexactness
+            const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
+            // IsEqual: equality occurs if the difference is within a scaled epsilon
+            const bool IsEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
+            return IsEqual;
+		*/
+
+		// Create a vector mask of signed bits for floats so that we can take the absolute value of a vector of floats
+		const auto signMask = 0x7fffffff;
+		const auto absMask = _mm_castsi128_ps(_mm_set1_epi32(signMask));
+
+		// Take the absolute value of four floats at a time for LHS and RHS
+		const auto absLHS = _mm_and_ps(inLHS, absMask);
+		const auto absRHS = _mm_and_ps(inRHS, absMask);
+
+		// Create the magnitude of the largest 4 floats, between LHS and RHS, such that they are greater than 1.0
+		const auto minMagnitude = _mm_set_ps1(1);
+		const auto magnitude = _mm_max_ps(_mm_max_ps(absLHS, absRHS), minMagnitude);
+
+		// Create the tolerance for the comparison based on the largest LHS or RHS value being compared
+		// The bigger the number, the greater the allowed inexactness for IsEqual()
+		const auto epsilon = _mm_mul_ps(magnitude, _mm_set_ps1(std::numeric_limits<float>::epsilon()));
+
+		// Compare LHS to RHS via subtraction, and take its absolute value
+		const auto comparison = _mm_and_ps(_mm_sub_ps(inLHS, inRHS), absMask);
+
+		// See if the difference is within the allowed computed epsilon/tolerance
+		const auto result = _mm_cmple_ps(comparison, epsilon);
+
+		// Get the 4 comparison results into a single comparable mask, such that it makes a simple bool
+		const auto mask = _mm_movemask_ps(result);
+
+		// See is all 4 bits of the mask were true (if so, IsEq() returns true)
+		const bool approxEq = (mask == 0xF);
+		return approxEq;
 	}
 };
 

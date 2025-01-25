@@ -215,7 +215,6 @@ struct Impl2
             return *this;
         }
 
-        // mnfitz 3jan2025
         constexpr bool IsEqual(const Simd& inRHS) const
         {
             bool result = false;
