@@ -491,6 +491,142 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		auto result2 = point3 != point4;
 		REQUIRE(result2);
 	}
+
+	SECTION("Translate Point -> Point")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{2,4};
+
+		saber::geometry::Point<int> expected{3,6};
+
+		auto result = saber::geometry::Translate(point1, point2) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Translate Point -> X, Y")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		const int x = 2;
+		const int y = 4;
+
+		saber::geometry::Point<int> expected{3,6};
+
+		auto result = saber::geometry::Translate(point1, x, y) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Translate Point -> X")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		const int x = 2; 
+
+		saber::geometry::Point<int> expected{3,4};
+
+		auto result = saber::geometry::Translate(point1, x) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Point -> Point")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		saber::geometry::Point<int> point2{2,4};
+
+		saber::geometry::Point<int> expected{2,8};
+
+		auto result = saber::geometry::Scale(point1, point2) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Point -> X, Y")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		const int x = 2;
+		const int y = 4;
+
+		saber::geometry::Point<int> expected{2,8};
+
+		auto result = saber::geometry::Scale(point1, x, y) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Point -> X")
+	{
+		saber::geometry::Point<int> point1{1,2};
+		const int x = 2;
+
+		saber::geometry::Point<int> expected{2,4};
+
+		auto result = saber::geometry::Scale(point1, x) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Enlarge Size -> Size")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		saber::geometry::Size<int> size2{2,4};
+
+		saber::geometry::Size<int> expected{3,6};
+
+		auto result = saber::geometry::Enlarge(size1, size2) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Enlarge Size -> X, Y")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		const int x = 2;
+		const int y = 4;
+
+		saber::geometry::Size<int> expected{3,6};
+
+		auto result = saber::geometry::Enlarge(size1, x, y) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Enlarge Size -> X")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		const int x = 2; 
+
+		saber::geometry::Size<int> expected{3,4};
+
+		auto result = saber::geometry::Enlarge(size1, x) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Size -> Size")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		saber::geometry::Size<int> size2{2,4};
+
+		saber::geometry::Size<int> expected{2,8};
+
+		auto result = saber::geometry::Scale(size1, size2) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Size -> X, Y")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		const int x = 2;
+		const int y = 4;
+
+		saber::geometry::Size<int> expected{2,8};
+
+		auto result = saber::geometry::Scale(size1, x, y) == expected;
+		REQUIRE(result);
+	}
+
+	SECTION("Scale Size -> X")
+	{
+		saber::geometry::Size<int> size1{1,2};
+		const int x = 2;
+
+		saber::geometry::Size<int> expected{2,4};
+
+		auto result = saber::geometry::Scale(size1, x) == expected;
+		REQUIRE(result);
+	}
 }
 
 TEST_CASE("saber::geometry::Inexact::Eq float", "[saber]")
