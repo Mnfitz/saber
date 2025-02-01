@@ -342,11 +342,21 @@ TEST_CASE("saber::geometry::operators Size", "[saber]")
 		REQUIRE(result2);
 	}
 
-	SECTION("Size Inexact::EQ Size")
+	SECTION("Size<float> Inexact::EQ Size<float>")
 	{
 		saber::geometry::Size<float> size1{3.6f, 3.6f};
 		saber::geometry::Size<float> size2{3.0f, 3.0f};
 		saber::geometry::Size<float> size3 = saber::geometry::Scale(size2, 1.20f);
+		auto result = size1 == size3;
+
+		REQUIRE(result);
+	}
+
+	SECTION("Size<double> Inexact::EQ Size<double>")
+	{
+		saber::geometry::Size<double> size1{3.6, 3.6};
+		saber::geometry::Size<double> size2{3.0, 3.0};
+		saber::geometry::Size<double> size3 = saber::geometry::Scale(size2, 1.20);
 		auto result = size1 == size3;
 
 		REQUIRE(result);
@@ -489,11 +499,21 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		REQUIRE(result2);
 	}
 
-	SECTION("Point Inexact::EQ Point")
+	SECTION("Point<float> Inexact::EQ Point<float>")
 	{
 		saber::geometry::Point<float> point1{3.6f, 3.6f};
 		saber::geometry::Point<float> point2{3.0f, 3.0f};
 		saber::geometry::Point<float> point3 = saber::geometry::Scale(point2, 1.20f);
+		auto result = point1 == point3;
+
+		REQUIRE(result);
+	}
+
+	SECTION("Point<double> Inexact::EQ Point<double>")
+	{
+		saber::geometry::Point<double> point1{3.6, 3.6};
+		saber::geometry::Point<double> point2{3.0, 3.0};
+		saber::geometry::Point<double> point3 = saber::geometry::Scale(point2, 1.20);
 		auto result = point1 == point3;
 
 		REQUIRE(result);

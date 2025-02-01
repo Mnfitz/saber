@@ -254,20 +254,8 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 	/// @return Return true if corresponding elements are equal, false otherwise
 	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-		/*
-			// magnitude: the further we get away from 0, the more inexactness we allow
-            const T magnitude = std::max<T>(std::max<T>(std::abs(mLHS), std::abs(inRHS)), 1.0f); 
-            // difference: compare the 2 numbers
-            const T difference = std::abs(mLHS - inRHS);
-            // epsilon: minimal permitted amount of inexactness
-            const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
-            // IsEqual: equality occurs if the difference is within a scaled epsilon
-            const bool IsEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
-            return IsEqual;
-		*/
-
-		// Create a vector mask of signed bits for floats so that we can take the absolute value of a vector of floats
-		const auto signMask = 0x7fffffff;
+		// Create a vector mask to remove the sign bit for floats so that we can take the absolute value of a vector of floats
+		const auto signMask = ~(1U << (sizeof(float) * 8 - 1));
 		const auto absMask = _mm_castsi128_ps(_mm_set1_epi32(signMask));
 
 		// Take the absolute value of four floats at a time for LHS and RHS
@@ -413,10 +401,36 @@ using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our ow
 	/// @return Return true if corresponding elements are equal, false otherwise
 	static bool IsEQ(SimdType inLHS, SimdType inRHS)
 	{
-        const auto eq = _mm_cmpeq_pd(inLHS, inRHS);
-		const auto mask = _mm_movemask_pd(eq);
-		const bool allEqual = (mask == 0x3);
-		return allEqual;
+		// Create a vector mask to remove the sign bit for doubles so that we can take the absolute value of a vector of doubles
+		constexpr auto signMask = ~(1ULL << (sizeof(double) * 8 - 1));
+		// 64 bits in a double. 1 << 63
+		// sizeof(double) = 8/*bytes*/ x 8 /*bits*/ = 64
+		const auto absMask = _mm_castsi128_pd(_mm_set1_epi64x(signMask));
+
+		// Take the absolute value of two doubles at a time for LHS and RHS
+		const auto absLHS = _mm_and_pd(inLHS, absMask);
+		const auto absRHS = _mm_and_pd(inRHS, absMask);
+
+		// Create the magnitude of the largest 2 doubles, between LHS and RHS, such that they are greater than 1.0
+		const auto minMagnitude = _mm_set1_pd(1);
+		const auto magnitude = _mm_max_pd(_mm_max_pd(absLHS, absRHS), minMagnitude);
+
+		// Create the tolerance for the comparison based on the largest LHS or RHS value being compared
+		// The bigger the number, the greater the allowed inexactness for IsEqual()
+		const auto epsilon = _mm_mul_pd(magnitude, _mm_set1_pd(std::numeric_limits<double>::epsilon()));
+
+		// Compare LHS to RHS via subtraction, and take its absolute value
+		const auto comparison = _mm_and_pd(_mm_sub_pd(inLHS, inRHS), absMask);
+
+		// See if the difference is within the allowed computed epsilon/tolerance
+		const auto result = _mm_cmple_pd(comparison, epsilon);
+
+		// Get the 2 comparison results into a single comparable mask, such that it makes a simple bool
+		const auto mask = _mm_movemask_pd(result);
+
+		// See is all 2 bits of the mask were true (if so, IsEq() returns true)
+		const bool approxEq = (mask == 0x3);
+		return approxEq;
 	}
 };
 
