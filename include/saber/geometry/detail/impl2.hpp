@@ -63,6 +63,23 @@ struct Impl2
             return *this;
         }
 
+        constexpr bool IsEqual(const Scalar& inRHS) const
+        {
+            // Point said to copy/paste this section into the scalar portion
+            bool result = false;
+            if constexpr (std::is_floating_point_v<T>)
+            {   
+                // Floating point comparisons are always inexact within an epsilon
+                result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) && Inexact::IsEq(Get<1>(), inRHS.Get<1>());
+            }
+            else
+            {
+                // Integer comparisons are always exact
+                result = (Get<0>() == inRHS.Get<0>()) && (Get<1>() == inRHS.Get<1>());
+            }
+            return result;
+        }
+
     private:
         std::tuple<T,T> mTuple{}; // Impl2: so 2 elements are assumed
     };
@@ -120,7 +137,7 @@ struct Impl2
         constexpr Simd& operator-=(const Simd& inRHS)
         {
             // protect our interface so it can remain constexpr
-             do 
+            do 
             {
 #if __cpp_lib_is_constant_evaluated
                 if (std::is_constant_evaluated())
@@ -146,8 +163,8 @@ struct Impl2
 
         constexpr Simd& operator*=(const Simd& inRHS)
         {
-             // protect our interface so it can remain constexpr
-             do 
+            // protect our interface so it can remain constexpr
+            do 
             {
 #if __cpp_lib_is_constant_evaluated
                 if (std::is_constant_evaluated())
@@ -173,8 +190,8 @@ struct Impl2
 
         constexpr Simd& operator/=(const Simd& inRHS)
         {
-             // protect our interface so it can remain constexpr
-             do 
+            // protect our interface so it can remain constexpr
+            do 
             {
 #if __cpp_lib_is_constant_evaluated
                 if (std::is_constant_evaluated())
@@ -198,9 +215,35 @@ struct Impl2
             return *this;
         }
 
+        constexpr bool IsEqual(const Simd& inRHS) const
+        {
+            bool result = false;
+            // protect our interface so it can remain constexpr
+            do 
+            {
+        #if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{Get<0>(), Get<1>()};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    result = lhs == rhs;
+                    break;
+                }
+        #endif // __cpp_lib_is_constant_evaluated
+
+                auto lhs = Simd128<T>::Load2(&mArray[0]);
+                auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+                result = Simd128<T>::IsEQ(lhs, rhs);
+            } while (false);
+
+            return result;
+        }
+
     private:
         std::array<T,2> mArray{}; // Impl2: so 2 elements are assumed
-    };
+    }; // class Simd
+
 }; // struct Impl2<>
 
 } // namespace saber::geometry::detail

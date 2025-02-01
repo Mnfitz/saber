@@ -212,6 +212,24 @@ struct Simd<128, T> :
 		}
 		return div;
 	}
+
+	/// @brief Check all vector type`<T>` elements in `inRHS` to `inLHS` for equality.
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return true if all corresponding vector elements are equal
+	static constexpr bool IsEq(SimdType inLHS, SimdType inRHS)
+	{
+		bool isEq = true;
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			if (inRHS[i] != inLHS[i])
+			{
+				isEq = false;
+				break;
+			}
+		}
+		return isEq;
+	}
 }; // struct Simd<128, T>
 
 // Type alias: partial template specialization for 128 Simd API

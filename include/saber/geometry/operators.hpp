@@ -113,6 +113,21 @@ inline constexpr bool operator!=(const T& inLHS, const T& inRHS)
     return result;
 }
 
+// Unary Operators
+
+template<typename T>
+inline constexpr T operator-(const T& inLHS) // Unary negation, not subtraction
+{ 
+    const T zero{};
+    return zero - inLHS;
+}
+
+template<typename T>
+inline constexpr T operator+(const T& inLHS) // Unary addition = noOp
+{
+    return inLHS; // copy
+}
+
 } // namespace saber::geometry
 
 #endif //SABER_GEOMETRY_OPERATORS_HPP

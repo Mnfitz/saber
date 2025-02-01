@@ -111,15 +111,7 @@ inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator/=(const Size& in
 template<typename T, typename ImplType>
 inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
 {
-    bool result = false;
-    if constexpr (std::is_floating_point_v<T>)
-    {
-        result = Inexact::IsEq(Width(), inSize.Width()) && Inexact::IsEq(Height(), inSize.Height());
-    }
-    else
-    {
-        result = (Width() == inSize.Width()) && (Height() == inSize.Height());
-    }
+    auto result = mImpl.IsEqual(inSize.mImpl);
     return result;
 }
 

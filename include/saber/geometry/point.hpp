@@ -117,15 +117,7 @@ inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator/=(const Point&
 template<typename T, typename ImplType>
 inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
 {
-    bool result = false;
-    if constexpr (std::is_floating_point_v<T>)
-    {
-        result = Inexact::IsEq(X(), inPoint.X()) && Inexact::IsEq(Y(), inPoint.Y());
-    }
-    else
-    {
-        result = (X() == inPoint.X()) && (Y() == inPoint.Y());
-    }
+    auto result = mImpl.IsEqual(inPoint.mImpl);
     return result;
 }
 
