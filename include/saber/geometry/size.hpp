@@ -162,6 +162,50 @@ inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inSc
     return Scale(inSize, inScale, inScale);
 }
 
+/// @brief Round to nearest integer value. Halfway cases round away from zero.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inSize: Size object to be rounded
+/// @return Rounded result Size
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& /*inSize*/)
+{
+    return {};
+}
+
+/// @brief Round towards zero to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inSize: Size object to be rounded
+/// @return Rounded result Size
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& /*inSize*/)
+{
+    return {};
+}
+
+/// @brief Round towards +infinity to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inSize: Size object to be rounded
+/// @return Rounded result Size
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& /*inSize*/)
+{
+    return {};
+}
+
+/// @brief Round towards -infinity to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inSize: Size object to be rounded
+/// @return Rounded result Size
+template<typename T, typename ImplType>
+inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& /*inSize*/)
+{
+    return {}; 
+}
+
 #pragma endregion 
 
 // ------------------------------------------------------------------

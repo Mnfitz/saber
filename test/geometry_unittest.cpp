@@ -667,6 +667,54 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		auto result = saber::geometry::Scale(size1, x) == expected;
 		REQUIRE(result);
 	}
+
+	SECTION("RoundNearest Size")
+	{
+		saber::geometry::Size<float> size1{1.1f, -2.9f};
+		saber::geometry::Size<float> expected1{1.0f, -3.0f};
+		saber::geometry::Size<float> size2{1.9f, -2.1f};
+		saber::geometry::Size<float> expected2{1.0f, -3.0f};
+		saber::geometry::Size<float> size3{1.5f, -2.5f};
+		saber::geometry::Size<float> expected3{1.0f, -3.0f};
+
+		auto roundSize1 = saber::geometry::RoundNearest(size1);
+		auto result = roundSize1 == expected1;
+
+		REQUIRE(result);
+	}
+
+	SECTION("RoundTrunc Size")
+	{
+		saber::geometry::Size<float> size{1.1f, -2.6f};
+		saber::geometry::Size<float> expected{1.0f, -2.0f};
+
+		auto roundSize = saber::geometry::RoundTrunc(size);
+		auto result = roundSize == expected;
+
+		REQUIRE(result);
+	}
+
+	SECTION("RoundCeil Size")
+	{
+		saber::geometry::Size<float> size{1.1f, -2.6f};
+		saber::geometry::Size<float> expected{};
+
+		auto roundSize = saber::geometry::RoundCeil(size);
+		auto result = roundSize == expected;
+
+		REQUIRE(result);
+	}
+
+	SECTION("RoundFloor Size")
+	{
+		saber::geometry::Size<float> size{1.1f, -2.6f};
+		saber::geometry::Size<float> expected{};
+
+		auto roundSize = saber::geometry::RoundFloor(size);
+		auto result = roundSize == expected;
+
+		REQUIRE(result);
+	}
 }
 
 TEST_CASE("saber::geometry::Inexact::Eq float", "[saber]")

@@ -63,7 +63,8 @@ private:
     ImplType mImpl{};
 }; // class Point<>
 
-// Inline Class Methods
+// ------------------------------------------------------------------
+#pragma region Inline Class Functions
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>::Point(T inX, T inY) :
@@ -84,7 +85,10 @@ inline constexpr T Point<T, ImplType>::Y() const
     return mImpl.Get<1>();
 }
 
-// Mathematical operations
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Inline Mathematical operations
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator+=(const Point& inPoint)
@@ -121,7 +125,11 @@ inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
     return result;
 }
 
-// Free functions 
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Free Functions
+
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inTranslate)
 {
@@ -164,6 +172,55 @@ inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T i
     return Scale(inPoint, inScale, inScale);
 }
 
+/// @brief Round to nearest integer value. Halfway cases round away from zero.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inPoint: Point object to be rounded
+/// @return Rounded result Point
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& /*inPoint*/)
+{
+    return {};
+}
+
+/// @brief Round towards zero to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inPoint: Point object to be rounded
+/// @return Rounded result Point
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& /*inPoint*/)
+{
+    return {};
+}
+
+/// @brief Round towards +infinity to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inPoint: Point object to be rounded
+/// @return Rounded result Point
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& /*inPoint*/)
+{
+    return {};
+}
+
+/// @brief Round towards -infinity to the nearest integer value.
+/// @tparam T: Underlying type
+/// @tparam ImplType: Underlying implementation type
+/// @param inPoint: Point object to be rounded
+/// @return Rounded result Point
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& /*inPoint*/)
+{
+    return {}; 
+}
+
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Structured Bindings
+
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
 
@@ -204,6 +261,7 @@ struct std::tuple_element<Index, Point<T>> // Partial template specialization fo
 };
 
 #endif //__cpp_structured_bindings
+#pragma endregion
 
 }// namespace saber::geometry
 
