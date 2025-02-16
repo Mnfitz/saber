@@ -14,6 +14,8 @@ namespace saber::geometry::detail {
 template<typename T>
 struct Impl2
 {
+    class Simd;
+
     class Scalar
     {
     public:
@@ -44,22 +46,22 @@ struct Impl2
 
         constexpr Scalar& operator-=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) -= inRHS.Get<0>();
-            std::get<1>(mTuple) -= inRHS.Get<1>();
+            std::get<0>(mTuple) -= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) -= std::get<1>(inRHS.mTuple);
             return *this;
         }
 
         constexpr Scalar& operator*=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) *= inRHS.Get<0>();
-            std::get<1>(mTuple) *= inRHS.Get<1>();
+            std::get<0>(mTuple) *= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) *= std::get<1>(inRHS.mTuple);
             return *this;
         }
 
         constexpr Scalar& operator/=(const Scalar& inRHS)
         {
-            std::get<0>(mTuple) /= inRHS.Get<0>();
-            std::get<1>(mTuple) /= inRHS.Get<1>();
+            std::get<0>(mTuple) /= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) /= std::get<1>(inRHS.mTuple);
             return *this;
         }
 
@@ -70,15 +72,28 @@ struct Impl2
             if constexpr (std::is_floating_point_v<T>)
             {   
                 // Floating point comparisons are always inexact within an epsilon
-                result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) && Inexact::IsEq(Get<1>(), inRHS.Get<1>());
+                result = Inexact::IsEq(std::get<0>(mTuple), std::get<0>(inRHS.mTuple)) 
+                    && Inexact::IsEq(std::get<1>(mTuple), std::get<1>(inRHS.mTuple));
             }
             else
             {
                 // Integer comparisons are always exact
-                result = (Get<0>() == inRHS.Get<0>()) && (Get<1>() == inRHS.Get<1>());
+                result = (std::get<0>(mTuple) == std::get<0>(inRHS.mTuple)) && (std::get<1>(mTuple) == std::get<1>(inRHS.mTuple));
             }
             return result;
         }
+
+        constexpr void RoundNearest()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "Rounding only supports floating point types");
+            
+            std::get<0>(mTuple) = std::round(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::round(std::get<1>(mTuple));
+        }
+
+    private:
+        friend class Simd; // Permit Simd class to provide constexpr api
 
     private:
         std::tuple<T,T> mTuple{}; // Impl2: so 2 elements are assumed
@@ -116,11 +131,11 @@ struct Impl2
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{Get<0>(), Get<1>()};
-                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    Scalar lhs{mArray[0], mArray[1]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs += rhs;
-                    mArray[0] = lhs.Get<0>();
-                    mArray[1] = lhs.Get<1>(); 
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[0]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -143,11 +158,11 @@ struct Impl2
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{Get<0>(), Get<1>()};
-                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    Scalar lhs{mArray[0], mArray[1]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs -= rhs;
-                    mArray[0] = lhs.Get<0>();
-                    mArray[1] = lhs.Get<1>(); 
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -170,11 +185,11 @@ struct Impl2
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{Get<0>(), Get<1>()};
-                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    Scalar lhs{mArray[0], mArray[1]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs *= rhs;
-                    mArray[0] = lhs.Get<0>();
-                    mArray[1] = lhs.Get<1>(); 
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -197,11 +212,11 @@ struct Impl2
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{Get<0>(), Get<1>()};
-                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    Scalar lhs{mArray[0], mArray[1]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs /= rhs;
-                    mArray[0] = lhs.Get<0>();
-                    mArray[1] = lhs.Get<1>(); 
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -225,8 +240,8 @@ struct Impl2
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{Get<0>(), Get<1>()};
-                    const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>()};
+                    Scalar lhs{mArray[0], mArray[1]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]]()};
                     result = lhs == rhs;
                     break;
                 }
@@ -238,6 +253,33 @@ struct Impl2
             } while (false);
 
             return result;
+        }
+
+        constexpr void RoundNearest()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "Rounding only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1]};
+                    round.RoundNearest();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+                auto round = Simd128<T>::Load2(&mArray[0]);
+                round = Simd128<T>::RoundNearest(round);
+                Simd128<T>::Store2(&mArray[0], round);
+            } while (false);
         }
 
     private:

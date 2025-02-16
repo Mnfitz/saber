@@ -230,6 +230,18 @@ struct Simd<128, T> :
 		}
 		return isEq;
 	}
+
+	/// @brief Round all elements of SimdType to the nearest whole number 
+	/// @param inRound The SimdType to be rounded
+	/// @return Return the rounded result
+	static constexpr SimdType RoundNearest(SimdType inRound)
+	{
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			inRound[i] = std::round(inRound[i]);
+		}
+		return inRound;
+	}
 }; // struct Simd<128, T>
 
 // Type alias: partial template specialization for 128 Simd API

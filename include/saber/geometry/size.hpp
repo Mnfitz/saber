@@ -39,18 +39,25 @@ public:
     constexpr Size& operator*=(const Size& inSize);
     constexpr Size& operator/=(const Size& inSize);
 
+    // Private APIs
 private:
     constexpr bool IsEqual(const Size& inSize) const;
+    constexpr void RoundNearest();
+    constexpr void RoundFloor();
+    constexpr void RoundCeil();
+    constexpr void RoundZero();
+
+    // Friend Functions
+private:
     friend constexpr bool operator==<Size>(const Size& inLHS, const Size& inRHS);
     friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
-
-    // REVISIT mnfitz 15jun2024:
-    // Figure out operators supporting scalar operations
+    friend constexpr Size RoundNearest(const Size& inSize);
+    friend constexpr Size RoundFloor(const Size& inSize);
+    friend constexpr Size RoundCeil(const Size& inSize);
+    friend constexpr Size RoundZero(const Size& inSize);
 
 private:
     ImplType mImpl{};
-    //T mWidth{};
-    //T mHeight{};
 }; // class size
 
 // ------------------------------------------------------------------
@@ -115,6 +122,30 @@ inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
     return result;
 }
 
+template<typename T, typename ImplType>
+inline constexpr void Size<T, ImplType>::RoundNearest()
+{
+    mImpl.RoundNearest();
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Size<T, ImplType>::RoundFloor()
+{
+
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Size<T, ImplType>::RoundCeil()
+{
+
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Size<T, ImplType>::RoundZero()
+{
+
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------
@@ -168,9 +199,11 @@ inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inSc
 /// @param inSize: Size object to be rounded
 /// @return Rounded result Size
 template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& /*inSize*/)
+inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 {
-    return {};
+    auto result{inSize};
+    result.RoundNearest();
+    return result;
 }
 
 /// @brief Round towards zero to the nearest integer value.
@@ -179,9 +212,11 @@ inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& /*inSiz
 /// @param inSize: Size object to be rounded
 /// @return Rounded result Size
 template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& /*inSize*/)
+inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 {
-    return {};
+    auto result{inSize};
+    //result.RoundTrunc();
+    return result;
 }
 
 /// @brief Round towards +infinity to the nearest integer value.
@@ -190,9 +225,11 @@ inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& /*inSize*
 /// @param inSize: Size object to be rounded
 /// @return Rounded result Size
 template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& /*inSize*/)
+inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 {
-    return {};
+    auto result{inSize};
+    //result.RoundCeil();
+    return result;
 }
 
 /// @brief Round towards -infinity to the nearest integer value.
@@ -201,9 +238,11 @@ inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& /*inSize*/
 /// @param inSize: Size object to be rounded
 /// @return Rounded result Size
 template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& /*inSize*/)
+inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& inSize)
 {
-    return {}; 
+    auto result{inSize};
+    //result.RoundFloor();
+    return result;
 }
 
 #pragma endregion 

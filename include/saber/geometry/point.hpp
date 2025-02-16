@@ -50,14 +50,19 @@ public:
 // Private APIs
 private:
     constexpr bool IsEqual(const Point& inPoint) const;
+    constexpr void RoundNearest();
+    constexpr void RoundFloor();
+    constexpr void RoundCeil();
+    constexpr void RoundZero();
 
 // Friend functions
 private:
     friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
-
-    // REVISIT mnfitz 15jun2024:
-    // Figure out operators supporting scalar operations
+    friend constexpr Point RoundNearest(const Point& inPoint);
+    friend constexpr Point RoundFloor(const Point& inPoint);
+    friend constexpr Point RoundCeil(const Point& inPoint);
+    friend constexpr Point RoundZero(const Point& inPoint);
 
 private:
     ImplType mImpl{};
@@ -125,6 +130,30 @@ inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
     return result;
 }
 
+template<typename T, typename ImplType>
+inline constexpr void Point<T, ImplType>::RoundNearest()
+{
+    mImpl.RoundNearest();
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Point<T, ImplType>::RoundFloor()
+{
+
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Point<T, ImplType>::RoundCeil()
+{
+
+}
+
+template<typename T, typename ImplType>
+inline constexpr void Point<T, ImplType>::RoundZero()
+{
+
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------
@@ -178,9 +207,11 @@ inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T i
 /// @param inPoint: Point object to be rounded
 /// @return Rounded result Point
 template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& /*inPoint*/)
+inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoint)
 {
-    return {};
+    auto result{inPoint};
+    result.RoundNearest();
+    return result;
 }
 
 /// @brief Round towards zero to the nearest integer value.
@@ -189,9 +220,11 @@ inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& /*inP
 /// @param inPoint: Point object to be rounded
 /// @return Rounded result Point
 template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& /*inPoint*/)
+inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint)
 {
-    return {};
+    auto result{inPoint};
+    //result.RoundTrunc();
+    return result;
 }
 
 /// @brief Round towards +infinity to the nearest integer value.
@@ -200,9 +233,11 @@ inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& /*inPoi
 /// @param inPoint: Point object to be rounded
 /// @return Rounded result Point
 template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& /*inPoint*/)
+inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
 {
-    return {};
+    auto result{inPoint};
+    //result.RoundCeil();
+    return result;
 }
 
 /// @brief Round towards -infinity to the nearest integer value.
@@ -211,9 +246,11 @@ inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& /*inPoin
 /// @param inPoint: Point object to be rounded
 /// @return Rounded result Point
 template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& /*inPoint*/)
+inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& inPoint)
 {
-    return {}; 
+    auto result{inPoint};
+    //result.RoundFloor();
+    return result;
 }
 
 #pragma endregion
