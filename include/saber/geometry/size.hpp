@@ -5,6 +5,9 @@
 // saber
 #include "saber/geometry/operators.hpp"
 
+//std
+#include <type_traits>
+
 namespace saber::geometry {
 
 // REVIEW mnfitz 15jun2024:
@@ -39,22 +42,27 @@ public:
     constexpr Size& operator*=(const Size& inSize);
     constexpr Size& operator/=(const Size& inSize);
 
+    // Rounding
+    template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>> // Black magic: SFINAE will disallow template T types that do not satisfy if condition
+    constexpr Size& RoundNearest();
+
+    template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+    constexpr Size& RoundFloor();
+
+    template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+    constexpr Size& RoundCeil();
+
+    template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+    constexpr Size& RoundTrunc();
+
     // Private APIs
 private:
     constexpr bool IsEqual(const Size& inSize) const;
-    constexpr void RoundNearest();
-    constexpr void RoundFloor();
-    constexpr void RoundCeil();
-    constexpr void RoundZero();
 
     // Friend Functions
 private:
     friend constexpr bool operator==<Size>(const Size& inLHS, const Size& inRHS);
     friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
-    friend constexpr Size RoundNearest(const Size& inSize);
-    friend constexpr Size RoundFloor(const Size& inSize);
-    friend constexpr Size RoundCeil(const Size& inSize);
-    friend constexpr Size RoundZero(const Size& inSize);
 
 private:
     ImplType mImpl{};
@@ -123,27 +131,35 @@ inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
 }
 
 template<typename T, typename ImplType>
-inline constexpr void Size<T, ImplType>::RoundNearest()
+template<typename U, typename SFINAE>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundNearest()
 {
     mImpl.RoundNearest();
+    return *this;
 }
 
 template<typename T, typename ImplType>
-inline constexpr void Size<T, ImplType>::RoundFloor()
+template<typename U, typename SFINAE>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundFloor()
 {
-
+    mImpl.RoundFloor();
+    return *this;
 }
 
 template<typename T, typename ImplType>
-inline constexpr void Size<T, ImplType>::RoundCeil()
+template<typename U, typename SFINAE>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundCeil()
 {
-
+    mImpl.RoundCeil();
+    return *this;
 }
 
 template<typename T, typename ImplType>
-inline constexpr void Size<T, ImplType>::RoundZero()
+template<typename U, typename SFINAE>
+inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundTrunc()
 {
-
+    mImpl.RoundTrunc();
+    return *this;
 }
 
 #pragma endregion
@@ -201,9 +217,11 @@ inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inSc
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 {
+    constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+    static_assert(kIsFloatingPoint, "RoundNearest() only supports floating point types");
+    
     auto result{inSize};
-    result.RoundNearest();
-    return result;
+    return result.RoundNearest(); // RVO should apply here
 }
 
 /// @brief Round towards zero to the nearest integer value.
@@ -214,9 +232,11 @@ inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 {
+    constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+    static_assert(kIsFloatingPoint, "RoundTrunc() only supports floating point types");
+    
     auto result{inSize};
-    //result.RoundTrunc();
-    return result;
+    return result.RoundTrunc(); // RVO should apply here
 }
 
 /// @brief Round towards +infinity to the nearest integer value.
@@ -227,9 +247,11 @@ inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 {
+    constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+    static_assert(kIsFloatingPoint, "RoundCeil() only supports floating point types");
+    
     auto result{inSize};
-    //result.RoundCeil();
-    return result;
+    return result.RoundCeil(); // RVO should apply here
 }
 
 /// @brief Round towards -infinity to the nearest integer value.
@@ -240,9 +262,11 @@ inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 template<typename T, typename ImplType>
 inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& inSize)
 {
+    constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+    static_assert(kIsFloatingPoint, "RoundFloor() only supports floating point types");
+    
     auto result{inSize};
-    //result.RoundFloor();
-    return result;
+    return result.RoundFloor(); // RVO should apply here
 }
 
 #pragma endregion 

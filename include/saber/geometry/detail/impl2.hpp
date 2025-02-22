@@ -86,10 +86,37 @@ struct Impl2
         constexpr void RoundNearest()
         {
             constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
-            static_assert(isFloatingPoint, "Rounding only supports floating point types");
+            static_assert(isFloatingPoint, "RoundNearest() only supports floating point types");
             
             std::get<0>(mTuple) = std::round(std::get<0>(mTuple));
             std::get<1>(mTuple) = std::round(std::get<1>(mTuple));
+        }
+
+        constexpr void RoundCeil()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundCeil() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::ceil(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::ceil(std::get<1>(mTuple));
+        }
+
+        constexpr void RoundFloor()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundFloor() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::floor(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::floor(std::get<1>(mTuple));
+        }
+
+        constexpr void RoundTrunc()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple));
         }
 
     private:
@@ -258,7 +285,7 @@ struct Impl2
         constexpr void RoundNearest()
         {
             constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
-            static_assert(isFloatingPoint, "Rounding only supports floating point types");
+            static_assert(isFloatingPoint, "RoundNearest() only supports floating point types");
             
             // protect our interface so it can remain constexpr
             do 
@@ -278,6 +305,87 @@ struct Impl2
  
                 auto round = Simd128<T>::Load2(&mArray[0]);
                 round = Simd128<T>::RoundNearest(round);
+                Simd128<T>::Store2(&mArray[0], round);
+            } while (false);
+        }
+
+        constexpr void RoundCeil()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundCeil() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1]};
+                    round.RoundCeil();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+                auto round = Simd128<T>::Load2(&mArray[0]);
+                round = Simd128<T>::RoundCeil(round);
+                Simd128<T>::Store2(&mArray[0], round);
+            } while (false);
+        }
+
+        constexpr void RoundFloor()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundFloor() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1]};
+                    round.RoundFloor();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+                auto round = Simd128<T>::Load2(&mArray[0]);
+                round = Simd128<T>::RoundFloor(round);
+                Simd128<T>::Store2(&mArray[0], round);
+            } while (false);
+        }
+
+        constexpr void RoundTrunc()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1]};
+                    round.RoundTrunc();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+                auto round = Simd128<T>::Load2(&mArray[0]);
+                round = Simd128<T>::RoundTrunc(round);
                 Simd128<T>::Store2(&mArray[0], round);
             } while (false);
         }

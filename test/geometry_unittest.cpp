@@ -673,25 +673,53 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		saber::geometry::Size<float> size1{1.1f, -2.9f};
 		saber::geometry::Size<float> expected1{1.0f, -3.0f};
 		saber::geometry::Size<float> size2{1.9f, -2.1f};
-		saber::geometry::Size<float> expected2{1.0f, -3.0f};
-		saber::geometry::Size<float> size3{1.5f, -2.5f};
-		saber::geometry::Size<float> expected3{1.0f, -3.0f};
+		saber::geometry::Size<float> expected2{2.0f, -2.0f};
+		saber::geometry::Size<float> size3{1.5f, -3.5f};
+		saber::geometry::Size<float> expected3{2.0f, -4.0f};
+
+		//saber::geometry::Size<int> sizeInt{2, -4};
+		//sizeInt.RoundNearest();
 
 		auto roundSize1 = saber::geometry::RoundNearest(size1);
-		auto result = roundSize1 == expected1;
+		size1.RoundNearest();
+		auto result1 = roundSize1 == expected1 && size1 == expected1;
+		auto roundSize2 = saber::geometry::RoundNearest(size2);
+		size2.RoundNearest();
+		auto result2 = roundSize2 == expected2 && size2 == expected2;
+		auto roundSize3 = saber::geometry::RoundNearest(size3);
+		size3.RoundNearest();
+		auto result3 = roundSize3 == expected3 && size3 == expected3;
 
-		REQUIRE(result);
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
 	}
 
 	SECTION("RoundTrunc Size")
 	{
-		saber::geometry::Size<float> size{1.1f, -2.6f};
-		saber::geometry::Size<float> expected{1.0f, -2.0f};
+		saber::geometry::Size<float> size1{1.1f, -2.9f};
+		saber::geometry::Size<float> expected1{1.0f, -2.0f};
+		saber::geometry::Size<float> size2{1.9f, -2.1f};
+		saber::geometry::Size<float> expected2{1.0f, -2.0f};
+		saber::geometry::Size<float> size3{1.5f, -3.5f};
+		saber::geometry::Size<float> expected3{1.0f, -3.0f};
 
-		auto roundSize = saber::geometry::RoundTrunc(size);
-		auto result = roundSize == expected;
+		//saber::geometry::Size<int> sizeInt{2, -4};
+		//sizeInt.RoundTrunc();
 
-		REQUIRE(result);
+		auto roundSize1 = saber::geometry::RoundTrunc(size1);
+		size1.RoundTrunc();
+		auto result1 = roundSize1 == expected1 && size1 == expected1;
+		auto roundSize2 = saber::geometry::RoundTrunc(size2);
+		size2.RoundTrunc();
+		auto result2 = roundSize2 == expected2 && size2 == expected2;
+		auto roundSize3 = saber::geometry::RoundTrunc(size3);
+		size3.RoundTrunc();
+		auto result3 = roundSize3 == expected3 && size3 == expected3;
+
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
 	}
 
 	SECTION("RoundCeil Size")
