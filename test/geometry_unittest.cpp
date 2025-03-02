@@ -724,24 +724,50 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 
 	SECTION("RoundCeil Size")
 	{
-		saber::geometry::Size<float> size{1.1f, -2.6f};
-		saber::geometry::Size<float> expected{};
+		saber::geometry::Size<float> size1{1.1f, -2.9f};
+		saber::geometry::Size<float> expected1{2.0f, -2.0f};
+		saber::geometry::Size<float> size2{1.9f, -2.1f};
+		saber::geometry::Size<float> expected2{2.0f, -2.0f};
+		saber::geometry::Size<float> size3{1.5f, -3.5f};
+		saber::geometry::Size<float> expected3{2.0f, -3.0f};
 
-		auto roundSize = saber::geometry::RoundCeil(size);
-		auto result = roundSize == expected;
+		auto roundSize1 = saber::geometry::RoundCeil(size1);
+		size1.RoundCeil();
+		auto result1 = roundSize1 == expected1 && size1 == expected1;
+		auto roundSize2 = saber::geometry::RoundCeil(size2);
+		size2.RoundCeil();
+		auto result2 = roundSize2 == expected2 && size2 == expected2;
+		auto roundSize3 = saber::geometry::RoundCeil(size3);
+		size3.RoundCeil();
+		auto result3 = roundSize3 == expected3 && size3 == expected3;
 
-		REQUIRE(result);
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
 	}
 
 	SECTION("RoundFloor Size")
 	{
-		saber::geometry::Size<float> size{1.1f, -2.6f};
-		saber::geometry::Size<float> expected{};
+		saber::geometry::Size<float> size1{1.1f, -2.9f};
+		saber::geometry::Size<float> expected1{1.0f, -3.0f};
+		saber::geometry::Size<float> size2{1.9f, -2.1f};
+		saber::geometry::Size<float> expected2{1.0f, -3.0f};
+		saber::geometry::Size<float> size3{1.5f, -3.5f};
+		saber::geometry::Size<float> expected3{1.0f, -4.0f};
 
-		auto roundSize = saber::geometry::RoundFloor(size);
-		auto result = roundSize == expected;
+		auto roundSize1 = saber::geometry::RoundFloor(size1);
+		size1.RoundFloor();
+		auto result1 = roundSize1 == expected1 && size1 == expected1;
+		auto roundSize2 = saber::geometry::RoundFloor(size2);
+		size2.RoundFloor();
+		auto result2 = roundSize2 == expected2 && size2 == expected2;
+		auto roundSize3 = saber::geometry::RoundFloor(size3);
+		size3.RoundFloor();
+		auto result3 = roundSize3 == expected3 && size3 == expected3;
 
-		REQUIRE(result);
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
 	}
 }
 
