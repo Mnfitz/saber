@@ -242,6 +242,42 @@ struct Simd<128, T> :
 		}
 		return inRound;
 	}
+
+	/// @brief Round all elements of SimdType toward positive infinity 
+	/// @param inRound The SimdType to be rounded
+	/// @return Return the rounded result
+	static constexpr SimdType RoundCeil(SimdType inRound)
+	{
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			inRound[i] = std::ceil(inRound[i]);
+		}
+		return inRound;
+	}
+
+	/// @brief Round all elements of SimdType toward negative infinity 
+	/// @param inRound The SimdType to be rounded
+	/// @return Return the rounded result
+	static constexpr SimdType RoundFloor(SimdType inRound)
+	{
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			inRound[i] = std::floor(inRound[i]);
+		}
+		return inRound;
+	}
+
+	/// @brief Round all elements of SimdType toward zero
+	/// @param inRound The SimdType to be rounded
+	/// @return Return the rounded result
+	static constexpr SimdType RoundTrunc(SimdType inRound)
+	{
+		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		{
+			inRound[i] = std::trunc(inRound[i]);
+		}
+		return inRound;
+	}
 }; // struct Simd<128, T>
 
 // Type alias: partial template specialization for 128 Simd API
