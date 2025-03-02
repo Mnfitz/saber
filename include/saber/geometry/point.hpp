@@ -47,23 +47,56 @@ public:
     constexpr Point& operator*=(const Point& inPoint);
     constexpr Point& operator/=(const Point& inPoint);
 
-// Private APIs
+    // --- Rounding ---
+
+    // TRICKY mnfitz 22feb2025: SFINAE-enable rounding methods only for floating point types.
+	// C++ Black magic: SFINAE (template substitution failure) will disallow
+	// template `T` types that do not satisfy `enable_if` condition. This prevents rounding
+	// methods from "being enabled" for non floating point types, like: `Size<int>`
+
+    /// @brief Round this `Point<>` to nearest integer value. Halfway cases round away from zero. Compatible with `std::round()`
+	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
+	/// @tparam SFINAE: Enable `RoundNearest()` only for floating point types
+	/// @return Ref& to this `Point<>`
+	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+	constexpr Point& RoundNearest();
+
+	/// @brief Round this `Point<>` toward -infinity to nearest integer value. Compatible with `std::floor()`
+	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
+	/// @tparam SFINAE: Enable `RoundFloor()` only for floating point types
+	/// @return Ref& to this `Point<>`
+	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+	constexpr Point& RoundFloor();
+
+	/// @brief Round this `Point<>` toward +infinity to nearest integer value. Compatible with `std::ceil()`
+	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
+	/// @tparam SFINAE: Enable `RoundCeil()` only for floating point types
+	/// @return Ref& to this `Point<>`
+	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+	constexpr Point& RoundCeil();
+
+	/// @brief Round this `Point<>` toward zero to nearest integer value. Compatible with `std::trunc()`
+	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
+	/// @tparam SFINAE: Enable `RoundTrunc()` only for floating point types
+	/// @return Ref& to this `Point<>`
+	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
+	constexpr Point& RoundTrunc();
+
 private:
-    constexpr bool IsEqual(const Point& inPoint) const;
+	// Private APIs
+	constexpr bool IsEqual(const Point& inPoint) const;
 
 // Friend functions
 private:
     friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
 
-    // REVISIT mnfitz 15jun2024:
-    // Figure out operators supporting scalar operations
-
 private:
     ImplType mImpl{};
 }; // class Point<>
 
-// Inline Class Methods
+// ------------------------------------------------------------------
+#pragma region Inline Class Functions
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>::Point(T inX, T inY) :
@@ -84,7 +117,10 @@ inline constexpr T Point<T, ImplType>::Y() const
     return mImpl.Get<1>();
 }
 
-// Mathematical operations
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Inline Mathematical operations
 
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator+=(const Point& inPoint)
@@ -121,7 +157,43 @@ inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
     return result;
 }
 
-// Free functions 
+template<typename T, typename ImplType>
+template<typename U, typename SFINAE>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundNearest()
+{
+	mImpl.RoundNearest();
+	return *this;
+}
+
+template<typename T, typename ImplType>
+template<typename U, typename SFINAE>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundFloor()
+{
+	mImpl.RoundFloor();
+	return *this;
+}
+
+template<typename T, typename ImplType>
+template<typename U, typename SFINAE>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundCeil()
+{
+	mImpl.RoundCeil();
+	return *this;
+}
+
+template<typename T, typename ImplType>
+template<typename U, typename SFINAE>
+inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundTrunc()
+{
+	mImpl.RoundTrunc();
+	return *this;
+}
+
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Free Functions
+
 template<typename T, typename ImplType>
 inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inTranslate)
 {
@@ -164,6 +236,71 @@ inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T i
     return Scale(inPoint, inScale, inScale);
 }
 
+/// @brief Round to nearest even integer value. Halfway cases round away from zero.
+/// @tparam T: Underlying `Point<>` type
+/// @tparam ImplType: Optional underlying implementation type
+/// @param inPoint: `Point<>` object to be rounded
+/// @return Rounded `Point<>` result
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoint)
+{
+	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+	static_assert(kIsFloatingPoint, "RoundNearest() only supports floating point types");
+
+	auto result{inPoint};
+	return result.RoundNearest(); // RVO should apply here
+}
+
+/// @brief Round towards zero to nearest integer value.
+/// @tparam T: Underlying `Point<>` type
+/// @tparam ImplType: Optional underlying implementation type
+/// @param inPoint: `Point<>` object to be rounded
+/// @return Rounded `Point<>` result
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint)
+{
+	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+	static_assert(kIsFloatingPoint, "RoundTrunc() only supports floating point types");
+
+	auto result{inPoint};
+	return result.RoundTrunc(); // RVO should apply here
+}
+
+/// @brief Round towards +infinity to the nearest integer value.
+/// @tparam T: Underlying `Point<>` type
+/// @tparam ImplType: Optional underlying implementation type
+/// @param inPoint: `Point<>` object to be rounded
+/// @return Rounded `Point<>` result
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
+{
+	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+	static_assert(kIsFloatingPoint, "RoundCeil() only supports floating point types");
+
+	auto result{inPoint};
+	return result.RoundCeil(); // RVO should apply here
+}
+
+/// @brief Round towards -infinity to the nearest integer value.
+/// @tparam T: Underlying `Point<>` type
+/// @tparam ImplType: Optional underlying implementation type
+/// @param inPoint: `Point<>` object to be rounded
+/// @return Rounded `Point<>` result
+template<typename T, typename ImplType>
+inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& inPoint)
+{
+	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
+	static_assert(kIsFloatingPoint, "RoundFloor() only supports floating point types");
+
+	auto result{inPoint};
+	return result.RoundFloor(); // RVO should apply here
+}
+
+#pragma endregion
+
+// ------------------------------------------------------------------
+#pragma region Structured Bindings
+
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
 
@@ -204,6 +341,7 @@ struct std::tuple_element<Index, Point<T>> // Partial template specialization fo
 };
 
 #endif //__cpp_structured_bindings
+#pragma endregion
 
 }// namespace saber::geometry
 

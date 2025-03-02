@@ -137,6 +137,10 @@ using typename SimdTraits<128, int>::SimdType; // Expose `SimdType` as our own
 		const bool allEqual = (mask == 0xFFFF);
 		return allEqual;
 	}
+
+	//static SimdType RoundNearest(SimdType inRound)
+	// Not Implemented for integers
+
 };
 
 // float
@@ -282,6 +286,42 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 		// See is all 4 bits of the mask were true (if so, IsEq() returns true)
 		const bool approxEq = (mask == 0xF);
 		return approxEq;
+	}
+
+	/// @brief Round all <float> values toward the nearest even number
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundNearest(SimdType inRound)
+	{
+		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+		return round;
+	}
+
+	/// @brief Round all <float> values toward positive infinity
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundCeil(SimdType inRound)
+	{
+		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
+		return round;
+	}
+
+	/// @brief Round all <float> values toward negative infinity
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundFloor(SimdType inRound)
+	{
+		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
+		return round;
+	}
+
+	/// @brief Round all <float> values toward zero
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundTrunc(SimdType inRound)
+	{
+		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
+		return round;
 	}
 };
 
@@ -431,6 +471,15 @@ using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our ow
 		// See is all 2 bits of the mask were true (if so, IsEq() returns true)
 		const bool approxEq = (mask == 0x3);
 		return approxEq;
+	}
+
+	/// @brief Round all <double> values toward the nearest whole number
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundNearest(SimdType inRound)
+	{
+		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+		return round;
 	}
 };
 
