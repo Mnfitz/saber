@@ -600,6 +600,102 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		REQUIRE(result);
 	}
 
+	SECTION("RoundNearest Point")
+	{
+		saber::geometry::Point<float> point1{1.1f, -2.9f};
+		saber::geometry::Point<float> expected1{1.0f, -3.0f};
+		saber::geometry::Point<float> point2{1.9f, -2.1f};
+		saber::geometry::Point<float> expected2{2.0f, -2.0f};
+		saber::geometry::Point<float> point3{1.5f, -3.5f};
+		saber::geometry::Point<float> expected3{2.0f, -4.0f};
+
+		auto roundPoint1 = saber::geometry::RoundNearest(point1);
+		point1.RoundNearest();
+		auto result1 = roundPoint1 == expected1 && point1 == expected1;
+		auto roundPoint2 = saber::geometry::RoundNearest(point2);
+		point2.RoundNearest();
+		auto result2 = roundPoint2 == expected2 && point2 == expected2;
+		auto roundPoint3 = saber::geometry::RoundNearest(point3);
+		point3.RoundNearest();
+		auto result3 = roundPoint3 == expected3 && point3 == expected3;
+
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
+	}
+
+	SECTION("RoundTrunc Point")
+	{
+		saber::geometry::Point<float> point1{1.1f, -2.9f};
+		saber::geometry::Point<float> expected1{1.0f, -2.0f};
+		saber::geometry::Point<float> point2{1.9f, -2.1f};
+		saber::geometry::Point<float> expected2{1.0f, -2.0f};
+		saber::geometry::Point<float> point3{1.5f, -3.5f};
+		saber::geometry::Point<float> expected3{1.0f, -3.0f};
+
+		auto roundPoint1 = saber::geometry::RoundTrunc(point1);
+		point1.RoundTrunc();
+		auto result1 = roundPoint1 == expected1 && point1 == expected1;
+		auto roundPoint2 = saber::geometry::RoundTrunc(point2);
+		point2.RoundTrunc();
+		auto result2 = roundPoint2 == expected2 && point2 == expected2;
+		auto roundPoint3 = saber::geometry::RoundTrunc(point3);
+		point3.RoundTrunc();
+		auto result3 = roundPoint3 == expected3 && point3 == expected3;
+
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
+	}
+
+	SECTION("RoundCeil Point")
+	{
+		saber::geometry::Point<float> point1{1.1f, -2.9f};
+		saber::geometry::Point<float> expected1{2.0f, -2.0f};
+		saber::geometry::Point<float> point2{1.9f, -2.1f};
+		saber::geometry::Point<float> expected2{2.0f, -2.0f};
+		saber::geometry::Point<float> point3{1.5f, -3.5f};
+		saber::geometry::Point<float> expected3{2.0f, -3.0f};
+
+		auto roundPoint1 = saber::geometry::RoundCeil(point1);
+		point1.RoundCeil();
+		auto result1 = roundPoint1 == expected1 && point1 == expected1;
+		auto roundPoint2 = saber::geometry::RoundCeil(point2);
+		point2.RoundCeil();
+		auto result2 = roundPoint2 == expected2 && point2 == expected2;
+		auto roundPoint3 = saber::geometry::RoundCeil(point3);
+		point3.RoundCeil();
+		auto result3 = roundPoint3 == expected3 && point3 == expected3;
+
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
+	}
+
+	SECTION("RoundFloor Point")
+	{
+		saber::geometry::Point<float> point1{1.1f, -2.9f};
+		saber::geometry::Point<float> expected1{1.0f, -3.0f};
+		saber::geometry::Point<float> point2{1.9f, -2.1f};
+		saber::geometry::Point<float> expected2{1.0f, -3.0f};
+		saber::geometry::Point<float> point3{1.5f, -3.5f};
+		saber::geometry::Point<float> expected3{1.0f, -4.0f};
+
+		auto roundPoint1 = saber::geometry::RoundFloor(point1);
+		point1.RoundFloor();
+		auto result1 = roundPoint1 == expected1 && point1 == expected1;
+		auto roundPoint2 = saber::geometry::RoundFloor(point2);
+		point2.RoundFloor();
+		auto result2 = roundPoint2 == expected2 && point2 == expected2;
+		auto roundPoint3 = saber::geometry::RoundFloor(point3);
+		point3.RoundFloor();
+		auto result3 = roundPoint3 == expected3 && point3 == expected3;
+
+		REQUIRE(result1);
+		REQUIRE(result2);
+		REQUIRE(result3);
+	}
+
 	SECTION("Enlarge Size -> Size")
 	{
 		saber::geometry::Size<int> size1{1,2};
@@ -676,9 +772,6 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 		saber::geometry::Size<float> expected2{2.0f, -2.0f};
 		saber::geometry::Size<float> size3{1.5f, -3.5f};
 		saber::geometry::Size<float> expected3{2.0f, -4.0f};
-
-		//saber::geometry::Size<int> sizeInt{2, -4};
-		//sizeInt.RoundNearest();
 
 		auto roundSize1 = saber::geometry::RoundNearest(size1);
 		size1.RoundNearest();
