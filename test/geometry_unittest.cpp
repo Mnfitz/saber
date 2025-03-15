@@ -604,24 +604,27 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 	{
 		saber::geometry::Point<float> point1{1.1f, -2.9f};
 		saber::geometry::Point<float> expected1{1.0f, -3.0f};
-		saber::geometry::Point<float> point2{1.9f, -2.1f};
-		saber::geometry::Point<float> expected2{2.0f, -2.0f};
-		saber::geometry::Point<float> point3{1.5f, -3.5f};
-		saber::geometry::Point<float> expected3{2.0f, -4.0f};
-
 		auto roundPoint1 = saber::geometry::RoundNearest(point1);
 		point1.RoundNearest();
-		auto result1 = roundPoint1 == expected1 && point1 == expected1;
+		REQUIRE((roundPoint1 == expected1 && point1 == expected1));
+
+		saber::geometry::Point<float> point2{1.9f, -2.1f};
+		saber::geometry::Point<float> expected2{2.0f, -2.0f};
 		auto roundPoint2 = saber::geometry::RoundNearest(point2);
 		point2.RoundNearest();
-		auto result2 = roundPoint2 == expected2 && point2 == expected2;
+		REQUIRE((roundPoint2 == expected2 && point2 == expected2));
+
+		saber::geometry::Point<float> point3{1.5f, -3.5f};
+		saber::geometry::Point<float> expected3{2.0f, -4.0f};
 		auto roundPoint3 = saber::geometry::RoundNearest(point3);
 		point3.RoundNearest();
-		auto result3 = roundPoint3 == expected3 && point3 == expected3;
+		REQUIRE((roundPoint3 == expected3 && point3 == expected3));
 
-		REQUIRE(result1);
-		REQUIRE(result2);
-		REQUIRE(result3);
+		saber::geometry::Point<float> point4{2.5f, -2.5f};
+		saber::geometry::Point<float> expected4{3.0f, -3.0f};
+		auto roundPoint4 = saber::geometry::RoundNearest(point4);
+		point4.RoundNearest();
+		REQUIRE((roundPoint4 == expected4 && point4 == expected4));
 	}
 
 	SECTION("RoundTrunc Point")
@@ -768,24 +771,31 @@ TEST_CASE("saber::geometry::operators Point", "[saber]")
 	{
 		saber::geometry::Size<float> size1{1.1f, -2.9f};
 		saber::geometry::Size<float> expected1{1.0f, -3.0f};
-		saber::geometry::Size<float> size2{1.9f, -2.1f};
-		saber::geometry::Size<float> expected2{2.0f, -2.0f};
-		saber::geometry::Size<float> size3{1.5f, -3.5f};
-		saber::geometry::Size<float> expected3{2.0f, -4.0f};
-
 		auto roundSize1 = saber::geometry::RoundNearest(size1);
 		size1.RoundNearest();
 		auto result1 = roundSize1 == expected1 && size1 == expected1;
+		REQUIRE(result1);
+
+		saber::geometry::Size<float> size2{1.9f, -2.1f};
+		saber::geometry::Size<float> expected2{2.0f, -2.0f};
 		auto roundSize2 = saber::geometry::RoundNearest(size2);
 		size2.RoundNearest();
 		auto result2 = roundSize2 == expected2 && size2 == expected2;
+		REQUIRE(result2);
+
+		saber::geometry::Size<float> size3{1.5f, -3.5f};
+		saber::geometry::Size<float> expected3{2.0f, -4.0f};
 		auto roundSize3 = saber::geometry::RoundNearest(size3);
 		size3.RoundNearest();
 		auto result3 = roundSize3 == expected3 && size3 == expected3;
-
-		REQUIRE(result1);
-		REQUIRE(result2);
 		REQUIRE(result3);
+
+		saber::geometry::Size<float> size4{2.5f, -2.5f};
+		saber::geometry::Size<float> expected4{3.0f, -3.0f};
+		auto roundSize4 = saber::geometry::RoundNearest(size4);
+		size4.RoundNearest();
+		auto result4 = roundSize4 == expected4 && size4 == expected4;
+		REQUIRE(result4);
 	}
 
 	SECTION("RoundTrunc Size")
