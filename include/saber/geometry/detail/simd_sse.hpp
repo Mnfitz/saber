@@ -293,12 +293,11 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 	/// @return Return rounded SimdType values
 	static SimdType RoundNearest(SimdType inRound)
 	{
-		auto cmpge = _mm_cmpge_ps(inRound, _mm_setzero_ps());
-		const auto add = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.5f);
-		const auto sub = _mm_set_ps(-0.5f, -0.5f, -0.5f, -0.5f);
+		const auto pos = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.5f);
+		const auto neg = _mm_set_ps(-0.5f, -0.5f, -0.5f, -0.5f);
 
-		auto byHalf = _mm_blendv_ps(sub, add, cmpge);
-		auto round = _mm_add_ps(inRound, byHalf);
+		const auto byHalf = _mm_blendv_ps(pos, neg, inRound);
+		const auto round = _mm_add_ps(inRound, byHalf);
 		return RoundTrunc(round);
 	}
 
@@ -483,12 +482,11 @@ using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our ow
 	/// @return Return rounded SimdType values
 	static SimdType RoundNearest(SimdType inRound)
 	{
-		auto cmpge = _mm_cmpge_pd(inRound, _mm_setzero_pd());
-		const auto add = _mm_set_pd(0.5, 0.5);
-		const auto sub = _mm_set_pd(-0.5, -0.5);
+		const auto pos = _mm_set_pd(0.5, 0.5);
+		const auto neg = _mm_set_pd(-0.5, -0.5);
 
-		auto byHalf = _mm_blendv_pd(sub, add, cmpge);
-		auto round = _mm_add_pd(inRound, byHalf);
+		const auto byHalf = _mm_blendv_pd(pos, neg, inRound);
+		const auto round = _mm_add_pd(inRound, byHalf);
 		return RoundTrunc(round);
 	}
 
