@@ -288,13 +288,17 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 		return approxEq;
 	}
 
-	/// @brief Round all <float> values toward the nearest even number
+	/// @brief Round all <float> values toward the nearest whole number
 	/// @param inRound Input to be rounded
 	/// @return Return rounded SimdType values
 	static SimdType RoundNearest(SimdType inRound)
 	{
-		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
-		return round;
+		const auto pos = _mm_set_ps(0.5f, 0.5f, 0.5f, 0.5f);
+		const auto neg = _mm_set_ps(-0.5f, -0.5f, -0.5f, -0.5f);
+
+		const auto byHalf = _mm_blendv_ps(pos, neg, inRound);
+		const auto round = _mm_add_ps(inRound, byHalf);
+		return RoundTrunc(round);
 	}
 
 	/// @brief Round all <float> values toward positive infinity
@@ -478,7 +482,38 @@ using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our ow
 	/// @return Return rounded SimdType values
 	static SimdType RoundNearest(SimdType inRound)
 	{
-		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+		const auto pos = _mm_set_pd(0.5, 0.5);
+		const auto neg = _mm_set_pd(-0.5, -0.5);
+
+		const auto byHalf = _mm_blendv_pd(pos, neg, inRound);
+		const auto round = _mm_add_pd(inRound, byHalf);
+		return RoundTrunc(round);
+	}
+
+	/// @brief Round all <double> values toward positive infinity
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundCeil(SimdType inRound)
+	{
+		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
+		return round;
+	}
+
+	/// @brief Round all <double> values toward negative infinity
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundFloor(SimdType inRound)
+	{
+		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
+		return round;
+	}
+
+	/// @brief Round all <double> values toward zero
+	/// @param inRound Input to be rounded
+	/// @return Return rounded SimdType values
+	static SimdType RoundTrunc(SimdType inRound)
+	{
+		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
 		return round;
 	}
 };
