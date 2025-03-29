@@ -3,7 +3,7 @@
 #pragma once
 
 // saber
-#include "saber/inexact.hpp"
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
 #include "saber/geometry/detail/impl2.hpp" 
 
@@ -12,16 +12,9 @@
 
 namespace saber::geometry {
 
-// REVIEW mnfitz 15jun2024:
-// design issues involved with developing Point class
-// 1. Appropriate namespace
-// 2. Separate function declaration and definition vs java style combined
-// 3. Has-a: naked types or std::tuple or std::array
-
-// template<typename T>
-// using ImplType = typename detail::Impl2<T>::Scalar;
-
-// Point<float> myFloat{5,7};
+/// @brief 
+/// @tparam T 
+/// @tparam ImplType 
 template<typename T, typename ImplType = typename detail::Impl2<T>::Simd> // TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
 class Point 
 {

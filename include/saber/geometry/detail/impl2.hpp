@@ -7,13 +7,31 @@
 #include <type_traits>
 
 // saber
+#include "saber/inexact.hpp"
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
 
-template<typename T>
-struct Impl2
+template<typename T, ImplKind Impl>
+struct Impl2Traits;
+
+template<typename T, ImplKind Impl>
+struct Impl2Traits
 {
+    /////
+    // mnfitz 3/29: We are going to specialize the Impl2Traits struct to create the ImplType typedef
+    /////
+
+    // typedef ImplType
+}; // struct Impl2Traits
+
+template<typename T, ImplKind Impl>
+struct Impl2Traits;
+
+template<typename T, ImplKind Impl>
+struct Impl2 : public Impl2Traits<T, Impl>
+{
+
     class Simd;
 
     class Scalar
