@@ -274,7 +274,7 @@ inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inSc
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -289,7 +289,7 @@ inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -304,7 +304,7 @@ inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -319,7 +319,7 @@ inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;

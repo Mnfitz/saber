@@ -241,7 +241,7 @@ inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T i
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -256,7 +256,7 @@ inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoi
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -271,7 +271,7 @@ inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
@@ -286,7 +286,7 @@ inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
+template<typename T, typename ImplType, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
 inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
