@@ -12,7 +12,7 @@
 
 namespace saber::geometry::detail {
 
-template<typename T, ImplKind Impl>
+template<typename T>
 struct Impl2 final
 {
     class Simd;
@@ -402,13 +402,13 @@ struct Impl2Traits;
 template<typename T> // Partial template specialization
 struct Impl2Traits<T, ImplKind::kScalar>
 {
-    using ImplType = typename Impl2<T, ImplKind::kScalar>::Scalar; // VOODOO: Nested template type requires `typename` prefix
+    using ImplType = typename Impl2<T>::Scalar; // VOODOO: Nested template type requires `typename` prefix
 };
 
 template<typename T> // Partial template specialization
 struct Impl2Traits<T, ImplKind::kSimd>
 {
-    using ImplType = typename Impl2<T, ImplKind::kSimd>::Simd; // VOODOO: Nested template type requires `typename` prefix
+    using ImplType = typename Impl2<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
 };
 
 } // namespace saber::geometry::detail
