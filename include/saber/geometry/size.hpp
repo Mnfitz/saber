@@ -5,6 +5,7 @@
 // saber
 #include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
+#include "saber/geometry/detail/impl2.hpp"
 
 //std
 #include <type_traits>
@@ -14,7 +15,7 @@ namespace saber::geometry {
 /// @brief 
 /// @tparam T 
 /// @tparam ImplKind 
-template<typename T, ImplKind Impl = ImplKind::kDefault>// TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
+template<typename T, ImplKind Impl = ImplKind::kDefault>
 class Size 
 {
 public: 
@@ -84,8 +85,8 @@ private:
 	friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
 
 private:
-	// ImplType = typename detail::Impl2<T, ImplKind>::ImplType
-	ImplKind mImpl{}; 
+	using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+    ImplType mImpl{};
 }; // class size
 
 // ------------------------------------------------------------------

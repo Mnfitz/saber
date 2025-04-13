@@ -13,25 +13,8 @@
 namespace saber::geometry::detail {
 
 template<typename T, ImplKind Impl>
-struct Impl2Traits;
-
-template<typename T, ImplKind Impl>
-struct Impl2Traits
+struct Impl2 final
 {
-    /////
-    // mnfitz 3/29: We are going to specialize the Impl2Traits struct to create the ImplType typedef
-    /////
-
-    // typedef ImplType
-}; // struct Impl2Traits
-
-template<typename T, ImplKind Impl>
-struct Impl2Traits;
-
-template<typename T, ImplKind Impl>
-struct Impl2 : public Impl2Traits<T, Impl>
-{
-
     class Simd;
 
     class Scalar
@@ -411,8 +394,22 @@ struct Impl2 : public Impl2Traits<T, Impl>
     private:
         std::array<T,2> mArray{}; // Impl2: so 2 elements are assumed
     }; // class Simd
-
 }; // struct Impl2<>
+
+template<typename T, ImplKind Impl> // Primary template declaration
+struct Impl2Traits;
+
+template<typename T> // Partial template specialization
+struct Impl2Traits<T, ImplKind::kScalar>
+{
+    using ImplType = typename Impl2<T, ImplKind::kScalar>::Scalar; // VOODOO: Nested template type requires `typename` prefix
+};
+
+template<typename T> // Partial template specialization
+struct Impl2Traits<T, ImplKind::kSimd>
+{
+    using ImplType = typename Impl2<T, ImplKind::kSimd>::Simd; // VOODOO: Nested template type requires `typename` prefix
+};
 
 } // namespace saber::geometry::detail
 

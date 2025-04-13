@@ -7,8 +7,8 @@
 
 namespace saber::geometry::detail {
 
-template<int NBits, typename T> // Primary template definition
-struct Simd;
+template<typename T> // Primary template definition
+struct Simd128;
 
 /// @brief Platform independent API for 128bit SIMD operations.
 ///
@@ -27,10 +27,10 @@ struct Simd;
 ///
 /// @tparam T Underlying type of element of a SIMD vector
 template<typename T>
-struct Simd<128, T> :
-	public SimdTraits<128, T> // is-a: SimdTraits<128, T>
+struct Simd128 :
+	public Simd128Traits<T> // is-a: Simd128Traits<T>
 {
-	using typename SimdTraits<128, T>::SimdType; // Expose `SimdType` as our own
+	using typename Simd128Traits<T>::SimdType; // Expose `SimdType` as our own
 
 	/// @brief Load 4 elements of type`<T>` from memory specified by `inAddr`.
 	/// @code{.cpp}
@@ -149,7 +149,7 @@ struct Simd<128, T> :
 	static constexpr SimdType Add(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType add{};
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			add[i] = inLHS[i] + inRHS[i];
 		}
@@ -168,7 +168,7 @@ struct Simd<128, T> :
 	static constexpr SimdType Sub(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType sub{};
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			sub[i] = inLHS[i] - inRHS[i];
 		}
@@ -187,7 +187,7 @@ struct Simd<128, T> :
 	static constexpr SimdType Mul(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType mul{};
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			mul[i] = inLHS[i] * inRHS[i];
 		}
@@ -206,7 +206,7 @@ struct Simd<128, T> :
 	static constexpr SimdType Div(SimdType inLHS, SimdType inRHS)
 	{
 		SimdType div{};
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			div[i] = (inRHS[i] != 0 ? (inLHS[i] / inRHS[i]) : 0);
 		}
@@ -220,7 +220,7 @@ struct Simd<128, T> :
 	static constexpr bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
 		bool isEq = true;
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			if (inRHS[i] != inLHS[i])
 			{
@@ -236,7 +236,7 @@ struct Simd<128, T> :
 	/// @return Return the rounded result
 	static constexpr SimdType RoundNearest(SimdType inRound)
 	{
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			inRound[i] = std::round(inRound[i]);
 		}
@@ -248,7 +248,7 @@ struct Simd<128, T> :
 	/// @return Return the rounded result
 	static constexpr SimdType RoundCeil(SimdType inRound)
 	{
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			inRound[i] = std::ceil(inRound[i]);
 		}
@@ -260,7 +260,7 @@ struct Simd<128, T> :
 	/// @return Return the rounded result
 	static constexpr SimdType RoundFloor(SimdType inRound)
 	{
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			inRound[i] = std::floor(inRound[i]);
 		}
@@ -272,17 +272,13 @@ struct Simd<128, T> :
 	/// @return Return the rounded result
 	static constexpr SimdType RoundTrunc(SimdType inRound)
 	{
-		for (std::size_t i = 0; i < SimdTraits<128, T>::kSize; ++i)
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
 			inRound[i] = std::trunc(inRound[i]);
 		}
 		return inRound;
 	}
-}; // struct Simd<128, T>
-
-// Type alias: partial template specialization for 128 Simd API
-template<typename T>
-using Simd128 = detail::Simd<128, T>;
+}; // struct Simd128<T>
 
 } // namespace saber::geometry::detail
 
