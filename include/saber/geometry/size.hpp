@@ -3,21 +3,19 @@
 #pragma once
 
 // saber
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
+#include "saber/geometry/detail/impl2.hpp"
 
 //std
 #include <type_traits>
 
 namespace saber::geometry {
 
-// REVIEW mnfitz 15jun2024:
-// design issues involved with developing Size class
-// 1. Appropriate namespace
-// 2. Separate function declaration and definition vs java style combined
-// 3. Has-a: naked types or std::tuple or std::array
-// 4. Include guards should incorperate namespace location
-// 5. Build up binary free operators from class operators +=, etc
-template<typename T, typename ImplType = typename detail::Impl2<T>::Simd> // TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
+/// @brief 
+/// @tparam T 
+/// @tparam ImplKind 
+template<typename T, ImplKind Impl = ImplKind::kDefault>
 class Size 
 {
 public: 
@@ -87,27 +85,28 @@ private:
 	friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
 
 private:
-	ImplType mImpl{};
+	using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+    ImplType mImpl{};
 }; // class size
 
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions
 
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType>::Size(T inWidth, T inHeight) :
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
 	mImpl{inWidth, inHeight}
 {
 	// Do nothing
 }
 
-template<typename T, typename ImplType>
-inline constexpr T Size<T, ImplType>::Width() const
+template<typename T, ImplKind Impl>
+inline constexpr T Size<T, Impl>::Width() const
 {
 	return mImpl.Get<0>();
 }
 
-template<typename T, typename ImplType>
-inline constexpr T Size<T, ImplType>::Height() const
+template<typename T, ImplKind Impl>
+inline constexpr T Size<T, Impl>::Height() const
 {
 	return mImpl.Get<1>();
 }
@@ -117,68 +116,68 @@ inline constexpr T Size<T, ImplType>::Height() const
 // ------------------------------------------------------------------
 #pragma region Inline Mathematical operations
 
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator+=(const Size& inSize)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::operator+=(const Size& inSize)
 {
 	mImpl += inSize.mImpl;
 	return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator-=(const Size& inSize)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::operator-=(const Size& inSize)
 {
 	mImpl -= inSize.mImpl;
 	return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator*=(const Size& inSize)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::operator*=(const Size& inSize)
 {
 	mImpl *= inSize.mImpl;
 	return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::operator/=(const Size& inSize)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::operator/=(const Size& inSize)
 {
 	mImpl /= inSize.mImpl;
 	return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr bool Size<T, ImplType>::IsEqual(const Size& inSize) const
+template<typename T, ImplKind Impl>
+inline constexpr bool Size<T, Impl>::IsEqual(const Size& inSize) const
 {
 	auto result = mImpl.IsEqual(inSize.mImpl);
 	return result;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundNearest()
+inline constexpr Size<T, Impl>& Size<T, Impl>::RoundNearest()
 {
 	mImpl.RoundNearest();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundFloor()
+inline constexpr Size<T, Impl>& Size<T, Impl>::RoundFloor()
 {
 	mImpl.RoundFloor();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundCeil()
+inline constexpr Size<T, Impl>& Size<T, Impl>::RoundCeil()
 {
 	mImpl.RoundCeil();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundTrunc()
+inline constexpr Size<T, Impl>& Size<T, Impl>::RoundTrunc()
 {
 	mImpl.RoundTrunc();
 	return *this;
@@ -191,91 +190,91 @@ inline constexpr Size<T, ImplType>& Size<T, ImplType>::RoundTrunc()
 
 /// @brief Enlarge a `Size<>` using another `Size<>`
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to emlarge
 /// @param inMagnitude: Width/Height to be added to `inSize`
 /// @return Resized `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, const Size<T, ImplType>& inMagnitude)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, const Size<T, Impl>& inMagnitude)
 {
-	Size<T, ImplType> result{inSize};
+	Size<T, Impl> result{inSize};
 	result += inMagnitude;
 	return result;
 }
 
 /// @brief Enlarge a `Size<>` using scalar X and Y
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to emlarge
 /// @param inX: Width to be added to `inSize`
 /// @param inY: Height to be added to `inSize`
 /// @return Resized `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, T inX, T inY)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inX, T inY)
 {
-	const Size<T, ImplType> magnitude{inX, inY};
+	const Size<T, Impl> magnitude{inX, inY};
 	return Enlarge(inSize, magnitude);
 }
 
 /// @brief Enlarge a `Size<>` using scalar inMagnitude
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to emlarge
 /// @param inMagnitude: Amount to add to `inSize` Width/Height
 /// @return Resized `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Enlarge(const Size<T, ImplType>& inSize, T inMagnitude)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inMagnitude)
 {
 	return Enlarge(inSize, inMagnitude, inMagnitude);
 }
 
 /// @brief Scale a `Size<>` using another `Size<>`
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be scaled
 /// @param inScale: Scale factor to apply
 /// @return Scaled `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, const Size<T, ImplType>& inScale)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, const Size<T, Impl>& inScale)
 {
-	Size<T, ImplType> result{inSize};
+	Size<T, Impl> result{inSize};
 	result *= inScale;
 	return result;
 }
 
 /// @brief Scale a `Size<>` using a scalar X and Y
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be scaled
 /// @param inScaleX: Width scale factor to apply
 /// @param inScaleY: Height scale factor to apply
 /// @return Scaled `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inScaleX, T inScaleY)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inScaleX, T inScaleY)
 {
-	const Size<T, ImplType> scale{inScaleX, inScaleY};
+	const Size<T, Impl> scale{inScaleX, inScaleY};
 	return Scale(inSize, scale);
 }
 
 /// @brief Scale a `Size<>` using scalar XY
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be scaled
 /// @param inScaleXY: Scale factor to apply
 /// @return Scaled `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> Scale(const Size<T, ImplType>& inSize, T inScaleXY)
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inScaleXY)
 {
 	return Scale(inSize, inScaleXY, inScaleXY);
 }
 
 /// @brief Round to nearest even integer value. Halfway cases round away from zero.
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Size<T, Impl> RoundNearest(const Size<T, Impl>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundNearest() only supports floating point types");
@@ -286,11 +285,11 @@ inline constexpr Size<T, ImplType> RoundNearest(const Size<T, ImplType>& inSize)
 
 /// @brief Round towards zero to nearest integer value.
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Size<T, Impl> RoundTrunc(const Size<T, Impl>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundTrunc() only supports floating point types");
@@ -301,11 +300,11 @@ inline constexpr Size<T, ImplType> RoundTrunc(const Size<T, ImplType>& inSize)
 
 /// @brief Round towards +infinity to the nearest integer value.
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Size<T, Impl> RoundCeil(const Size<T, Impl>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundCeil() only supports floating point types");
@@ -316,11 +315,11 @@ inline constexpr Size<T, ImplType> RoundCeil(const Size<T, ImplType>& inSize)
 
 /// @brief Round towards -infinity to the nearest integer value.
 /// @tparam T: Underlying `Size<>` type
-/// @tparam ImplType: Optional underlying implementation type
+/// @tparam ImplKind: Optional underlying implementation type
 /// @param inSize: `Size<>` object to be rounded
 /// @return Rounded `Size<>` result
-template<typename T, typename ImplType>
-inline constexpr Size<T, ImplType> RoundFloor(const Size<T, ImplType>& inSize)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Size<T, Impl> RoundFloor(const Size<T, Impl>& inSize)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundFloor() only supports floating point types");
