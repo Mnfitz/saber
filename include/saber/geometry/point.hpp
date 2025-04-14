@@ -3,26 +3,19 @@
 #pragma once
 
 // saber
-#include "saber/inexact.hpp"
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
-#include "saber/geometry/detail/impl2.hpp" 
+#include "saber/geometry/detail/impl2.hpp"
 
 // std
 #include <utility>
 
 namespace saber::geometry {
 
-// REVIEW mnfitz 15jun2024:
-// design issues involved with developing Point class
-// 1. Appropriate namespace
-// 2. Separate function declaration and definition vs java style combined
-// 3. Has-a: naked types or std::tuple or std::array
-
-// template<typename T>
-// using ImplType = typename detail::Impl2<T>::Scalar;
-
-// Point<float> myFloat{5,7};
-template<typename T, typename ImplType = typename detail::Impl2<T>::Simd> // TRICKY mnfitz 19oct2024: nested type in a template class needs 'typename' prefix
+/// @brief 
+/// @tparam T 
+/// @tparam ImplType 
+template<typename T, ImplKind Impl = ImplKind::kDefault>
 class Point 
 {
 public: 
@@ -92,27 +85,28 @@ private:
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
 
 private:
+    using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
     ImplType mImpl{};
 }; // class Point<>
 
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType>::Point(T inX, T inY) :
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>::Point(T inX, T inY) :
     mImpl{inX, inY}
 {
     // Do nothing
 }
 
-template<typename T, typename ImplType>
-inline constexpr T Point<T, ImplType>::X() const
+template<typename T, ImplKind Impl>
+inline constexpr T Point<T, Impl>::X() const
 {
     return mImpl.Get<0>();
 }
 
-template<typename T, typename ImplType>
-inline constexpr T Point<T, ImplType>::Y() const
+template<typename T, ImplKind Impl>
+inline constexpr T Point<T, Impl>::Y() const
 {
     return mImpl.Get<1>();
 }
@@ -122,68 +116,68 @@ inline constexpr T Point<T, ImplType>::Y() const
 // ------------------------------------------------------------------
 #pragma region Inline Mathematical operations
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator+=(const Point& inPoint)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::operator+=(const Point& inPoint)
 {
     mImpl += inPoint.mImpl;
     return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator-=(const Point& inPoint)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::operator-=(const Point& inPoint)
 {
     mImpl -= inPoint.mImpl;
     return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator*=(const Point& inPoint)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::operator*=(const Point& inPoint)
 {
     mImpl *= inPoint.mImpl;
     return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::operator/=(const Point& inPoint)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::operator/=(const Point& inPoint)
 {
     mImpl /= inPoint.mImpl;
     return *this;
 }
 
-template<typename T, typename ImplType>
-inline constexpr bool Point<T, ImplType>::IsEqual(const Point& inPoint) const
+template<typename T, ImplKind Impl>
+inline constexpr bool Point<T, Impl>::IsEqual(const Point& inPoint) const
 {
     auto result = mImpl.IsEqual(inPoint.mImpl);
     return result;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundNearest()
+inline constexpr Point<T, Impl>& Point<T, Impl>::RoundNearest()
 {
 	mImpl.RoundNearest();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundFloor()
+inline constexpr Point<T, Impl>& Point<T, Impl>::RoundFloor()
 {
 	mImpl.RoundFloor();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundCeil()
+inline constexpr Point<T, Impl>& Point<T, Impl>::RoundCeil()
 {
 	mImpl.RoundCeil();
 	return *this;
 }
 
-template<typename T, typename ImplType>
+template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
-inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundTrunc()
+inline constexpr Point<T, Impl>& Point<T, Impl>::RoundTrunc()
 {
 	mImpl.RoundTrunc();
 	return *this;
@@ -194,44 +188,44 @@ inline constexpr Point<T, ImplType>& Point<T, ImplType>::RoundTrunc()
 // ------------------------------------------------------------------
 #pragma region Free Functions
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inTranslate)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, const Point<T, Impl>& inTranslate)
 {
-    Point<T, ImplType> result{inPoint};
+    Point<T, Impl> result{inPoint};
     result += inTranslate;
     return result;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, T inX, T inY)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inX, T inY)
 {
-    const Point<T, ImplType> translate{inX, inY};
+    const Point<T, Impl> translate{inX, inY};
     return Translate(inPoint, translate);
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Translate(const Point<T, ImplType>& inPoint, T inTranslate)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inTranslate)
 {
     return Translate(inPoint, inTranslate, inTranslate);
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, const Point<T, ImplType>& inScale)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, const Point<T, Impl>& inScale)
 {
-    Point<T, ImplType> result{inPoint};
+    Point<T, Impl> result{inPoint};
     result *= inScale;
     return result;
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T inScaleX, T inScaleY)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScaleX, T inScaleY)
 {
-    const Point<T, ImplType> scale{inScaleX, inScaleY};
+    const Point<T, Impl> scale{inScaleX, inScaleY};
     return Scale(inPoint, scale);
 }
 
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T inScale)
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScale)
 {
     return Scale(inPoint, inScale, inScale);
 }
@@ -241,8 +235,8 @@ inline constexpr Point<T, ImplType> Scale(const Point<T, ImplType>& inPoint, T i
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoint)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Point<T, Impl> RoundNearest(const Point<T, Impl>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundNearest() only supports floating point types");
@@ -256,8 +250,8 @@ inline constexpr Point<T, ImplType> RoundNearest(const Point<T, ImplType>& inPoi
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Point<T, Impl> RoundTrunc(const Point<T, Impl>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundTrunc() only supports floating point types");
@@ -271,8 +265,8 @@ inline constexpr Point<T, ImplType> RoundTrunc(const Point<T, ImplType>& inPoint
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Point<T, Impl> RoundCeil(const Point<T, Impl>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundCeil() only supports floating point types");
@@ -286,8 +280,8 @@ inline constexpr Point<T, ImplType> RoundCeil(const Point<T, ImplType>& inPoint)
 /// @tparam ImplType: Optional underlying implementation type
 /// @param inPoint: `Point<>` object to be rounded
 /// @return Rounded `Point<>` result
-template<typename T, typename ImplType>
-inline constexpr Point<T, ImplType> RoundFloor(const Point<T, ImplType>& inPoint)
+template<typename T, ImplKind Impl, typename SFINAE = std::enable_if_t<std::is_floating_point_v<T>>>
+inline constexpr Point<T, Impl> RoundFloor(const Point<T, Impl>& inPoint)
 {
 	constexpr bool kIsFloatingPoint = std::is_floating_point_v<T>;
 	static_assert(kIsFloatingPoint, "RoundFloor() only supports floating point types");
@@ -311,7 +305,7 @@ template<std::size_t Index, typename T>
 inline T get(const Point<T>& inPoint)
 {
     static_assert(2 == std::tuple_size_v<Point<T>>); // Use own std::tuple_size<> specialization
-    static_assert(Index < 2, "Unexpected Index for Point<T, ImplType>");
+    static_assert(Index < 2, "Unexpected Index for Point<T, Impl>");
 
     T result{};
     if constexpr (Index == 0)
@@ -327,16 +321,16 @@ inline T get(const Point<T>& inPoint)
 }
 
 template<typename T>
-struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T, ImplType>
+struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T, Impl>
 {
-    // Number of elements in Point<T, ImplType>'s structured binding
+    // Number of elements in Point<T, Impl>'s structured binding
     static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T, ImplType>
+struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T, Impl>
 {
-    // Type of elements in Point<T, ImplType>'s structured
+    // Type of elements in Point<T, Impl`>'s structured
     using type = T;
 };
 

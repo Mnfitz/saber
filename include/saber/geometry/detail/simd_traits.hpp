@@ -23,13 +23,12 @@ namespace saber::geometry::detail {
 /// This "primary" template definition describes it's types in a
 /// platform-independent way. Use template specializations of this
 /// struct to define platform-specific SIMD types for a given CPU.
-/// @tparam NBits Width of the SIMD vector described by this trait
 /// @tparam T Typeof underlying SIMD elements described by this trait
-template<int NBits, typename T>
-struct SimdTraits
+template<typename T>
+struct Simd128Traits
 {
 	/// @brief Number of elements of type T in a SIMD vector
-	static constexpr std::size_t kSize = (NBits/8)/sizeof(T);
+	static constexpr std::size_t kSize = (128/8)/sizeof(T);
 
 	/// @brief Underlying type of a SIMD element
 	using ValueType = T;
@@ -55,7 +54,7 @@ struct SimdTraits
 
 // int
 template<>
-struct SimdTraits<128, int>
+struct Simd128Traits<int>
 {
 	/// @brief Number of elements of type T in a SIMD vector
 	static constexpr std::size_t kSize = 4;
@@ -70,7 +69,7 @@ struct SimdTraits<128, int>
 
 // float
 template<>
-struct SimdTraits<128, float>
+struct Simd128Traits<float>
 {
 	/// @brief Number of elements of type T in a SIMD vector
 	static constexpr std::size_t kSize = 4;
@@ -85,7 +84,7 @@ struct SimdTraits<128, float>
 
 // double
 template<>
-struct SimdTraits<128, double>
+struct Simd128Traits<double>
 {
 	/// @brief Number of elements of type T in a SIMD vector
 	static constexpr std::size_t kSize = 2;

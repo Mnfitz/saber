@@ -9,10 +9,10 @@ namespace saber::geometry::detail {
 
 // int
 template<>
-struct Simd<128, int> :
-    public SimdTraits<128, int> // is-a: SimdTraits<128, int>
+struct Simd128<int> :
+    public Simd128Traits<int> // is-a: Simd128Traits<int>
 {
-using typename SimdTraits<128, int>::SimdType; // Expose `SimdType` as our own
+using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 
 	/// @brief Load 4 elements of type`<int>` from memory specified by `inAddr`.
 	/// @param inAddr Address of &elements[4] to load
@@ -145,10 +145,10 @@ using typename SimdTraits<128, int>::SimdType; // Expose `SimdType` as our own
 
 // float
 template<>
-struct Simd<128, float> :
-    public SimdTraits<128, float> // is-a: SimdTraits<128, int>
+struct Simd128<float> :
+    public Simd128Traits<float> // is-a: Simd128Traits<int>
 {
-using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
+using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 
 	/// @brief Load 4 elements of type`<float>` from memory specified by `inAddr`.
 	/// @param inAddr Address of &elements[4] to load
@@ -331,10 +331,10 @@ using typename SimdTraits<128, float>::SimdType; // Expose `SimdType` as our own
 
 // double
 template<>
-struct Simd<128, double> :
-    public SimdTraits<128, double> // is-a: SimdTraits<128, int>
+struct Simd128<double> :
+    public Simd128Traits<double> // is-a: Simd128Traits<int>
 {
-using typename SimdTraits<128, double>::SimdType; // Expose `SimdType` as our own
+using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 
 /*
 	/// @brief Load 4 elements of type`<double>` from memory specified by `inAddr`.

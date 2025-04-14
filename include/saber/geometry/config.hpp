@@ -16,4 +16,21 @@
 #define SABER_GEOMETRY_CONFIG_ISENABLED_SIMD	1 /*0*/
 #endif // SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
 
+namespace saber::geometry {
+
+/// @brief The set of all possible implementations for saber geometry classes
+enum class ImplKind
+{
+    kSimd = 0,
+    kScalar,
+
+#if SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
+	kDefault = kSimd
+#else
+	kDefault = kScalar
+#endif // SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
+}; // enum class ImplKind
+
+} // namespace saber::geometry
+
 #endif // SABER_GEOMETRY_CONFIG_HPP
