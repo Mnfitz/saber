@@ -1,14 +1,31 @@
+/////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2025 Matthew Fitzgerald
+//
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software
+// is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+/////////////////////////////////////////////////////////////////////
+
+#pragma once
 #ifndef SABER_GEOMETRY_UTILITY_HPP
 #define SABER_GEOMETRY_UTILITY_HPP
-#pragma once
 
 // saber
+#include "saber/config.hpp"
 #include "saber/utility.hpp"
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 
 namespace saber {
-namespace detail {
 
 // Converts from Point to Size
 template<typename T>
@@ -34,7 +51,6 @@ struct ConvertTraits<geometry::Point<T>, geometry::Size<T>>
     }
 };
 
-} // namespace detail
 } // namespace saber
 
-#endif
+#endif // SABER_GEOMETRY_UTILITY_HPP
