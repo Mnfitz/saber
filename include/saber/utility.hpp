@@ -87,16 +87,11 @@ struct ConvertTraits
 	/// @return Output converted value
 	ToType operator()(const FromType& inValue) const
 	{
-		[]()
-		{
-			// TRICKY j3fitz 08apr2025: Dummy lambda to catch missing specializations.
-			// We want to static_assert() when a missing specialization is encountered.
-			// But static_assert will always fire if placed directly in this default
-			// function body whether someone has specialized it or not. By wrapping the
-			// static_assert in a dummy lambda, it fires only if this default impl is
-			// template instanciated (and hence: is being used, but hasn't been specialized).
-			//static_assert(false, "Missing ConvertTraits<> specialization for: <ToType,FromType>");
-		}();
+		// TRICKY j3fitz 08apr2025: static_assert during missing specializations.
+		// Note that static_assert must have dependency on input type so it will
+		// selectively fire only when instanciated (during missing specialization).
+		constexpr bool kIsImpossible = (sizeof(inValue) == -1);
+		static_assert(kIsImpossible, "Missing ConvertTraits<> specialization for: <ToType,FromType>");
 	}
 };
 

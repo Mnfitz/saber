@@ -91,11 +91,11 @@ namespace detail {
 /// @brief Type traits describing variants of the FNV1A hash algorithm
 ///
 /// Currently, the hash algorithm is implemented as: "fnv1a"
-/// See: https://en.wikipedia.org/wiki/Fowler–Noll–Vo_hash_function
+/// See: https://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function
 ///
 /// But we hide the implementation from the HashValue interface,
 /// so that we can change it (should we need to) in the future.
-/// Like maybe switching to: crc32, or murmur2?
+/// Like maybe switching to: crc32, or murmur3?
 /// @tparam BitLength: Hash value size in bits
 template<int BitLength>
 struct Fnv1aTraits;

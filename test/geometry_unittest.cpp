@@ -280,8 +280,17 @@ TEMPLATE_TEST_CASE(	"saber::geometry inexact comparison works correctly",
 #endif // __cplusplus >= 202002L
 
 		// Check runtime correctness
-		REQUIRE(TestType{3.6f,3.6f} == (TestType{3.0f,3.0f} * TestType{1.2f,1.2f}));
-		REQUIRE(TestType{0.3f,0.3f} == (TestType{0.1f,0.1f} + TestType{0.2f,0.2f}));
+		using ValueType = typename TestType::ValueType;
+
+		auto k3point6 = TestType{static_cast<ValueType>(3.6), static_cast<ValueType>(3.6)};
+		auto k3point0 = TestType{static_cast<ValueType>(3.0), static_cast<ValueType>(3.0)};
+		auto k1point2 = TestType{static_cast<ValueType>(1.2), static_cast<ValueType>(1.2)};
+		REQUIRE(k3point6 == (k3point0 * k1point2));
+
+		auto k0point3 = TestType{static_cast<ValueType>(0.3), static_cast<ValueType>(0.3)};
+		auto k0point2 = TestType{static_cast<ValueType>(0.2), static_cast<ValueType>(0.2)};
+		auto k0point1 = TestType{static_cast<ValueType>(0.1), static_cast<ValueType>(0.1)};
+		REQUIRE(k0point3 == (k0point2 + k0point1));
 	}
 
 	SECTION("operator!=(lhs,rhs) (inexact)")
@@ -294,8 +303,16 @@ TEMPLATE_TEST_CASE(	"saber::geometry inexact comparison works correctly",
 
 		// Check runtime correctness
 		using ValueType = typename TestType::ValueType;
-		REQUIRE(!(TestType{3.6f,3.6f} != (TestType{3.0f,3.0f} * TestType{1.2f,1.2f})));
-		REQUIRE(!(TestType{0.3f,0.3f} != (TestType{0.1f,0.1f} + TestType{0.2f,0.2f})));
+
+		auto k3point6 = TestType{static_cast<ValueType>(3.6), static_cast<ValueType>(3.6)};
+		auto k3point0 = TestType{static_cast<ValueType>(3.0), static_cast<ValueType>(3.0)};
+		auto k1point2 = TestType{static_cast<ValueType>(1.2), static_cast<ValueType>(1.2)};
+		REQUIRE(!(k3point6 != (k3point0 * k1point2)));
+
+		auto k0point3 = TestType{static_cast<ValueType>(0.3), static_cast<ValueType>(0.3)};
+		auto k0point2 = TestType{static_cast<ValueType>(0.2), static_cast<ValueType>(0.2)};
+		auto k0point1 = TestType{static_cast<ValueType>(0.1), static_cast<ValueType>(0.1)};
+		REQUIRE(!(k0point3 != (k0point2 + k0point1)));
 	}
 
 	SECTION("RoundNearest()")
