@@ -18,6 +18,9 @@ namespace saber::geometry {
 template<typename T, ImplKind Impl = ImplKind::kDefault>
 class Size 
 {
+public:
+    using ValueType = T;
+
 public: 
 	constexpr Size(T inWidth, T inHeight);
 

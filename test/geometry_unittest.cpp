@@ -293,6 +293,7 @@ TEMPLATE_TEST_CASE(	"saber::geometry inexact comparison works correctly",
 #endif // __cplusplus >= 202002L
 
 		// Check runtime correctness
+		using ValueType = typename TestType::ValueType;
 		REQUIRE(!(TestType{3.6f,3.6f} != (TestType{3.0f,3.0f} * TestType{1.2f,1.2f})));
 		REQUIRE(!(TestType{0.3f,0.3f} != (TestType{0.1f,0.1f} + TestType{0.2f,0.2f})));
 	}

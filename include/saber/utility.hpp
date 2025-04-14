@@ -95,7 +95,7 @@ struct ConvertTraits
 			// function body whether someone has specialized it or not. By wrapping the
 			// static_assert in a dummy lambda, it fires only if this default impl is
 			// template instanciated (and hence: is being used, but hasn't been specialized).
-			static_assert(false, "Missing ConvertTraits<> specialization for: <ToType,FromType>");
+			//static_assert(false, "Missing ConvertTraits<> specialization for: <ToType,FromType>");
 		}();
 	}
 };

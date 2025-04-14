@@ -18,6 +18,9 @@ namespace saber::geometry {
 template<typename T, ImplKind Impl = ImplKind::kDefault>
 class Point 
 {
+public:
+    using ValueType = T;
+
 public: 
     constexpr Point(T inX, T inY);
 
