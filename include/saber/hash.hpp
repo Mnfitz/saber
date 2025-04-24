@@ -24,6 +24,7 @@
 
 // std
 #include <assert.h>
+#include <functional>
 #include <string_view>
 #if SABER_DEBUG
 #include <variant>
@@ -116,7 +117,17 @@ namespace detail {
 ///
 /// But we hide the implementation from the HashValue interface,
 /// so that we can change it (should we need to) in the future.
-/// Like maybe switching to: crc32, or murmur3?
+/// Like maybe switching to: crc32, or murmur3? For testing
+/// purposes, here's a sample of "hash collisions" from google.
+/// Beware:
+///
+/// FNV1:
+///		"creamwove" collides with: "quists"
+/// FNV1A:
+///		"costarring" collides with: "liquid"
+///		"declinate" collides with: "macallums"
+///		"altarage" collides with: "zinke"
+/// 
 /// @tparam BitLength: Hash value size in bits
 template<int BitLength>
 struct Fnv1aTraits;
@@ -147,7 +158,7 @@ struct Fnv1aTraits<64> // Support for: 64bit hash
 	};
 }; // struct Fnv1aTraits<64>
 
-/// @brief Functor that implements FNV1A has algorithm
+/// @brief Functor that implements FNV1A hash algorithm
 /// @tparam BitLength: Hash value size in bits
 template<int BitLength>
 struct Fnv1a :
@@ -170,26 +181,33 @@ public:
 			return hash;
 		};
 
-		auto basis = Fnv1aTraits<BitLength>::kOffset;
+		ValueType basis = Fnv1aTraits<BitLength>::kOffset;
 		for (std::size_t i = 0; i < inSize; i++)
 		{
 			const auto bytes = inBuffer[i];
-			switch (sizeof(T)) // Support 8/16 *and* 32 bit variants of "T"
+			if constexpr (4 == sizeof(T))
 			{
-			case 4: // 32bits
 				basis = fnv1a(basis, (bytes >> 24) & 0xff);
-			case 3: // ??
 				basis = fnv1a(basis, (bytes >> 16) & 0xff);
-			case 2: // 16bits
 				basis = fnv1a(basis, (bytes >> 8) & 0xff);
-			case 1: // 8bits
 				basis = fnv1a(basis, (bytes >> 0) & 0xff);
-				break;
-			default:
-				assert(!"Unsupported type. Only 8, 16, and 32 bit types are supported");
-				break;
-			} // switch (sizeof(T))
-		}
+			}
+			else if constexpr (3 == sizeof(T)) // ???
+			{
+				basis = fnv1a(basis, (bytes >> 16) & 0xff);
+				basis = fnv1a(basis, (bytes >> 8) & 0xff);
+				basis = fnv1a(basis, (bytes >> 0) & 0xff);
+			}
+			else if constexpr (2 == sizeof(T))
+			{
+				basis = fnv1a(basis, (bytes >> 8) & 0xff);
+				basis = fnv1a(basis, (bytes >> 0) & 0xff);
+			}
+			else if constexpr (1 == sizeof(T))
+			{
+				basis = fnv1a(basis, (bytes >> 0) & 0xff);
+			}
+		} // for (std::size_t i; ...)
 		return basis;
 	}
 }; // struct Fnv1a<>
@@ -285,6 +303,26 @@ private:
 		return value;
 	}
 
+	/// @brief Compare two `HashValues<>`s for equality
+	/// @param inLhs: Lefthand-side term
+	/// @param inRhs: Righthand-side term
+	/// @return true, if terms are equal; false otherwise
+	friend constexpr bool operator==(HashValue inLhs, HashValue inRhs) noexcept
+	{
+		const bool isEqual = (inLhs.Value() == inRhs.Value());
+		return isEqual;
+	}
+
+	/// @brief Compare two `HashValues<>`s for inequality
+	/// @param inLhs: Lefthand-side term
+	/// @param inRhs: Righthand-side term
+	/// @return true, if terms are not equal; false otherwise
+	friend constexpr bool operator!=(HashValue inLhs, HashValue inRhs) noexcept
+	{
+		const bool isEqual = (inLhs == inRhs); // Delegate to: operator==()
+		return !isEqual;
+	}
+
 private:
 	using ImplType = typename HashTraits<BitLength>::ImplType;
 	static constexpr ImplType sImpl{}; // static hash-algoritm{} functor instance
@@ -306,10 +344,10 @@ inline namespace debug { // "inline", meaning: also "using namespace debug;"
 
 /// @brief `debug::HashValue<>` hashed result of an input buffer.
 ///
-/// During a debug build, this class extends the actual `HashValue<>`
-/// class to include as debug-hint: reference to original input key
-/// string. Note this key is a debug-hint for humans using a debugger,
-/// and is not available via any API.
+/// During debug builds, this class extends the actual `HashValue<>`
+/// class to include as debug-hint: "reference to original input key"
+/// that generated this hash value. Note this key is a debug-hint only
+/// for humans using a debugger, and is not available via any API.
 /// @tparam BitLength: Size of the hashed value in bits (typically 32 or 64)
 template<int BitLength>
 class HashValue :
@@ -368,6 +406,29 @@ public:
 	constexpr operator auto() const noexcept { return Value(); }
 
 private:
+	/// @brief Compare two `HashValues<>`s for equality
+	/// @param inLhs: Lefthand-side term
+	/// @param inRhs: Righthand-side term
+	/// @return true, if terms are equal; false otherwise
+	friend constexpr bool operator==(HashValue inLhs, HashValue inRhs) noexcept
+	{
+		const auto& lhs = static_cast<detail::HashValue<BitLength>&>(inLhs); // is-a: "actual" HashValue<>...
+		const auto& rhs = static_cast<detail::HashValue<BitLength>&>(inRhs);
+		const bool isEqual = (lhs == rhs); // Delegate to: "actual" HashValue<>::operator==()
+		return isEqual;
+	}
+
+	/// @brief Compare two `HashValues<>`s for inequality
+	/// @param inLhs: Lefthand-side term
+	/// @param inRhs: Righthand-side term
+	/// @return true, if terms are not equal; false otherwise
+	friend constexpr bool operator!=(HashValue inLhs, HashValue inRhs) noexcept
+	{
+		const bool isEqual = (inLhs == inRhs); // Delegate to: operator==()
+		return !isEqual;
+	}
+
+private:
 	/// @brief Debug hint: source string "key" used to generate result hashed "value".
 	///
 	/// Debug hint! For humans only! Enabled only in DEBUG builds, because it
@@ -387,5 +448,25 @@ using Hash64 = HashValue<64>;
 /// @}
 
 } // namespace saber
+
+// ------------------------------------------------------------------
+#pragma region std::unordered_map<saber::HashValue<>, Value> support
+
+/// @brief `std::hash` specialization for `saber::HashValue`
+///
+/// Allows `saber::HashValue` to be used as `key_type` for `std::unordered_map<key, value>`
+/// @tparam BitLength: Size of hashed value in bits
+template<int BitLength>
+struct std::hash<saber::HashValue<BitLength>>
+{
+	std::size_t operator()(saber::HashValue<BitLength> inHashValue) const noexcept
+	{
+		// Identity operation: saber's hashed value *becomes* std::hash's
+		const auto hash = static_cast<std::size_t>(inHashValue.Value());
+		return hash;
+	}
+}; // struct std::hash<saber::HashValue<BitLength>>
+
+#pragma endregion {}
 
 #endif // SABER_HASH_HPP
