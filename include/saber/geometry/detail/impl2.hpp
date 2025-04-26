@@ -163,7 +163,7 @@ struct Impl2 final
                     const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs += rhs;
                     mArray[0] = lhs.mArray[0];
-                    mArray[1] = lhs.mArray[0]; 
+                    mArray[1] = lhs.mArray[1]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -269,7 +269,7 @@ struct Impl2 final
                 {
                     // Delegate to Scalar Impl which is constexpr capable
                     Scalar lhs{mArray[0], mArray[1]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]]()};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     result = lhs == rhs;
                     break;
                 }

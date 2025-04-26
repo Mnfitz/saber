@@ -5,7 +5,9 @@
 // saber
 #include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
-#include "saber/geometry/detail/impl2.hpp"
+#include "saber/geometry/point.hpp"
+#include "saber/geometry/size.hpp"
+#include "saber/geometry/detail/impl4.hpp"
 
 // std
 #include <utility>
@@ -23,7 +25,10 @@ public:
 
 public: 
     constexpr Rectangle() = default;
-	constexpr Rectangle(const Point<T>& inPoint, const Size<T>& inSize);
+	constexpr Rectangle(const Point<T, Impl>& inPoint, const geometry::Size<T, Impl>& inSize);
+	constexpr Rectangle(T inX, T inY, T inWidth, T inHeight);
+	constexpr Rectangle(const Point<T, Impl>& inPoint);
+	constexpr Rectangle(const geometry::Size<T, Impl>& inSize);
     ~Rectangle() = default;
 
     // RO5 is all default implemented
@@ -33,16 +38,16 @@ public:
     constexpr Rectangle& operator=(const Rectangle& inCopy) = default;
 
 	// Getters
-    constexpr Point<T>& Origin() const;
-	constexpr Size<T>& Size() const; 
+    constexpr Point<T, Impl> Origin() const;
+	constexpr geometry::Size<T, Impl> Size() const; 
 	constexpr T X() const;
 	constexpr T Y() const;
 	constexpr T Width() const;
 	constexpr T Height() const;
 
 	// Setters
-	constexpr void Origin(const Point<T>& inPoint);
-	constexpr void Size(const Size<T>& inSize); 
+	constexpr void Origin(const Point<T, Impl>& inPoint);
+	constexpr void Size(const geometry::Size<T, Impl>& inSize); 
 	constexpr void X(T inX);
 	constexpr void Y(T inY);
 	constexpr void Width(T inWidth);
@@ -102,34 +107,101 @@ private:
 #endif
 
 private:
-    using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
-    ImplType mImpl{};
+	using Impl4Type = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+    Impl4Type mImpl{};
 }; // class Rectangle<>
 
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl>::Point(T inX, T inY) :
-    mImpl{inX, inY}
+inline constexpr Rectangle<T, Impl>::Rectangle(T inX, T inY, T inWidth, T inHeight) :
+    mImpl{inX, inY, inWidth, inHeight}
 {
     // Do nothing
 }
 
+// Getters
 template<typename T, ImplKind Impl>
-inline constexpr T Point<T, Impl>::X() const
+inline constexpr Point<T, Impl> Rectangle<T, Impl>::Origin() const
+{
+    return Point<T, Impl>{X(), Y()};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr geometry::Size<T, Impl> Rectangle<T, Impl>::Size() const
+{
+    return Size<T, Impl>{Width(), Height()};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Rectangle<T, Impl>::X() const
 {
     return mImpl.Get<0>();
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr T Point<T, Impl>::Y() const
+inline constexpr T Rectangle<T, Impl>::Y() const
 {
     return mImpl.Get<1>();
 }
 
+template<typename T, ImplKind Impl>
+inline constexpr T Rectangle<T, Impl>::Width() const
+{
+    return mImpl.Get<2>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Rectangle<T, Impl>::Height() const
+{
+    return mImpl.Get<3>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Rectangle<T, Impl>::Origin(const Point<T, Impl>& inPoint)
+{
+	// REVISIT mnfitz 26apr2025: Investigate Set2() that sets both members at once
+	mImpl.Set<0>(inPoint.X());
+	mImpl.Set<1>(inPoint.Y());
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Rectangle<T, Impl>::Size(const geometry::Size<T, Impl>& inSize)
+{
+	// REVISIT mnfitz 26apr2025: Investigate Set2() that sets both members at once
+	mImpl.Set<2>(inSize.Width());
+	mImpl.Set<3>(inSize.Height());
+}
+
+template<typename T, ImplKind Impl>
+constexpr void Rectangle<T, Impl>::X(T inX)
+{
+	mImpl.Set<0>(inX);
+}
+
+template<typename T, ImplKind Impl>
+constexpr void Rectangle<T, Impl>::Y(T inY)
+{
+	mImpl.Set<1>(inY);
+}
+
+template<typename T, ImplKind Impl>
+constexpr void Rectangle<T, Impl>::Width(T inWidth)
+{
+	mImpl.Set<2>(inWidth);
+}
+
+template<typename T, ImplKind Impl>
+constexpr void Rectangle<T, Impl>::Height(T inHeight)
+{
+	mImpl.Set<3>(inHeight);
+}
+
 #pragma endregion
 
+#if 0
 // ------------------------------------------------------------------
 #pragma region Inline Mathematical operations
 
@@ -353,7 +425,7 @@ struct std::tuple_element<Index, Point<T>> // Partial template specialization fo
 
 #endif //__cpp_structured_bindings
 #pragma endregion
-
+#endif // #if 0
 }// namespace saber::geometry
 
 #endif // SABER_GEOMETRY_RECTANGLE_HPP

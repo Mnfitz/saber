@@ -90,7 +90,7 @@ private:
 private:
 	using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
     ImplType mImpl{};
-}; // class size
+}; // class Size
 
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions

@@ -1,0 +1,630 @@
+#ifndef SABER_GEOMETRY_DETAIL_IMPL4_HPP
+#define SABER_GEOMETRY_DETAIL_IMPL4_HPP
+
+// std
+#include <array>
+#include <tuple>
+#include <type_traits>
+
+// saber
+#include "saber/inexact.hpp"
+#include "saber/geometry/detail/simd.hpp"
+
+namespace saber::geometry::detail {
+
+template<typename T>
+struct Impl4 final
+{
+    class Simd;
+
+    class Scalar
+    {
+    public:
+        // default ctor
+        constexpr Scalar() = default;
+        ~Scalar() = default;
+
+        // alt ctor
+        constexpr Scalar(T inFirst, T inSecond, T inThird, T inFourth):
+            mTuple(inFirst, inSecond, inThird, inFourth)
+        {
+            
+        }
+
+        template<std::size_t Index>
+        constexpr T Get() const
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
+            return std::get<Index>(mTuple);
+        }
+
+        constexpr Scalar& operator+=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) += std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) += std::get<1>(inRHS.mTuple);
+			std::get<2>(mTuple) += std::get<2>(inRHS.mTuple);
+            std::get<3>(mTuple) += std::get<3>(inRHS.mTuple);
+            return *this;
+        }
+
+        constexpr Scalar& operator-=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) -= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) -= std::get<1>(inRHS.mTuple);
+			std::get<2>(mTuple) -= std::get<2>(inRHS.mTuple);
+            std::get<3>(mTuple) -= std::get<3>(inRHS.mTuple);
+            return *this;
+        }
+
+        constexpr Scalar& operator*=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) *= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) *= std::get<1>(inRHS.mTuple);
+			std::get<2>(mTuple) *= std::get<2>(inRHS.mTuple);
+            std::get<3>(mTuple) *= std::get<3>(inRHS.mTuple);
+            return *this;
+        }
+
+        constexpr Scalar& operator/=(const Scalar& inRHS)
+        {
+            std::get<0>(mTuple) /= std::get<0>(inRHS.mTuple);
+            std::get<1>(mTuple) /= std::get<1>(inRHS.mTuple);
+			std::get<2>(mTuple) /= std::get<2>(inRHS.mTuple);
+            std::get<3>(mTuple) /= std::get<3>(inRHS.mTuple);
+            return *this;
+        }
+
+        constexpr bool IsEqual(const Scalar& inRHS) const
+        {
+            // Point said to copy/paste this section into the scalar portion
+            bool result = false;
+            if constexpr (std::is_floating_point_v<T>)
+            {   
+                // Floating point comparisons are always inexact within an epsilon
+                result = Inexact::IsEq(std::get<0>(mTuple), std::get<0>(inRHS.mTuple)) 
+							&& Inexact::IsEq(std::get<1>(mTuple), std::get<1>(inRHS.mTuple))
+							&& Inexact::IsEq(std::get<2>(mTuple), std::get<2>(inRHS.mTuple))
+							&& Inexact::IsEq(std::get<3>(mTuple), std::get<3>(inRHS.mTuple));
+            }
+            else
+            {
+                // Integer comparisons are always exact
+                result = (std::get<0>(mTuple) == std::get<0>(inRHS.mTuple)) 
+							&& (std::get<1>(mTuple) == std::get<1>(inRHS.mTuple))
+							&& (std::get<2>(mTuple) == std::get<2>(inRHS.mTuple))
+							&& (std::get<3>(mTuple) == std::get<3>(inRHS.mTuple));
+            }
+            return result;
+        }
+
+        constexpr void RoundNearest()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundNearest() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::round(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::round(std::get<1>(mTuple));
+			std::get<2>(mTuple) = std::round(std::get<2>(mTuple));
+            std::get<3>(mTuple) = std::round(std::get<3>(mTuple));
+        }
+
+        constexpr void RoundCeil()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundCeil() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::ceil(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::ceil(std::get<1>(mTuple));
+			std::get<2>(mTuple) = std::ceil(std::get<2>(mTuple));
+            std::get<3>(mTuple) = std::ceil(std::get<3>(mTuple));
+        }
+
+        constexpr void RoundFloor()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundFloor() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::floor(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::floor(std::get<1>(mTuple));
+			std::get<2>(mTuple) = std::floor(std::get<2>(mTuple));
+            std::get<3>(mTuple) = std::floor(std::get<3>(mTuple));
+        }
+
+        constexpr void RoundTrunc()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
+            
+            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple));
+            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple));
+			std::get<2>(mTuple) = std::trunc(std::get<2>(mTuple));
+            std::get<3>(mTuple) = std::trunc(std::get<3>(mTuple));
+        }
+
+    private:
+        friend class Simd; // Permit Simd class to provide constexpr api
+
+    private:
+        std::tuple<T,T,T,T> mTuple{}; // Impl4: so 4 elements are assumed
+    };
+
+    class Simd
+    {
+    public:
+        // default ctor
+        constexpr Simd() = default;
+        ~Simd() = default;
+
+        constexpr Simd(T inFirst, T inSecond, T inThird, T inFourth):
+            mArray{{inFirst, inSecond, inThird, inFourth}} 
+        {
+
+        }
+
+        template<std::size_t Index>
+        constexpr T Get() const
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
+            return mArray[Index];
+        }
+
+        constexpr Simd& operator+=(const Simd& inRHS)
+        {
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    lhs += rhs;
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
+					mArray[2] = lhs.mArray[2];
+                    mArray[3] = lhs.mArray[3]; 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto lhs = Simd128<T>::Load4(&mArray[0]);
+					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Add(lhs, rhs);
+                	Simd128<T>::Store4(&mArray[0], result);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto lhs = Simd128<T>::Load2(&mArray[0]);
+					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Add(lhs, rhs);
+					Simd128<T>::Store2(&mArray[0], result);
+
+					lhs = Simd128<T>::Load2(&mArray[2]);
+					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					result = Simd128<T>::Add(lhs, rhs);
+					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+                
+            } while (false);
+
+            return *this;
+        }
+
+        constexpr Simd& operator-=(const Simd& inRHS)
+        {
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    lhs -= rhs;
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1];
+					mArray[2] = lhs.mArray[2];
+                    mArray[3] = lhs.mArray[3];
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto lhs = Simd128<T>::Load4(&mArray[0]);
+					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Sub(lhs, rhs);
+					Simd128<T>::Store4(&mArray[0], result);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto lhs = Simd128<T>::Load2(&mArray[0]);
+					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Sub(lhs, rhs);
+					Simd128<T>::Store2(&mArray[0], result);
+
+					lhs = Simd128<T>::Load2(&mArray[2]);
+					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					result = Simd128<T>::Sub(lhs, rhs);
+					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+
+            return *this;
+        }
+
+        constexpr Simd& operator*=(const Simd& inRHS)
+        {
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    lhs *= rhs;
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
+					mArray[2] = lhs.mArray[2];
+                    mArray[3] = lhs.mArray[3]; 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto lhs = Simd128<T>::Load4(&mArray[0]);
+					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Mul(lhs, rhs);
+					Simd128<T>::Store4(&mArray[0], result);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto lhs = Simd128<T>::Load2(&mArray[0]);
+					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Mul(lhs, rhs);
+					Simd128<T>::Store2(&mArray[0], result);
+
+					lhs = Simd128<T>::Load2(&mArray[2]);
+					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					result = Simd128<T>::Mul(lhs, rhs);
+					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+
+            return *this;
+        }
+
+        constexpr Simd& operator/=(const Simd& inRHS)
+        {
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    lhs /= rhs;
+                    mArray[0] = lhs.mArray[0];
+                    mArray[1] = lhs.mArray[1]; 
+					mArray[2] = lhs.mArray[2];
+                    mArray[3] = lhs.mArray[3]; 
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto lhs = Simd128<T>::Load4(&mArray[0]);
+					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Div(lhs, rhs);
+					Simd128<T>::Store4(&mArray[0], result);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto lhs = Simd128<T>::Load2(&mArray[0]);
+					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto result = Simd128<T>::Div(lhs, rhs);
+					Simd128<T>::Store2(&mArray[0], result);
+
+					lhs = Simd128<T>::Load2(&mArray[2]);
+					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					result = Simd128<T>::Div(lhs, rhs);
+					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+
+            return *this;
+        }
+
+        constexpr bool IsEqual(const Simd& inRHS) const
+        {
+            bool result = false;
+            // protect our interface so it can remain constexpr
+            do 
+            {
+        #if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    result = lhs == rhs;
+                    break;
+                }
+        #endif // __cpp_lib_is_constant_evaluated
+
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto lhs = Simd128<T>::Load4(&mArray[0]);
+					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					result = Simd128<T>::IsEQ(lhs, rhs);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto lhs = Simd128<T>::Load2(&mArray[0]);
+					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					result = Simd128<T>::IsEQ(lhs, rhs);
+
+					if (result)
+					{
+						lhs = Simd128<T>::Load2(&mArray[2]);
+						rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+						result = result && Simd128<T>::IsEQ(lhs, rhs);
+					}
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+
+            } while (false);
+
+            return result;
+        }
+
+        constexpr void RoundNearest()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundNearest() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    round.RoundNearest();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+					mArray[2] = std::get<2>(round.mTuple);
+                    mArray[3] = std::get<3>(round.mTuple);
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto round = Simd128<T>::Load4(&mArray[0]);
+					round = Simd128<T>::RoundNearest(round);
+					Simd128<T>::Store4(&mArray[0], round);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto round = Simd128<T>::Load2(&mArray[0]);
+					round = Simd128<T>::RoundNearest(round);
+					Simd128<T>::Store4(&mArray[0], round);
+
+					auto round = Simd128<T>::Load2(&mArray[2]);
+					round = Simd128<T>::RoundNearest(round);
+					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+        }
+
+        constexpr void RoundCeil()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundCeil() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    round.RoundCeil();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+					mArray[2] = std::get<2>(round.mTuple);
+                    mArray[3] = std::get<3>(round.mTuple);
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto round = Simd128<T>::Load4(&mArray[0]);
+					round = Simd128<T>::RoundCeil(round);
+					Simd128<T>::Store4(&mArray[0], round);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto round = Simd128<T>::Load2(&mArray[0]);
+					round = Simd128<T>::RoundCeil(round);
+					Simd128<T>::Store4(&mArray[0], round);
+
+					auto round = Simd128<T>::Load2(&mArray[2]);
+					round = Simd128<T>::RoundCeil(round);
+					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+        }
+
+        constexpr void RoundFloor()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundFloor() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    round.RoundFloor();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+					mArray[2] = std::get<2>(round.mTuple);
+                    mArray[3] = std::get<3>(round.mTuple);
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto round = Simd128<T>::Load4(&mArray[0]);
+					round = Simd128<T>::RoundFloor(round);
+					Simd128<T>::Store4(&mArray[0], round);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto round = Simd128<T>::Load2(&mArray[0]);
+					round = Simd128<T>::RoundFloor(round);
+					Simd128<T>::Store4(&mArray[0], round);
+
+					auto round = Simd128<T>::Load2(&mArray[2]);
+					round = Simd128<T>::RoundFloor(round);
+					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+        }
+
+        constexpr void RoundTrunc()
+        {
+            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
+            static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
+            
+            // protect our interface so it can remain constexpr
+            do 
+            {
+#if __cpp_lib_is_constant_evaluated
+                if (std::is_constant_evaluated())
+                {
+                    // Delegate to Scalar Impl which is constexpr capable
+                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    round.RoundTrunc();
+                    mArray[0] = std::get<0>(round.mTuple);
+                    mArray[1] = std::get<1>(round.mTuple);
+					mArray[2] = std::get<2>(round.mTuple);
+                    mArray[3] = std::get<3>(round.mTuple);
+                    break;
+                }
+#endif // __cpp_lib_is_constant_evaluated
+ 
+				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+				{
+					// 32 bits means 4 elements at a time
+					auto round = Simd128<T>::Load4(&mArray[0]);
+					round = Simd128<T>::RoundTrunc(round);
+					Simd128<T>::Store4(&mArray[0], round);
+				}
+				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+				{
+					// 64 bits means 2 elements at a time
+					auto round = Simd128<T>::Load2(&mArray[0]);
+					round = Simd128<T>::RoundTrunc(round);
+					Simd128<T>::Store4(&mArray[0], round);
+
+					auto round = Simd128<T>::Load2(&mArray[2]);
+					round = Simd128<T>::RoundTrunc(round);
+					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+				}
+				else
+				{
+					static_assert("Unsupported T");
+				}
+            } while (false);
+        }
+
+    private:
+        std::array<T,4> mArray{}; // Impl4: so 4 elements are assumed
+    }; // class Simd
+}; // struct Impl4<>
+
+template<typename T, ImplKind Impl> // Primary template declaration
+struct Impl4Traits;
+
+template<typename T> // Partial template specialization
+struct Impl4Traits<T, ImplKind::kScalar>
+{
+    using ImplType = typename Impl4<T>::Scalar; // VOODOO: Nested template type requires `typename` prefix
+};
+
+template<typename T> // Partial template specialization
+struct Impl4Traits<T, ImplKind::kSimd>
+{
+    using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
+};
+
+} // namespace saber::geometry::detail
+
+#endif // SABER_GEOMETRY_DETAIL_IMPL4_HPP
