@@ -29,6 +29,7 @@
 // saber
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
+#include "saber/geometry/rectangle.hpp"
 #include "saber/geometry/utility.hpp"
 #include "saber/inexact.hpp"
 
@@ -504,5 +505,103 @@ TEMPLATE_TEST_CASE(	"saber::geometry operators works correctly",
 		// Check runtime correctness
 		REQUIRE(+TestType{4,5} == TestType{4,5});
 	}
+}
+
+TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
+					"[saber][template]",
+					int, float, double)
+{
+	using namespace saber::geometry;
+
+	SECTION("Default Construct")
+	{
+		REQUIRE(Rectangle<TestType>{}.X() == 0);
+		REQUIRE(Rectangle<TestType>{}.Y() == 0);
+		REQUIRE(Rectangle<TestType>{}.Width() == 0);
+		REQUIRE(Rectangle<TestType>{}.Height() == 0);
+	}
+
+	SECTION("Alt Construct")
+	{
+		REQUIRE(Rectangle<TestType>{1,2,3,4}.X() == 1);
+		REQUIRE(Rectangle<TestType>{1,2,3,4}.Y() == 2);
+		REQUIRE(Rectangle<TestType>{1,2,3,4}.Width() == 3);
+		REQUIRE(Rectangle<TestType>{1,2,3,4}.Height() == 4);
+	}
+
+	SECTION("Copy Construct")
+	{
+		const Rectangle<TestType> rectangle{1,2,3,4};
+		REQUIRE(Rectangle<TestType>{rectangle}.X() == rectangle.X());
+		REQUIRE(Rectangle<TestType>{rectangle}.Y() == rectangle.Y());
+		REQUIRE(Rectangle<TestType>{rectangle}.Width() == rectangle.Width());
+		REQUIRE(Rectangle<TestType>{rectangle}.Height() == rectangle.Height());
+	}
+
+	SECTION("Copy Assign")
+	{
+		Rectangle<TestType> rectangle1{};
+		const Rectangle<TestType> rectangle2{1,2,3,4};
+		REQUIRE((rectangle1 = rectangle2).X() == rectangle2.X());
+		REQUIRE((rectangle1 = rectangle2).Y() == rectangle2.Y());
+		REQUIRE((rectangle1 = rectangle2).Width() == rectangle2.Width());
+		REQUIRE((rectangle1 = rectangle2).Height() == rectangle2.Height());
+	}
+
+	SECTION("Move Construct")
+	{
+		Rectangle<TestType> rectangle{};
+		REQUIRE((Rectangle<TestType>{Rectangle<TestType>{1,2,3,4}}).X() == 1);
+		REQUIRE((Rectangle<TestType>{Rectangle<TestType>{1,2,3,4}}).Y() == 2);
+		REQUIRE((Rectangle<TestType>{Rectangle<TestType>{1,2,3,4}}).Width() == 3);
+		REQUIRE((Rectangle<TestType>{Rectangle<TestType>{1,2,3,4}}).Height() == 4);
+	}
+
+	SECTION("Move Assign")
+	{
+		Rectangle<TestType> rectangle{};
+		REQUIRE((rectangle = Rectangle<TestType>{1,2,3,4}).X() == 1);
+		REQUIRE((rectangle = Rectangle<TestType>{1,2,3,4}).Y() == 2);
+		REQUIRE((rectangle = Rectangle<TestType>{1,2,3,4}).Width() == 3);
+		REQUIRE((rectangle = Rectangle<TestType>{1,2,3,4}).Height() == 4);
+	}
+
+	/*
+	// REVISIT mnfitz 26may2025: Add structured binding for Rectangle
+	SECTION("Structured Binding")
+	{
+		const Rectangle<TestType> rectangle{1,2,3,4};
+		const auto [x, y, width, height] = rectangle; // accessor: structured binding!
+		REQUIRE(point.X() == x);
+		REQUIRE(point.Y() == y);
+		REQUIRE(point.Width() == width);
+		REQUIRE(point.Height() == height);
+	}
+	*/
+
+	// CLASS METHOD
+	SECTION("Translate(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{Point<TestType>{2,1}}.Translate(Point<TestType>{4,3}) == Rectangle<TestType>{Point<TestType>{6,4}});
+		REQUIRE(Rectangle<TestType>{Point<TestType>{3,2}}.Translate(5,4) == Rectangle<TestType>{Point<TestType>{8,6}});
+		REQUIRE(Rectangle<TestType>{Point<TestType>{4,6}}.Translate(3) == Rectangle<TestType>{Point<TestType>{7,9}});
+	}
+
+	SECTION("Enlarge(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{Size<TestType>{2,1}}.Enlarge(Size<TestType>{4,3}) == Rectangle<TestType>{Size<TestType>{6,4}});
+		REQUIRE(Rectangle<TestType>{Size<TestType>{3,2}}.Enlarge(5,4) == Rectangle<TestType>{Size<TestType>{8,6}});
+		REQUIRE(Rectangle<TestType>{Size<TestType>{4,6}}.Enlarge(3) == Rectangle<TestType>{Size<TestType>{7,9}});
+	}
+
+	SECTION("Scale(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{2,3,2,3}}.Scale(Point<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
+		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{2,3,2,3}}.Scale(Size<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
+		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{5,3,5,3}}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
+		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{6,7,6,7}}.Scale(2) == Rectangle<TestType>{12,14,12,14});
+	}
+
+	// FREE FUNCTION
 }
 

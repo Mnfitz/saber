@@ -53,13 +53,39 @@ public:
 	constexpr void Width(T inWidth);
 	constexpr void Height(T inHeight);
 
+	// Mutators
+	constexpr Rectangle& Translate(const Point<T, Impl>& inPoint); //+- Origin
+	constexpr Rectangle& Translate(T inX, T inY);
+	constexpr Rectangle& Translate(T inXY);
+
+	constexpr Rectangle& Enlarge(const geometry::Size<T, Impl>& inSize); //+- Size
+	constexpr Rectangle& Enlarge(T inX, T inY);
+	constexpr Rectangle& Enlarge(T inXY);
+
+	// REVISIT mnfitz 26may2025: This would prevent implicit conversion from an initializer list
+	/*
+	saber::Rectangle<float> rect;
+	rect.Scale({2.0f, 3.0f}); // error: "ambiguous"
+	rect.Translate({2.0f, 4.0f}); // OK
+	*/
+	constexpr Rectangle& Scale(const Point<T, Impl>& inPoint); // */ Origin
+	constexpr Rectangle& Scale(const geometry::Size<T, Impl>& inSize); // */ Size
+	constexpr Rectangle& Scale(T inX, T inY); // Origin + Size
+	constexpr Rectangle& Scale(T inXY); // */ Origin + Size
+
 #if 0
     
-    // Mathematical operations
-    constexpr Point& operator+=(const Point& inPoint);
-    constexpr Point& operator-=(const Point& inPoint);
-    constexpr Point& operator*=(const Point& inPoint);
-    constexpr Point& operator/=(const Point& inPoint);
+    // Mathematical Origin operations
+    constexpr Rectangle& operator+=(const Point& inPoint);
+    constexpr Rectangle& operator-=(const Point& inPoint);
+    constexpr Rectangle& operator*=(const Point& inPoint);
+    constexpr Rectangle& operator/=(const Point& inPoint);
+
+	// Mathematical Size operations
+    constexpr Rectangle& operator+=(const Size& inSize);
+    constexpr Rectangle& operator-=(const Size& inSize);
+    constexpr Rectangle& operator*=(const Size& inSize);
+    constexpr Rectangle& operator/=(const Size& inSize);
 
     // --- Rounding ---
 
@@ -107,8 +133,8 @@ private:
 #endif
 
 private:
-	using Impl4Type = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
-    Impl4Type mImpl{};
+	using ImplType = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+    ImplType mImpl{};
 }; // class Rectangle<>
 
 // ------------------------------------------------------------------
@@ -131,7 +157,7 @@ inline constexpr Point<T, Impl> Rectangle<T, Impl>::Origin() const
 template<typename T, ImplKind Impl>
 inline constexpr geometry::Size<T, Impl> Rectangle<T, Impl>::Size() const
 {
-    return Size<T, Impl>{Width(), Height()};
+    return geometry::Size<T, Impl>{Width(), Height()};
 }
 
 template<typename T, ImplKind Impl>
@@ -197,6 +223,77 @@ template<typename T, ImplKind Impl>
 constexpr void Rectangle<T, Impl>::Height(T inHeight)
 {
 	mImpl.Set<3>(inHeight);
+}
+
+// Mutators
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(const Point<T, Impl>& inPoint)
+{
+	mImpl += Rectangle{inPoint}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inX, T inY)
+{
+	mImpl += Rectangle{Point<T, Impl>{inX, inY}}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inXY)
+{
+	mImpl += Rectangle{Point<T, Impl>{inXY, inXY}}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(const geometry::Size<T, Impl>& inSize)
+{
+	mImpl += Rectangle{inSize}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inX, T inY)
+{
+	mImpl += Rectangle{geometry::Size<T, Impl>{inX, inY}}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inXY)
+{
+	mImpl += Rectangle{geometry::Size<T, Impl>{inXY, inXY}}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const Point<T, Impl>& inPoint)
+{
+	mImpl *= Rectangle{inPoint}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const geometry::Size<T, Impl>& inSize)
+{
+	mImpl *= Rectangle{inSize}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inX, T inY)
+{
+	mImpl += Rectangle{Point<T, Impl>{inX, inY}, geometry::Size<T, Impl>{inX, inY}}.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inXY)
+{
+	mImpl += Rectangle{Point<T, Impl>{inXY, inXY}, geometry::Size<T, Impl>{inXY, inXY}}.mImpl;
+	return *this;
 }
 
 #pragma endregion
