@@ -11,7 +11,7 @@
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
-
+    
 template<typename T>
 struct Impl2 final
 {
@@ -145,6 +145,11 @@ struct Impl2 final
         {
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             return mArray[Index];
+        }
+
+        constexpr auto GetSimdType() const
+        {
+            return Simd128<T>::Load2(&mArray[0]);
         }
 
         constexpr Simd& operator+=(const Simd& inRHS)

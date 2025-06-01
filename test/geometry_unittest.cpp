@@ -596,10 +596,10 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 
 	SECTION("Scale(Rectangle)")
 	{
-		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{2,3,2,3}}.Scale(Point<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
-		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{2,3,2,3}}.Scale(Size<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
-		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{5,3,5,3}}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
-		REQUIRE(Rectangle<TestType>{Rectangle<TestType>{6,7,6,7}}.Scale(2) == Rectangle<TestType>{12,14,12,14});
+		REQUIRE(Rectangle<TestType>{2,3,2,3}.Scale(Point<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
+		REQUIRE(Rectangle<TestType>{2,3,2,3}.Scale(Size<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
+		REQUIRE(Rectangle<TestType>{5,3,5,3}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
+		REQUIRE(Rectangle<TestType>{6,7,6,7}.Scale(2) == Rectangle<TestType>{12,14,12,14});
 	}
 
 	// FREE FUNCTION

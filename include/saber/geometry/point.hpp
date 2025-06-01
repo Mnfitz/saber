@@ -12,6 +12,10 @@
 
 namespace saber::geometry {
 
+// Forward Declaration
+template<typename T, ImplKind Impl>
+class Rectangle;
+
 /// @brief 
 /// @tparam T 
 /// @tparam ImplType 
@@ -86,6 +90,7 @@ private:
 private:
     friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
+    friend class Rectangle<T, Impl>;
 
 private:
     using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix

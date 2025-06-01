@@ -8,6 +8,7 @@
 
 // saber
 #include "saber/inexact.hpp"
+#include "saber/geometry/detail/impl2.hpp"
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
@@ -25,10 +26,16 @@ struct Impl4 final
         ~Scalar() = default;
 
         // alt ctor
-        constexpr Scalar(T inFirst, T inSecond, T inThird, T inFourth):
+        constexpr Scalar(T inFirst, T inSecond, T inThird, T inFourth) :
             mTuple(inFirst, inSecond, inThird, inFourth)
         {
-            
+            // Do nothing
+        }
+
+        constexpr Scalar(const typename Impl2<T>::Scalar& inFirst, const typename Impl2<T>::Scalar& inSecond) :
+            mTuple(std::get<0>(inFirst), std::get<1>(inFirst), std::get<0>(inSecond), std::get<1>(inSecond))
+        {
+            // Do nothing
         }
 
         template<std::size_t Index>
@@ -155,10 +162,16 @@ struct Impl4 final
         constexpr Simd() = default;
         ~Simd() = default;
 
-        constexpr Simd(T inFirst, T inSecond, T inThird, T inFourth):
+        constexpr Simd(T inFirst, T inSecond, T inThird, T inFourth) :
             mArray{{inFirst, inSecond, inThird, inFourth}} 
         {
+            // Do nothing
+        }
 
+        constexpr Simd(const typename Impl2<T>::Simd& inFirst, const typename Impl2<T>::Simd& inSecond)
+        {
+            Simd128<T>::Store2(&mArray[0], inFirst.GetSimdType());
+            Simd128<T>::Store2(&mArray[2], inSecond.GetSimdType());
         }
 
         template<std::size_t Index>

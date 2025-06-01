@@ -8,6 +8,7 @@
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/detail/impl4.hpp"
+#include "saber/utility.hpp"
 
 // std
 #include <utility>
@@ -121,16 +122,16 @@ public:
 	/// @return Ref& to this `Point<>`
 	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
 	constexpr Point& RoundTrunc();
+#endif
 
 private:
 	// Private APIs
-	constexpr bool IsEqual(const Point& inPoint) const;
+	constexpr bool IsEqual(const Rectangle& inRectangle) const;
 
 // Friend functions
 private:
-    friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
-    friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
-#endif
+    friend constexpr bool operator==<Rectangle>(const Rectangle& inLHS, const Rectangle& inRHS);
+    friend constexpr bool operator!=<Rectangle>(const Rectangle& inLHS, const Rectangle& inRHS);
 
 private:
 	using ImplType = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
@@ -140,9 +141,31 @@ private:
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions
 
+// Ctors
 template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl>::Rectangle(T inX, T inY, T inWidth, T inHeight) :
     mImpl{inX, inY, inWidth, inHeight}
+{
+    // Do nothing
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl>::Rectangle(const Point<T, Impl>& inPoint, const geometry::Size<T, Impl>& inSize) :
+    mImpl{inPoint.mImpl, inSize.mImpl}
+{
+    // Do nothing
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl>::Rectangle(const Point<T, Impl>& inPoint) :
+    mImpl{inPoint.mImpl, geometry::Size<T, Impl>{}.mImpl}
+{
+    // Do nothing
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl>::Rectangle(const geometry::Size<T, Impl>& inSize) :
+    mImpl{Point<T, Impl>{}.mImpl, inSize.mImpl}
 {
     // Do nothing
 }
@@ -271,32 +294,39 @@ constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inXY)
 template<typename T, ImplKind Impl>
 constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const Point<T, Impl>& inPoint)
 {
-	mImpl *= Rectangle{inPoint}.mImpl;
+	mImpl *= Rectangle{inPoint, saber::ConvertTo<geometry::Size<T, Impl>>(inPoint)}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
 constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const geometry::Size<T, Impl>& inSize)
 {
-	mImpl *= Rectangle{inSize}.mImpl;
+	mImpl *= Rectangle{saber::ConvertTo<Point<T, Impl>>(inSize), inSize}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
 constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inX, T inY)
 {
-	mImpl += Rectangle{Point<T, Impl>{inX, inY}, geometry::Size<T, Impl>{inX, inY}}.mImpl;
+	mImpl *= Rectangle{inX, inY, inX, inY}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
 constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inXY)
 {
-	mImpl += Rectangle{Point<T, Impl>{inXY, inXY}, geometry::Size<T, Impl>{inXY, inXY}}.mImpl;
+	mImpl *= Rectangle{inXY, inXY, inXY, inXY}.mImpl;
 	return *this;
 }
 
 #pragma endregion
+
+template<typename T, ImplKind Impl>
+inline constexpr bool Rectangle<T, Impl>::IsEqual(const Rectangle& inRectangle) const
+{
+    auto result = mImpl.IsEqual(inRectangle.mImpl);
+    return result;
+}
 
 #if 0
 // ------------------------------------------------------------------
@@ -328,13 +358,6 @@ inline constexpr Point<T, Impl>& Point<T, Impl>::operator/=(const Point& inPoint
 {
     mImpl /= inPoint.mImpl;
     return *this;
-}
-
-template<typename T, ImplKind Impl>
-inline constexpr bool Point<T, Impl>::IsEqual(const Point& inPoint) const
-{
-    auto result = mImpl.IsEqual(inPoint.mImpl);
-    return result;
 }
 
 template<typename T, ImplKind Impl>
