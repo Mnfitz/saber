@@ -118,6 +118,16 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Point::ctor() works correctly",
 		REQUIRE(Scale<TestType>(Point<TestType>{5,3}, 2,4) == Point<TestType>{10,12});
 		REQUIRE(Scale<TestType>(Point<TestType>{6,7}, 2) == Point<TestType>{12,14});
 	}
+
+	SECTION("Setters")
+	{
+		auto x = Point<TestType>{2,3};
+		x.X(3);
+		REQUIRE(x == Point<TestType>{3,3});
+		auto y = Point<TestType>{2,3};
+		y.Y(2);
+		REQUIRE(y == Point<TestType>{2,2});
+	}
 }
 
 TEMPLATE_TEST_CASE(	"saber::geometry::Size::ctor() works correctly",
@@ -206,6 +216,16 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Size::ctor() works correctly",
 		REQUIRE(Scale<TestType>(Size<TestType>{2,3}, Size<TestType>{4,3}) == Size<TestType>{8,9});
 		REQUIRE(Scale<TestType>(Size<TestType>{5,3}, 2,4) == Size<TestType>{10,12});
 		REQUIRE(Scale<TestType>(Size<TestType>{6,7}, 2) == Size<TestType>{12,14});
+	}
+
+	SECTION("Setters")
+	{
+		auto width = Size<TestType>{2,3};
+		width.Width(3);
+		REQUIRE(width == Size<TestType>{3,3});
+		auto height = Size<TestType>{2,3};
+		height.Height(2);
+		REQUIRE(height == Size<TestType>{2,2});
 	}
 }
 
@@ -565,6 +585,19 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 		REQUIRE(Rectangle<TestType>{2,3,2,3}.Scale(Size<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
 		REQUIRE(Rectangle<TestType>{5,3,5,3}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
 		REQUIRE(Rectangle<TestType>{6,7,6,7}.Scale(2) == Rectangle<TestType>{12,14,12,14});
+	}
+
+	SECTION("Setters")
+	{
+		auto rectangle = Rectangle<TestType>{0,0,0,0};
+		rectangle.X(1);
+		REQUIRE(rectangle == Rectangle<TestType>{1,0,0,0});
+		rectangle.Y(2);
+		REQUIRE(rectangle == Rectangle<TestType>{1,2,0,0});
+		rectangle.Width(3);
+		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,0});
+		rectangle.Height(4);
+		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,4});
 	}
 }
 
