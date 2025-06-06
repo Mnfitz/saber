@@ -38,6 +38,13 @@ struct Impl2 final
             return std::get<Index>(mTuple);
         }
 
+        template<std::size_t Index>
+        constexpr void Set(T inT)
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
+            std::get<Index>(mTuple) = inT;
+        }
+
         constexpr Scalar& operator+=(const Scalar& inRHS)
         {
             std::get<0>(mTuple) += std::get<0>(inRHS.mTuple);
@@ -145,6 +152,13 @@ struct Impl2 final
         {
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             return mArray[Index];
+        }
+
+        template<std::size_t Index>
+        constexpr void Set(T inT)
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
+            mArray[Index] = inT;
         }
 
         constexpr auto GetSimdType() const

@@ -38,8 +38,13 @@ public:
 	constexpr Size(const Size& inCopy) = default;
 	constexpr Size& operator=(const Size& inCopy) = default;
 
+	// Getters
 	constexpr T Width() const;
 	constexpr T Height() const;
+
+	// Setters
+	constexpr void Width(T inWidth);
+	constexpr void Height(T inHeight);
 
 	// Mathematical operations
 	constexpr Size& operator+=(const Size& inSize);
@@ -107,6 +112,7 @@ inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
 	// Do nothing
 }
 
+// Getters
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Width() const
 {
@@ -117,6 +123,19 @@ template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Height() const
 {
 	return mImpl.Get<1>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Size<T, Impl>::Width(T inWidth)
+{
+	mImpl.Set<0>(inWidth);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Size<T, Impl>::Height(T inHeight)
+{
+	mImpl.Set<1>(inHeight);
 }
 
 #pragma endregion

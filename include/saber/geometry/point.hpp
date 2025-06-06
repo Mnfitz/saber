@@ -38,8 +38,13 @@ public:
     constexpr Point(const Point& inCopy) = default;
     constexpr Point& operator=(const Point& inCopy) = default;
 
+    // Getters
     constexpr T X() const;
     constexpr T Y() const;
+
+    // Setters
+    constexpr void X(T inX);
+	constexpr void Y(T inY);
 
     // Mathematical operations
     constexpr Point& operator+=(const Point& inPoint);
@@ -107,6 +112,7 @@ inline constexpr Point<T, Impl>::Point(T inX, T inY) :
     // Do nothing
 }
 
+// Getters
 template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::X() const
 {
@@ -117,6 +123,19 @@ template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::Y() const
 {
     return mImpl.Get<1>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Point<T, Impl>::X(T inX)
+{
+	mImpl.Set<0>(inX);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Point<T, Impl>::Y(T inY)
+{
+	mImpl.Set<1>(inY);
 }
 
 #pragma endregion
