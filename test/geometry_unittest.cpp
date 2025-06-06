@@ -566,6 +566,79 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 		REQUIRE(Rectangle<TestType>{5,3,5,3}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
 		REQUIRE(Rectangle<TestType>{6,7,6,7}.Scale(2) == Rectangle<TestType>{12,14,12,14});
 	}
+}
+
+TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle rounding works correctly",
+					"[saber][template]",
+					float, double)
+{
+	SECTION("RoundNearest(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}.RoundNearest() == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}.RoundNearest() == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}.RoundNearest() == Rectangle<TestType>{-2,-3,-4,-5});
+
+		REQUIRE(RoundNearest(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}) == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(RoundNearest(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundNearest(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}) == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(RoundNearest(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}) == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(RoundNearest(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}) == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(RoundNearest(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}) == Rectangle<TestType>{-2,-3,-4,-5});
+	}
+
+	SECTION("RoundTrunc(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}.RoundTrunc() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}.RoundTrunc() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}.RoundTrunc() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}.RoundTrunc() == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}.RoundTrunc() == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}.RoundTrunc() == Rectangle<TestType>{-1,-2,-3,-4});
+
+		REQUIRE(RoundTrunc(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundTrunc(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundTrunc(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundTrunc(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}) == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(RoundTrunc(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}) == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(RoundTrunc(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}) == Rectangle<TestType>{-1,-2,-3,-4});
+	}
+
+	SECTION("RoundCeil(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}.RoundCeil() == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}.RoundCeil() == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}.RoundCeil() == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}.RoundCeil() == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}.RoundCeil() == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}.RoundCeil() == Rectangle<TestType>{-1,-2,-3,-4});
+
+		REQUIRE(RoundCeil(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}) == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(RoundCeil(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}) == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(RoundCeil(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}) == Rectangle<TestType>{2,3,4,5});
+		REQUIRE(RoundCeil(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}) == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(RoundCeil(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}) == Rectangle<TestType>{-1,-2,-3,-4});
+		REQUIRE(RoundCeil(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}) == Rectangle<TestType>{-1,-2,-3,-4});
+	}
+
+	SECTION("RoundFloor(Rectangle)")
+	{
+		REQUIRE(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}.RoundFloor() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}.RoundFloor() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}.RoundFloor() == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}.RoundFloor() == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}.RoundFloor() == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}.RoundFloor() == Rectangle<TestType>{-2,-3,-4,-5});
+
+		REQUIRE(RoundFloor(Rectangle<TestType>{1.5f,2.5f,3.5f,4.5f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundFloor(Rectangle<TestType>{1.1f,2.1f,3.1f,4.1f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundFloor(Rectangle<TestType>{1.9f,2.9f,3.9f,4.9f}) == Rectangle<TestType>{1,2,3,4});
+		REQUIRE(RoundFloor(Rectangle<TestType>{-1.5f,-2.5f,-3.5f,-4.5f}) == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(RoundFloor(Rectangle<TestType>{-1.1f,-2.1f,-3.1f,-4.1f}) == Rectangle<TestType>{-2,-3,-4,-5});
+		REQUIRE(RoundFloor(Rectangle<TestType>{-1.9f,-2.9f,-3.9f,-4.9f}) == Rectangle<TestType>{-2,-3,-4,-5});
+	}
 
 	// FREE FUNCTION
 }

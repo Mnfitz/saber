@@ -462,13 +462,13 @@ struct Impl4 final
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round = Simd128<T>::Load2(&mArray[0]);
-					round = Simd128<T>::RoundNearest(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					round1 = Simd128<T>::RoundNearest(round1);
+					Simd128<T>::Store2(&mArray[0], round1);
 
-					auto round = Simd128<T>::Load2(&mArray[2]);
-					round = Simd128<T>::RoundNearest(round);
-					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					round2 = Simd128<T>::RoundNearest(round2);
+					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -509,13 +509,13 @@ struct Impl4 final
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round = Simd128<T>::Load2(&mArray[0]);
-					round = Simd128<T>::RoundCeil(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					round1 = Simd128<T>::RoundCeil(round1);
+					Simd128<T>::Store2(&mArray[0], round1);
 
-					auto round = Simd128<T>::Load2(&mArray[2]);
-					round = Simd128<T>::RoundCeil(round);
-					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					round2 = Simd128<T>::RoundCeil(round2);
+					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -556,13 +556,13 @@ struct Impl4 final
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round = Simd128<T>::Load2(&mArray[0]);
-					round = Simd128<T>::RoundFloor(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					round1 = Simd128<T>::RoundFloor(round1);
+					Simd128<T>::Store2(&mArray[0], round1);
 
-					auto round = Simd128<T>::Load2(&mArray[2]);
-					round = Simd128<T>::RoundFloor(round);
-					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					round2 = Simd128<T>::RoundFloor(round2);
+					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -603,13 +603,13 @@ struct Impl4 final
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round = Simd128<T>::Load2(&mArray[0]);
-					round = Simd128<T>::RoundTrunc(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					round1 = Simd128<T>::RoundTrunc(round1);
+					Simd128<T>::Store2(&mArray[0], round1);
 
-					auto round = Simd128<T>::Load2(&mArray[2]);
-					round = Simd128<T>::RoundTrunc(round);
-					Simd128<T>::Store4(&mArray[2], round); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					round2 = Simd128<T>::RoundTrunc(round2);
+					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
