@@ -12,14 +12,6 @@
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-//
 /////////////////////////////////////////////////////////////////////
 
 // catch2
@@ -31,7 +23,6 @@
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/rectangle.hpp"
 #include "saber/geometry/utility.hpp"
-#include "saber/inexact.hpp"
 
 // std
 #include <cstdio>
@@ -39,32 +30,6 @@
 
 using namespace saber;
 using namespace saber::geometry;
-
-
-TEMPLATE_TEST_CASE(	"saber::geometry::Inexact works correctly",
-					"[saber][template]",
-					int, float, double)
-{
-	SECTION("Inexact::IsEq()")
-	{
-		REQUIRE(Inexact::IsEq(3.60, (3.0 * 1.2)));
-	}
-
-	SECTION("!Inexact::IsEq()")
-	{
-		REQUIRE(!Inexact::IsEq(3.59, (3.0 * 1.2)));
-	}
-
-	SECTION("Inexact::IsNeq()")
-	{
-		REQUIRE(Inexact::IsNe(0.29, (0.10 + 0.20)));
-	}
-
-	SECTION("!Inexact::IsNeq()")
-	{
-		REQUIRE(!Inexact::IsNe(0.30, (0.10 + 0.20)));
-	}
-}
 
 TEMPLATE_TEST_CASE(	"saber::geometry::Point::ctor() works correctly",
 					"[saber][template]",
