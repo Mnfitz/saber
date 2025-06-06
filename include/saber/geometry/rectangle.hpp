@@ -225,95 +225,95 @@ inline constexpr void Rectangle<T, Impl>::Size(const geometry::Size<T, Impl>& in
 }
 
 template<typename T, ImplKind Impl>
-constexpr void Rectangle<T, Impl>::X(T inX)
+inline constexpr void Rectangle<T, Impl>::X(T inX)
 {
 	mImpl.Set<0>(inX);
 }
 
 template<typename T, ImplKind Impl>
-constexpr void Rectangle<T, Impl>::Y(T inY)
+inline constexpr void Rectangle<T, Impl>::Y(T inY)
 {
 	mImpl.Set<1>(inY);
 }
 
 template<typename T, ImplKind Impl>
-constexpr void Rectangle<T, Impl>::Width(T inWidth)
+inline constexpr void Rectangle<T, Impl>::Width(T inWidth)
 {
 	mImpl.Set<2>(inWidth);
 }
 
 template<typename T, ImplKind Impl>
-constexpr void Rectangle<T, Impl>::Height(T inHeight)
+inline constexpr void Rectangle<T, Impl>::Height(T inHeight)
 {
 	mImpl.Set<3>(inHeight);
 }
 
 // Mutators
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(const Point<T, Impl>& inPoint)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(const Point<T, Impl>& inPoint)
 {
 	mImpl += Rectangle{inPoint}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inX, T inY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inX, T inY)
 {
 	mImpl += Rectangle{Point<T, Impl>{inX, inY}}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inXY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Translate(T inXY)
 {
 	mImpl += Rectangle{Point<T, Impl>{inXY, inXY}}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(const geometry::Size<T, Impl>& inSize)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(const geometry::Size<T, Impl>& inSize)
 {
 	mImpl += Rectangle{inSize}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inX, T inY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inX, T inY)
 {
 	mImpl += Rectangle{geometry::Size<T, Impl>{inX, inY}}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inXY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Enlarge(T inXY)
 {
 	mImpl += Rectangle{geometry::Size<T, Impl>{inXY, inXY}}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const Point<T, Impl>& inPoint)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const Point<T, Impl>& inPoint)
 {
 	mImpl *= Rectangle{inPoint, saber::ConvertTo<geometry::Size<T, Impl>>(inPoint)}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const geometry::Size<T, Impl>& inSize)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(const geometry::Size<T, Impl>& inSize)
 {
 	mImpl *= Rectangle{saber::ConvertTo<Point<T, Impl>>(inSize), inSize}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inX, T inY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inX, T inY)
 {
 	mImpl *= Rectangle{inX, inY, inX, inY}.mImpl;
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inXY)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inXY)
 {
 	mImpl *= Rectangle{inXY, inXY, inXY, inXY}.mImpl;
 	return *this;
