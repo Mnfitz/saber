@@ -180,15 +180,15 @@ public:
 	/// @return Reference to this rectangle.
 	constexpr Rectangle& Intersect(const Rectangle& inRectangle);
 
-	/// @brief Checks if this rectangle contains a point.
+	/// @brief Checks if given point overlaps this rectangle.
 	/// @param inPoint The point to check.
-	/// @return True if the rectangle contains the point, false otherwise.
-	constexpr bool IsContainedBy(const Point<T, Impl>& inPoint);
+	/// @return True if the rectangle overlaps the point, false otherwise.
+	constexpr bool IsOverlapping(const Point<T, Impl>& inPoint);
 
-	/// @brief Checks if this rectangle contains another rectangle.
+	/// @brief Checks if given rectangle overlaps this rectangle.
 	/// @param inRectangle The rectangle to check.
-	/// @return True if this rectangle contains the other, false otherwise.
-	constexpr bool IsContainedBy(const Rectangle& inRectangle);
+	/// @return True if this rectangle overlaps the other, false otherwise.
+	constexpr bool IsOverlapping(const Rectangle& inRectangle);
 
 	// --- Rounding ---
 
@@ -430,18 +430,18 @@ inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Intersect(const Rectang
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool Rectangle<T, Impl>::IsContainedBy(const Point<T, Impl>& inPoint)
+inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Point<T, Impl>& inPoint)
 {
-	// TODO: Add a IsContainedBy() class method to impl4
-	// mImpl.isContainedBy(inPoint.mImpl);
+	// TODO: Add a IsOverlapping() class method to impl4
+	mImpl.IsOverlapping(inPoint.mImpl);
 	return false;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool Rectangle<T, Impl>::IsContainedBy(const Rectangle& inRectangle)
+inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Rectangle& inRectangle)
 {
-	// TODO: Add a IsContainedBy() class method to impl4
-	// mImpl.isContainedBy(inRectangle.mImpl);
+	// TODO: Add a IsOverlapping() class method to impl4
+	// mImpl.IsOverlapping(inRectangle.mImpl);
 	return false;
 }
 
@@ -570,22 +570,21 @@ inline constexpr Rectangle<T, Impl> Intersect(const Rectangle<T, Impl>& inLHS, c
 template<typename T, ImplKind Impl>
 inline constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle)
 {
-	// TODO: Add a free function to impl4 called IsEmpty()
-	// IsEmpty(inRectangle.mImpl);
+	IsEmpty(inRectangle.mImpl);
 	return false;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool IsContainedBy(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
+inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
 {
-	auto result = inRectangle.IsContainedBy(inPoint);
+	auto result = inRectangle.IsOverlapping(inPoint);
 	return result;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool IsContainedBy(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
+inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
-	auto result = inLHS.IsContainedBy(inRHS);
+	auto result = inLHS.IsOverlapping(inRHS);
 	return result;
 }
 

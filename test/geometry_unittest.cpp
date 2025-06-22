@@ -599,6 +599,11 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 		rectangle.Height(4);
 		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,4});
 	}
+
+	SECTION("Area Operations")
+	{
+		// Union, Intersection, IsOverlapping, IsEmpty
+	}
 }
 
 TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle rounding works correctly",

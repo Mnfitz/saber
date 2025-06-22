@@ -149,10 +149,89 @@ struct Impl4 final
             constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
             static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
             
-            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple));
-            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple));
-			std::get<2>(mTuple) = std::trunc(std::get<2>(mTuple));
-            std::get<3>(mTuple) = std::trunc(std::get<3>(mTuple));
+            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple)); // 0 = Origin.X
+            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple)); // 1 = Origin.Y
+			std::get<2>(mTuple) = std::trunc(std::get<2>(mTuple)); // 2 = Size.Width
+            std::get<3>(mTuple) = std::trunc(std::get<3>(mTuple)); // 3 = Size.Height
+        }
+
+        constexpr Scalar& Union(const Scalar& inImpl4)
+        {
+            // Figure out the bottom right of the union rectangle 
+            std::get<2>(mTuple) = std::max(std::get<2>(mTuple) + std::get<0>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<0>(inImpl4.mTuple));
+            std::get<3>(mTuple) = std::max(std::get<3>(mTuple) + std::get<1>(mTuple), std::get<3>(inImpl4.mTuple) + std::get<1>(inImpl4.mTuple));
+
+            // Figure out the top left of the union rectangle
+            std::get<0>(mTuple) = std::min(std::get<0>(mTuple), std::get<0>(inImpl4.mTuple));
+            std::get<1>(mTuple) = std::min(std::get<1>(mTuple), std::get<1>(inImpl4.mTuple));
+
+            // Convert the bottom right to width and height
+            std::get<2>(mTuple) -= std::get<0>(mTuple);
+            std::get<3>(mTuple) -= std::get<1>(mTuple);
+            return *this;
+        }
+
+        constexpr Scalar& Intersect(const Scalar& inImpl4)
+        {
+            // Reverse of Union operation
+            // Figure out the top left of the intersect rectangle
+            // Note: some intersection rectangles may be empty (size = 0)
+            // Figure out the top left of the intersect rectangle
+            std::get<2>(mTuple) = std::min(std::get<2>(mTuple) + std::get<0>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<0>(inImpl4.mTuple));
+            std::get<3>(mTuple) = std::min(std::get<3>(mTuple) + std::get<1>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<1>(inImpl4.mTuple));
+
+            // Figure out the bottom right of the intersect rectangle
+            std::get<0>(mTuple) = std::max(std::get<0>(mTuple), std::get<0>(inImpl4.mTuple));
+            std::get<1>(mTuple) = std::max(std::get<1>(mTuple), std::get<1>(inImpl4.mTuple));
+
+            // Convert the bottom right to width and height, ensuring we do not end up with negative values
+            std::get<2>(mTuple) = max(std::get<2>(mTuple) - std::get<0>(mTuple), 0);
+            std::get<3>(mTuple) = max(std::get<3>(mTuple) - std::get<1>(mTuple), 0);
+            return *this;
+        }
+
+        constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
+        {
+            bool result = false;
+            do 
+            {
+                if (std::get<0>(mTuple) > std::get<0>(inImpl2))
+                {
+                    // Point is left of the rectangle
+                    break;
+                }
+
+                if (std::get<1>(mTuple) > std::get<1>(inImpl2))
+                {
+                    // Point is above the rectangle
+                    break;
+                }
+
+                if (std::get<0>(mTuple) + std::get<2>(mTuple) <= std::get<0>(inImpl2))
+                {
+                    // Point is right of the rectangle
+                    break;
+                }
+
+                if (std::get<1>(mTuple) + std::get<3>(mTuple) <= std::get<1>(inImpl2))
+                {
+                    // Point is below rectangle
+                    break;
+                }
+
+                // Point is contained within the rectangle
+                result = true;
+            } while (false);
+
+            return result;
+        }
+
+        constexpr bool IsOverlapping(const Scalar& inImpl4)
+        {
+            auto intersection = Intersect(mTuple, inImpl4);
+            bool result = !IsEmpty(intersection);
+           
+            return result;
         }
 
     private:
@@ -636,6 +715,13 @@ struct Impl4 final
         std::array<T,4> mArray{}; // Impl4: so 4 elements are assumed
     }; // class Simd
 }; // struct Impl4<>
+
+template<typename T>
+inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
+{
+    bool result = (std::get<2>(inScalar) <= 0) || (std::get<3>(inScalar) <= 0);
+    return result;
+}
 
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;
