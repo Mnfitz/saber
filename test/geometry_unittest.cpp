@@ -600,10 +600,93 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,4});
 	}
 
-	SECTION("Area Operations")
-	{
-		// Union, Intersection, IsOverlapping, IsEmpty
-	}
+	SECTION("Union")
+    {
+        // Overlapping rectangles
+        auto rect1 = Rectangle<TestType>{0,0,5,5};
+        auto rect2 = Rectangle<TestType>{2,2,4,4};
+        REQUIRE(Union(rect1, rect2) == Rectangle<TestType>{0,0,6,6});
+
+        // One rectangle inside another
+        auto rect3 = Rectangle<TestType>{1,1,2,2};
+        REQUIRE(Union(rect1, rect3) == rect1);
+
+        // No overlap (should span both)
+        auto rect4 = Rectangle<TestType>{10,10,2,2};
+        REQUIRE(Union(rect1, rect4) == Rectangle<TestType>{0,0,12,12});
+
+        // Touching at edge (should span both)
+        auto rect5 = Rectangle<TestType>{5,0,2,2};
+        REQUIRE(Union(rect1, rect5) == Rectangle<TestType>{0,0,7,5});
+    }
+
+	SECTION("Intersect")
+    {
+        // Overlapping rectangles
+        auto rect1 = Rectangle<TestType>{0,0,5,5};
+        auto rect2 = Rectangle<TestType>{2,2,4,4};
+        REQUIRE(Intersect(rect1, rect2) == Rectangle<TestType>{2,2,3,3});
+
+        // One rectangle inside another
+        auto rect3 = Rectangle<TestType>{1,1,2,2};
+        REQUIRE(Intersect(rect1, rect3) == rect3);
+
+        // No overlap
+        auto rect4 = Rectangle<TestType>{10,10,2,2};
+        REQUIRE(IsEmpty(Intersect(rect1, rect4)));
+
+        // Touching at edge (should be empty)
+        auto rect5 = Rectangle<TestType>{5,0,2,2};
+        REQUIRE(IsEmpty(Intersect(rect1, rect5)));
+    }
+
+	SECTION("IsOverlapping")
+    {
+        // Rectangle-Rectangle overlap
+        auto rect1 = Rectangle<TestType>{0, 0, 5, 5};
+        auto rect2 = Rectangle<TestType>{2, 2, 4, 4};
+        REQUIRE(IsOverlapping(rect1, rect2));
+        REQUIRE(IsOverlapping(rect2, rect1));
+        REQUIRE(rect1.IsOverlapping(rect2));
+        REQUIRE(rect2.IsOverlapping(rect1));
+
+        // One rectangle inside another
+        auto rect3 = Rectangle<TestType>{1, 1, 2, 2};
+        REQUIRE(IsOverlapping(rect1, rect3));
+        REQUIRE(IsOverlapping(rect3, rect1));
+        REQUIRE(rect1.IsOverlapping(rect3));
+        REQUIRE(rect3.IsOverlapping(rect1));
+
+        // No overlap
+        auto rect4 = Rectangle<TestType>{10, 10, 2, 2};
+        REQUIRE_FALSE(IsOverlapping(rect1, rect4));
+        REQUIRE_FALSE(IsOverlapping(rect4, rect1));
+        REQUIRE_FALSE(rect1.IsOverlapping(rect4));
+        REQUIRE_FALSE(rect4.IsOverlapping(rect1));
+
+        // Touching at edge (should not overlap)
+        auto rect5 = Rectangle<TestType>{5, 0, 2, 2};
+        REQUIRE_FALSE(IsOverlapping(rect1, rect5));
+        REQUIRE_FALSE(IsOverlapping(rect5, rect1));
+        REQUIRE_FALSE(rect1.IsOverlapping(rect5));
+        REQUIRE_FALSE(rect5.IsOverlapping(rect1));
+
+        // Rectangle-Point overlap (inside)
+        auto pt1 = Point<TestType>{2, 2};
+        REQUIRE(IsOverlapping(rect1, pt1));
+        REQUIRE(rect1.IsOverlapping(pt1));
+
+        // Rectangle-Point overlap (on edge)
+        auto pt2 = Point<TestType>{0, 0};
+        REQUIRE(IsOverlapping(rect1, pt2));
+        REQUIRE(rect1.IsOverlapping(pt2));
+
+        // Rectangle-Point no overlap (outside)
+        auto pt3 = Point<TestType>{10, 10};
+        REQUIRE_FALSE(IsOverlapping(rect1, pt3));
+        REQUIRE_FALSE(rect1.IsOverlapping(pt3));
+    }
+
 }
 
 TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle rounding works correctly",
