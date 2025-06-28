@@ -157,36 +157,48 @@ struct Impl4 final
 
         constexpr Scalar& Union(const Scalar& inImpl4)
         {
-            // Figure out the bottom right of the union rectangle 
-            std::get<2>(mTuple) = std::max(std::get<2>(mTuple) + std::get<0>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<0>(inImpl4.mTuple));
-            std::get<3>(mTuple) = std::max(std::get<3>(mTuple) + std::get<1>(mTuple), std::get<3>(inImpl4.mTuple) + std::get<1>(inImpl4.mTuple));
+            // By default Scalar is in X,Y,Width,Height format
+            // Convert to L,T,R,B format
+            auto lhs = ToLTRB(*this);
+            auto rhs = ToLTRB(inImpl4);
 
             // Figure out the top left of the union rectangle
-            std::get<0>(mTuple) = std::min(std::get<0>(mTuple), std::get<0>(inImpl4.mTuple));
-            std::get<1>(mTuple) = std::min(std::get<1>(mTuple), std::get<1>(inImpl4.mTuple));
+            std::get<0>(lhs.mTuple) = std::min(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple)); // Min Left
+            std::get<1>(lhs.mTuple) = std::min(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple)); // Min Top
 
-            // Convert the bottom right to width and height
-            std::get<2>(mTuple) -= std::get<0>(mTuple);
-            std::get<3>(mTuple) -= std::get<1>(mTuple);
+            // Figure out the bottom right of the union rectangle
+            std::get<2>(lhs.mTuple) = std::max(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple)); // Max Right
+            std::get<3>(lhs.mTuple) = std::max(std::get<3>(lhs.mTuple), std::get<3>(rhs.mTuple)); // Max Bottom
+
+            // Remember to revert back to XYWH format
+            *this = ToXYWH(lhs);
             return *this;
         }
 
         constexpr Scalar& Intersect(const Scalar& inImpl4)
         {
             // Reverse of Union operation
-            // Figure out the top left of the intersect rectangle
             // Note: some intersection rectangles may be empty (size = 0)
-            // Figure out the top left of the intersect rectangle
-            std::get<2>(mTuple) = std::min(std::get<2>(mTuple) + std::get<0>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<0>(inImpl4.mTuple));
-            std::get<3>(mTuple) = std::min(std::get<3>(mTuple) + std::get<1>(mTuple), std::get<2>(inImpl4.mTuple) + std::get<1>(inImpl4.mTuple));
+
+            // By default Scalar is in X,Y,Width,Height format
+            // Convert to L,T,R,B format
+            auto lhs = ToLTRB(*this);
+            auto rhs = ToLTRB(inImpl4);
 
             // Figure out the bottom right of the intersect rectangle
-            std::get<0>(mTuple) = std::max(std::get<0>(mTuple), std::get<0>(inImpl4.mTuple));
-            std::get<1>(mTuple) = std::max(std::get<1>(mTuple), std::get<1>(inImpl4.mTuple));
+            std::get<0>(lhs.mTuple) = std::max(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple));
+            std::get<1>(lhs.mTuple) = std::max(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple));
+
+            // Figure out the top left of the intersect rectangle
+            std::get<2>(lhs.mTuple) = std::min(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple));
+            std::get<3>(lhs.mTuple) = std::min(std::get<3>(lhs.mTuple), std::get<2>(rhs.mTuple));
+
+            // Remember to revert back to XYWH format
+            *this = ToXYWH(lhs);
 
             // Convert the bottom right to width and height, ensuring we do not end up with negative values
-            std::get<2>(mTuple) = max(std::get<2>(mTuple) - std::get<0>(mTuple), 0);
-            std::get<3>(mTuple) = max(std::get<3>(mTuple) - std::get<1>(mTuple), 0);
+            std::get<2>(mTuple) = max(std::get<2>(mTuple), 0);
+            std::get<3>(mTuple) = max(std::get<3>(mTuple), 0);
             return *this;
         }
 
@@ -232,6 +244,24 @@ struct Impl4 final
             bool result = !IsEmpty(intersection);
            
             return result;
+        }
+
+    private:
+        // TRICKY: There is no way to discern whether a Scalar is in LTRB or XYWH format, therefore methods are kept private
+        static constexpr Scalar ToLTRB(const Scalar& inXYWH)
+        {
+            Scalar ltrb = inXYWH;
+            std::get<2>(ltrb.mTuple) += std::get<0>(ltrb.mTuple);
+            std::get<3>(ltrb.mTuple) += std::get<1>(ltrb.mTuple);
+            return ltrb;
+        }
+
+        static constexpr Scalar ToXYWH(const Scalar& inLTRB)
+        {
+            Scalar xywh = inLTRB;
+            std::get<2>(xywh.mTuple) -= std::get<0>(xywh.mTuple);
+            std::get<3>(xywh.mTuple) -= std::get<1>(xywh.mTuple);
+            return xywh;
         }
 
     private:
