@@ -204,38 +204,101 @@ struct Impl4 final
 
         constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
         {
-            bool result = false;
+            // TODO: Change all std::get() to use Get() and remove .mTuple
+
+            Scalar ltrb = ToLTRB(mTuple);
+            bool isOverlapping = false;
             do 
             {
-                if (std::get<0>(mTuple) > std::get<0>(inImpl2))
+                // Test the x and left component
+                if (Get<0>(inImpl2) < Get<0>(ltrb)) // Not greater than or equal
                 {
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. x = 2.99999_, left = 3.0
+                        if (!Inexact::Eq(Get<0>(inImpl2), Get<0>(ltrb)))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
                     // Point is left of the rectangle
-                    break;
+                    else
+                    {
+                        break;
+                    }
                 }
 
-                if (std::get<1>(mTuple) > std::get<1>(inImpl2))
+                // Test the y and top component
+                if (Get<1>(inImpl2) < Get<1>(ltrb)) // Not greater than or equal
                 {
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. y = 2.99999_, top = 3.0
+                        if (!Inexact::Eq(Get<1>(inImpl2), Get<1>(ltrb)))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
                     // Point is above the rectangle
-                    break;
+                    else
+                    {
+                        break;
+                    }
                 }
 
-                if (std::get<0>(mTuple) + std::get<2>(mTuple) <= std::get<0>(inImpl2))
+                // Test the x and right component
+                if (Get<0>(inImpl2) >= Get<2>(ltrb)) // Not less than
                 {
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. x = 2.99999_, right = 3.0
+                        if (Inexact::Eq(Get<0>(inImpl2), Get<2>(ltrb)))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
                     // Point is right of the rectangle
-                    break;
+                    else
+                    {
+                        break;
+                    }
                 }
 
-                if (std::get<1>(mTuple) + std::get<3>(mTuple) <= std::get<1>(inImpl2))
+                // Test the y and bottom component
+                if (Get<1>(inImpl2) >= Get<3>(ltrb)) // Not less than 
                 {
-                    // Point is below rectangle
-                    break;
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. y = 2.99999_, bottom = 3.0
+                        if (Inexact::Eq(Get<1>(inImpl2), Get<3>(ltrb)))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
+                    // Point is below the rectangle
+                    else
+                    {
+                        break;
+                    }
                 }
 
                 // Point is contained within the rectangle
-                result = true;
+                isOverlapping = true;
             } while (false);
 
-            return result;
+            return isOverlapping;
         }
 
         constexpr bool IsOverlapping(const Scalar& inImpl4)
