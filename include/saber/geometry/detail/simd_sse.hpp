@@ -141,6 +141,51 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 	//static SimdType RoundNearest(SimdType inRound)
 	// Not Implemented for integers
 
+	/// @brief Find the minimum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum value for each pair of element of SimdType
+	static SimdType Min(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_epi32(inLHS, inRHS);
+		return min;
+	}
+
+	/// @brief Find the maximum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum value for each pair of element of SimdType
+	static SimdType Max(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_epi32(inLHS, inRHS);
+		return max;
+	}
+
+	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum/maximum values for each pair of element of SimdType
+	static SimdType MinMax(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_epi32(inLHS, inRHS); // elements 0 and 1
+		auto max = _mm_max_epi32(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_epi16 to blend the 32 bit min and max values
+		auto minMax = _mm_blend_epi16(min, max, 0xF0);
+		return minMax;
+	}
+
+	/// @brief Find the maximum/minimum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum/minimum values for each pair of element of SimdType
+	static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_epi32(inLHS, inRHS); // elements 0 and 1
+		auto min = _mm_min_epi32(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_epi16 to blend the 32 bit min and max values
+		auto maxMin = _mm_blend_epi16(max, min, 0xF0);
+		return maxMin;
+	}
 };
 
 // float
@@ -326,6 +371,52 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 	{
 		auto round = _mm_round_ps(inRound, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
 		return round;
+	}
+
+	/// @brief Find the minimum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum value for each pair of element of SimdType
+	static SimdType Min(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_ps(inLHS, inRHS);
+		return min;
+	}
+
+	/// @brief Find the maximum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum value for each pair of element of SimdType
+	static SimdType Max(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_ps(inLHS, inRHS);
+		return max;
+	}
+
+	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum/maximum values for each pair of element of SimdType
+	static SimdType MinMax(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_ps(inLHS, inRHS); // elements 0 and 1
+		auto max = _mm_max_ps(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_ps to blend the 32 bit min and max values
+		auto minMax = _mm_blend_ps(min, max, 0x0C);
+		return minMax;
+	}
+
+	/// @brief Find the maximum/minimum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum/minimum values for each pair of element of SimdType
+	static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_ps(inLHS, inRHS); // elements 0 and 1
+		auto min = _mm_min_ps(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_ps to blend the 32 bit min and max values
+		auto maxMin = _mm_blend_ps(max, min, 0x0C);
+		return maxMin;
 	}
 };
 
@@ -515,6 +606,53 @@ using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 	{
 		auto round = _mm_round_pd(inRound, _MM_FROUND_TO_ZERO | _MM_FROUND_NO_EXC);
 		return round;
+	}
+
+
+	/// @brief Find the minimum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum value for each pair of element of SimdType
+	static SimdType Min(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_pd(inLHS, inRHS);
+		return min;
+	}
+
+	/// @brief Find the maximum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum value for each pair of element of SimdType
+	static SimdType Max(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_pd(inLHS, inRHS);
+		return max;
+	}
+
+	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum/maximum values for each pair of element of SimdType
+	static SimdType MinMax(SimdType inLHS, SimdType inRHS)
+	{
+		auto min = _mm_min_pd(inLHS, inRHS); // elements 0 and 1
+		auto max = _mm_max_pd(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_pd to blend the 64 bit min and max values
+		auto minMax = _mm_blend_pd(min, max, 0x02);
+		return minMax;
+	}
+
+	/// @brief Find the maximum/minimum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum/minimum values for each pair of element of SimdType
+	static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
+	{
+		auto max = _mm_max_pd(inLHS, inRHS); // elements 0 and 1
+		auto min = _mm_min_pd(inLHS, inRHS); // elements 2 and 3
+		// use _mm_blend_pd to blend the 64 bit min and max values
+		auto maxMin = _mm_blend_pd(max, min, 0x02);
+		return maxMin;
 	}
 };
 

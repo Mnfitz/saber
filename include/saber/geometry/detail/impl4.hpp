@@ -802,51 +802,41 @@ struct Impl4 final
 
         constexpr Simd& Union(const Simd& inImpl4)
         {
-            auto ltrbLHS = ToLTRB(*this);
-            auto ltrbRHS = ToLTRB(inImpl4);
+            Simd result{};
+            if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+            {
+                auto lhs = Simd128<T>::Load4(ToLTRB(*this));
+                auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
+                result = Simd128<T>::MinMax(lhs, rhs);
+                result = ToXYWH(result);
+                Simd128<T>::Store4(&mArray[0], result);
+            }
+            else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+            {
+                // Find the minimum of the left and top values
+                auto lt1 = Simd128<T>::Load2(&mArray[0]);
+                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                result = Simd128<T>::Min(lt1, lt2);
+                Simd128<T>::Store2(&mArray[0], result);
 
-            #if 0
-            auto lhs = Simd128<T>::Load4(ltrbLHS);
-            auto rhs = Simd128<T>::Load4(ltrbRHS);
-            // Magic Happens
-            auto result = Simd128<T>::MinMax(lhs, rhs);
-            // 
-            result = ToXYWH(result);
-            Simd128<T>::Store4(&mArray[0], result);
-            return *this;
-            #endif
+                // Find the maximum of the right and bottom values
+                // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
+                auto simdL = ToLTRB(*this);
+                auto simdR = ToLTRB(inImpl4);
+                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
+                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                result = Simd128<T>::Max(rb1, rb2);
 
-            // Figure out the top left of the union rectangle
-            std::get<0>(lhs.mTuple) = std::min(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple)); // Min Left
-            std::get<1>(lhs.mTuple) = std::min(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple)); // Min Top
-
-            // Figure out the bottom right of the union rectangle
-            std::get<2>(lhs.mTuple) = std::max(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple)); // Max Right
-            std::get<3>(lhs.mTuple) = std::max(std::get<3>(lhs.mTuple), std::get<3>(rhs.mTuple)); // Max Bottom
-
-            // Remember to revert back to XYWH format
-            *this = ToXYWH(lhs);
-            return *this;
+                // Now convert right and bottom to width and height
+                Simd128<T>::Store2(&mArray[2], result);
+                ToXYWH(*this);
+            }
+            else
+            {
+                static_assert("Unsupported T");
+            }
             
-
-            #if 0
-            // By default Scalar is in X,Y,Width,Height format
-            // Convert to L,T,R,B format
-            auto lhs = ToLTRB(*this);
-            auto rhs = ToLTRB(inImpl4);
-
-            // Figure out the top left of the union rectangle
-            std::get<0>(lhs.mTuple) = std::min(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple)); // Min Left
-            std::get<1>(lhs.mTuple) = std::min(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple)); // Min Top
-
-            // Figure out the bottom right of the union rectangle
-            std::get<2>(lhs.mTuple) = std::max(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple)); // Max Right
-            std::get<3>(lhs.mTuple) = std::max(std::get<3>(lhs.mTuple), std::get<3>(rhs.mTuple)); // Max Bottom
-
-            // Remember to revert back to XYWH format
-            *this = ToXYWH(lhs);
             return *this;
-            #endif
         }
 
         constexpr Scalar& Intersect(const Scalar& inImpl4)
@@ -961,38 +951,22 @@ struct Impl4 final
     private:
         static constexpr Simd ToLTRB(const Simd& inXYWH)
         {
-            #if 1
             Simd ltrb = inXYWH;
             auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
 			auto wh = Simd128<T>::Load2(&ltrb.mArray[2]);
 			auto rb = Simd128<T>::Add(lt, wh);
             Simd128<T>::Store2(&ltrb[2], rb);
             return ltrb;
-            #else
-            // TODO: Delete me!
-            Simd ltrb = inXYWH;
-            std::get<2>(ltrb.mTuple) += std::get<0>(ltrb.mTuple);
-            std::get<3>(ltrb.mTuple) += std::get<1>(ltrb.mTuple);
-            return ltrb;
-            #endif
         }
 
         static constexpr Simd ToXYWH(const Simd& inLTRB)
         {
-            #if 1
             Simd xywh = inLTRB;
             auto lt = Simd128<T>::Load2(&xywh.mArray[0]);
 			auto rb = Simd128<T>::Load2(&xywh.mArray[2]);
 			auto wh = Simd128<T>::Sub(rb, lt);
             Simd128<T>::Store2(&xywh[2], rb);
             return xywh;
-            #else
-            // TODO: Delete me!
-            Simd xywh = inLTRB;
-            std::get<2>(xywh.mTuple) -= std::get<0>(xywh.mTuple);
-            std::get<3>(xywh.mTuple) -= std::get<1>(xywh.mTuple);
-            return xywh;
-            #endif
         }
 
     private:

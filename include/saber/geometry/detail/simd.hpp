@@ -278,6 +278,47 @@ struct Simd128 :
 		}
 		return inRound;
 	}
+
+	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum/maximum values for each pair of element of SimdType
+	static constexpr SimdType MinMax(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+
+		constexpr auto kMin = 0;
+		constexpr auto kMax = Simd128Traits<T>::kSize/2;
+		SimdType minMax{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize/2; i++)
+		{
+			minMax[i+kMin] = std::min(inLHS[i+kMin], inRHS[i+kMin]);
+			minMax[i+kMax] = std::max(inLHS[i+kMax], inRHS[i+kMax]);
+		}
+		return minMax;
+	}
+
+	/// @brief Find the maximum/minimum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum/minimum values for each pair of element of SimdType
+	static constexpr SimdType MaxMin(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+
+		constexpr auto kMin = 0;
+		constexpr auto kMax = Simd128Traits<T>::kSize/2;
+		SimdType maxMin{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize/2; i++)
+		{
+			maxMin[i+kMin] = std::max(inLHS[i+kMin], inRHS[i+kMin]);
+			maxMin[i+kMax] = std::min(inLHS[i+kMax], inRHS[i+kMax]);
+		}
+		return maxMin;
+	}
+
 }; // struct Simd128<T>
 
 } // namespace saber::geometry::detail
