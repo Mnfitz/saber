@@ -222,25 +222,89 @@ struct Simd128 :
 		bool isEq = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
-			if (inRHS[i] != inLHS[i])
+			// check for "exact" equality
+			if (inRHS[i] == inLHS[i])
 			{
-				isEq = false;
-				break;
+				continue;
 			}
+
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inRHS[i], inLHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isEq = false;
+			break;
 		}
 		return isEq;
 	}
 
-	/// @brief Round all elements of SimdType to the nearest whole number 
-	/// @param inRound The SimdType to be rounded
-	/// @return Return the rounded result
-	static constexpr SimdType RoundNearest(SimdType inRound)
+	static constexpr bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
+		bool isGe = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
-			inRound[i] = std::round(inRound[i]);
+			// check for "exact" greater than
+			if (inLHS[i] >= inRHS[i])
+			{
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isGe = false;
+			break;
 		}
-		return inRound;
+		return isGe;
+	}
+
+	static constexpr bool IsLe(SimdType inLHS, SimdType inRHS)
+	{
+		bool isLe = true;
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			// check for "exact" greater than
+			if (inLHS[i] <= inRHS[i])
+			{
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isLe = false;
+			break;
+		}
+		return isLe;
+	}
+
+	static constexpr bool IsGt(SimdType inLHS, SimdType inRHS)
+	{
+		bool isGt = !IsLe(inRHS, inLHS);
+		return isGt;
+	}
+
+	static constexpr bool IsLt(SimdType inLHS, SimdType inRHS)
+	{
+		bool isLt = !IsGe(inRHS, inLHS);
+		return isLt;
 	}
 
 	/// @brief Round all elements of SimdType toward positive infinity 

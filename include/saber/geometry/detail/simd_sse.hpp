@@ -130,12 +130,28 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
-	static bool IsEQ(SimdType inLHS, SimdType inRHS)
+	static bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
         const auto eq = _mm_cmpeq_epi32(inLHS, inRHS);
 		const auto mask = _mm_movemask_epi8(eq);
-		const bool allEqual = (mask == 0xFFFF);
-		return allEqual;
+		const bool allEq = (mask == 0xFFFF);
+		return allEq;
+	}
+
+	static bool IsGe(SimdType inLHS, SimdType inRHS)
+	{
+		const auto ge = _mm_cmplt_epi32(inRHS, inLHS);
+		const auto mask = _mm_movemask_epi8(ge);
+		const bool allGe = (mask == 0xFFFF);
+		return allGe;
+	}
+
+	static bool IsLe(SimdType inLHS, SimdType inRHS)
+	{
+		const auto le = _mm_cmpgt_epi32(inRHS, inLHS);
+		const auto mask = _mm_movemask_epi8(le);
+		const bool allLe = (mask == 0xFFFF);
+		return allLe;
 	}
 
 	//static SimdType RoundNearest(SimdType inRound)
@@ -301,7 +317,7 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
-	static bool IsEQ(SimdType inLHS, SimdType inRHS)
+	static bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
 		// Create a vector mask to remove the sign bit for floats so that we can take the absolute value of a vector of floats
 		const auto signMask = ~(1U << (sizeof(float) * 8 - 1));
@@ -331,6 +347,24 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 		// See is all 4 bits of the mask were true (if so, IsEq() returns true)
 		const bool approxEq = (mask == 0xF);
 		return approxEq;
+	}
+
+	static bool IsGe(SimdType inLHS, SimdType inRHS)
+	{
+		// TODO: Add inexact check
+		const auto ge = _mm_cmpge_ps(inLHS, inRHS);
+		const auto mask = _mm_movemask_ps(ge);
+		const bool allGe = (mask == 0xF);
+		return allGe;
+	}
+
+	static bool IsLe(SimdType inLHS, SimdType inRHS)
+	{
+		// TODO: Add inexact check
+		const auto le = _mm_cmple_ps(inLHS, inRHS);
+		const auto mask = _mm_movemask_ps(le);
+		const bool allLe = (mask == 0xF);
+		return allLe;
 	}
 
 	/// @brief Round all <float> values toward the nearest whole number
@@ -534,7 +568,7 @@ using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
-	static bool IsEQ(SimdType inLHS, SimdType inRHS)
+	static bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
 		// Create a vector mask to remove the sign bit for doubles so that we can take the absolute value of a vector of doubles
 		constexpr auto signMask = ~(1ULL << (sizeof(double) * 8 - 1));

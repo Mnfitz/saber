@@ -586,20 +586,20 @@ struct Impl4 final
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&mArray[0]);
 					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEQ(lhs, rhs);
+					result = Simd128<T>::IsEq(lhs, rhs);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&mArray[0]);
 					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEQ(lhs, rhs);
+					result = Simd128<T>::IsEq(lhs, rhs);
 
 					if (result)
 					{
 						lhs = Simd128<T>::Load2(&mArray[2]);
 						rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
-						result = result && Simd128<T>::IsEQ(lhs, rhs);
+						result = result && Simd128<T>::IsEq(lhs, rhs);
 					}
 				}
 				else
@@ -803,7 +803,7 @@ struct Impl4 final
         constexpr Simd& Union(const Simd& inImpl4)
         {
             Simd result{};
-            if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
+            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
             {
                 auto lhs = Simd128<T>::Load4(ToLTRB(*this));
                 auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
@@ -811,7 +811,7 @@ struct Impl4 final
                 result = ToXYWH(result);
                 Simd128<T>::Store4(&mArray[0], result);
             }
-            else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
+            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
             {
                 // Find the minimum of the left and top values
                 auto lt1 = Simd128<T>::Load2(&mArray[0]);
@@ -827,8 +827,8 @@ struct Impl4 final
                 auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
                 result = Simd128<T>::Max(rb1, rb2);
 
-                // Now convert right and bottom to width and height
                 Simd128<T>::Store2(&mArray[2], result);
+                // Now convert right and bottom to width and height
                 ToXYWH(*this);
             }
             else
@@ -841,31 +841,41 @@ struct Impl4 final
 
         constexpr Scalar& Intersect(const Scalar& inImpl4)
         {
-            #if 0
-            // Reverse of Union operation
-            // Note: some intersection rectangles may be empty (size = 0)
+            Simd result{};
+            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
+            {
+                auto lhs = Simd128<T>::Load4(ToLTRB(*this));
+                auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
+                result = Simd128<T>::MinMax(lhs, rhs);
+                result = ToXYWH(result);
+                Simd128<T>::Store4(&mArray[0], result);
+            }
+            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
+            {
+                // Find the maximum of the left and top values
+                auto lt1 = Simd128<T>::Load2(&mArray[0]);
+                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                result = Simd128<T>::Max(lt1, lt2);
+                Simd128<T>::Store2(&mArray[0], result);
 
-            // By default Scalar is in X,Y,Width,Height format
-            // Convert to L,T,R,B format
-            auto lhs = ToLTRB(*this);
-            auto rhs = ToLTRB(inImpl4);
+                // Find the minimum of the right and bottom values
+                // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
+                auto simdL = ToLTRB(*this);
+                auto simdR = ToLTRB(inImpl4);
+                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
+                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                result = Simd128<T>::Min(rb1, rb2);
 
-            // Figure out the bottom right of the intersect rectangle
-            std::get<0>(lhs.mTuple) = std::max(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple));
-            std::get<1>(lhs.mTuple) = std::max(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple));
-
-            // Figure out the top left of the intersect rectangle
-            std::get<2>(lhs.mTuple) = std::min(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple));
-            std::get<3>(lhs.mTuple) = std::min(std::get<3>(lhs.mTuple), std::get<2>(rhs.mTuple));
-
-            // Remember to revert back to XYWH format
-            *this = ToXYWH(lhs);
-
-            // Convert the bottom right to width and height, ensuring we do not end up with negative values
-            std::get<2>(mTuple) = max(std::get<2>(mTuple), 0);
-            std::get<3>(mTuple) = max(std::get<3>(mTuple), 0);
+                Simd128<T>::Store2(&mArray[2], result);
+                // Now convert right and bottom to width and height
+                ToXYWH(*this);
+            }
+            else
+            {
+                static_assert("Unsupported T");
+            }
+            
             return *this;
-            #endif
         }
 
         constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
@@ -977,9 +987,51 @@ struct Impl4 final
 template<typename T>
 inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
 {
-    bool result = (std::get<2>(inScalar) <= 0) || (std::get<3>(inScalar) <= 0);
-    return result;
+    bool isEmpty = false;
+    do
+    {
+        // check for "exact" width and height being zero or negative
+        isEmpty = (Get<2>(inScalar) <= 0) || (Get<3>(inScalar) <= 0);
+        if (isEmpty)
+        {
+            break;
+        }
+
+        if constexpr(std::is_floating_point_v<T>)
+        {
+            // check for "inexact" width and height being zero
+            isEmpty = (Inexact::Eq(Get<2>(inScalar), 0) || Inexact::Eq(Get<3>(inScalar), 0));
+        }
+
+    } while (false);
+   
+    return isEmpty;
 }
+
+template<typename T>
+inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
+{
+    bool isEmpty = false;
+    do
+    {
+        // check for "exact" width and height being zero or negative
+        isEmpty = (Get<2>(inSimd) <= 0) || (Get<3>(inSimd) <= 0);
+        if (isEmpty)
+        {
+            break;
+        }
+
+        if constexpr(std::is_floating_point_v<T>)
+        {
+            // check for "inexact" width and height being zero
+            isEmpty = (Inexact::Eq(Get<2>(inSimd), 0) || Inexact::Eq(Get<3>(inSimd), 0));
+        }
+
+    } while (false);
+   
+    return isEmpty;
+}
+
 
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;
