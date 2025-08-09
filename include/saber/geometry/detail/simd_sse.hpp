@@ -313,14 +313,14 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
-	/// @brief Compare two vector<float> values to check if all elements equal.
+	/// @brief Compare two vector<float> values to check if all elements equal or inexactly equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
 	static bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
 		// Create a vector mask to remove the sign bit for floats so that we can take the absolute value of a vector of floats
-		const auto signMask = ~(1U << (sizeof(float) * 8 - 1));
+		constexpr auto signMask = ~(1U << (sizeof(float) * 8 - 1)); // Most significant bit of the float = sign bit (0x7FFFFFFF)
 		const auto absMask = _mm_castsi128_ps(_mm_set1_epi32(signMask));
 
 		// Take the absolute value of four floats at a time for LHS and RHS
@@ -351,19 +351,40 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
-		// TODO: Add inexact check
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto ge = _mm_cmpge_ps(inLHS, inRHS);
-		const auto mask = _mm_movemask_ps(ge);
-		const bool allGe = (mask == 0xF);
+		const auto mask = _mm_movemask_ps(ge); // Convert _m128 to a binary mask
+		bool allGe = (mask == 0xF); // if mask == 0b1111, all are 'exactly' greater than or equal
+		if (!allGe)
+		{
+			// We are testing if LHS is greater than OR equal to RHS.
+			// If an element is not 'exactly' greater than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' greater than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly greater than or equal.
+			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
+			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
+			const auto lhs = _mm_blendv_ps(inLHS, inRHS, ge); 
+			allGe = IsEq(lhs, inRHS);
+		}
 		return allGe;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
-		// TODO: Add inexact check
 		const auto le = _mm_cmple_ps(inLHS, inRHS);
 		const auto mask = _mm_movemask_ps(le);
-		const bool allLe = (mask == 0xF);
+		bool allLe = (mask == 0xF);
+		if (!allLe)
+		{
+			// We are testing if LHS is less than OR equal to RHS.
+			// If an element is not 'exactly' less than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' less than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly less than or equal.
+			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
+			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
+			const auto lhs = _mm_blendv_ps(inLHS, inRHS, le); 
+			allLe = IsEq(lhs, inRHS);
+		}
 		return allLe;
 	}
 
@@ -600,6 +621,46 @@ using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 		// See is all 2 bits of the mask were true (if so, IsEq() returns true)
 		const bool approxEq = (mask == 0x3);
 		return approxEq;
+	}
+
+	static bool IsGe(SimdType inLHS, SimdType inRHS)
+	{
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
+		const auto ge = _mm_cmpge_pd(inLHS, inRHS);
+		const auto mask = _mm_movemask_pd(ge); // Convert _m128d to a binary mask
+		bool allGe = (mask == 0x3); // if mask == 0b0011, all are 'exactly' greater than or equal
+		if (!allGe)
+		{
+			// We are testing if LHS is greater than OR equal to RHS.
+			// If an element is not 'exactly' greater than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' greater than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly greater than or equal.
+			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
+			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [1.1, 1.0]
+			const auto lhs = _mm_blendv_pd(inLHS, inRHS, ge); 
+			allGe = IsEq(lhs, inRHS);
+		}
+		return allGe;
+	}
+
+	static bool IsLe(SimdType inLHS, SimdType inRHS)
+	{
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
+		const auto le = _mm_cmple_pd(inLHS, inRHS);
+		const auto mask = _mm_movemask_pd(le); // Convert _m128d to a binary mask
+		bool allLe = (mask == 0x3); // if mask == 0b0011, all are 'exactly' greater than or equal
+		if (!allLe)
+		{
+			// We are testing if LHS is less than OR equal to RHS.
+			// If an element is not 'exactly' less than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' less than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly less than or equal.
+			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
+			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [5.0, 1.1]
+			const auto lhs = _mm_blendv_pd(inLHS, inRHS, le); 
+			allLe = IsEq(lhs, inRHS);
+		}
+		return allLe;
 	}
 
 	/// @brief Round all <double> values toward the nearest whole number

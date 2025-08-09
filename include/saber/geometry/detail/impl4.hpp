@@ -204,42 +204,40 @@ struct Impl4 final
 
         constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
         {
-            // TODO: Change all std::get() to use Get() and remove .mTuple
-
             Scalar ltrb = ToLTRB(mTuple);
             bool isOverlapping = false;
             do 
             {
                 // Test the x and left component
-                if (Get<0>(inImpl2) < Get<0>(ltrb)) // Not greater than or equal
+                if (inImpl2.Get<0>() < ltrb.Get<0>()) // Not greater than or equal
                 {
                     // Extra step needed for floating point equality
                     if constexpr(std::is_floating_point_v<T>)
                     {
                         // Approximately equal values are contained within the rectangle
                         // Eg. x = 2.99999..., left = 3.0
-                        if (!Inexact::Eq(Get<0>(inImpl2), Get<0>(ltrb)))
+                        if (!Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<0>()))
                         {
                             break;
                         }
                         // Continue checking, since point is approximately contained within the rectangle
                     }
-                    // Point is left of the rectangle
                     else
                     {
+                        // Point is left of the rectangle
                         break;
                     }
                 }
 
                 // Test the y and top component
-                if (Get<1>(inImpl2) < Get<1>(ltrb)) // Not greater than or equal
+                if (inImpl2.Get<1>() < ltrb.Get<1>()) // Not greater than or equal
                 {
                     // Extra step needed for floating point equality
                     if constexpr(std::is_floating_point_v<T>)
                     {
                         // Approximately equal values are contained within the rectangle
                         // Eg. y = 2.99999..., top = 3.0
-                        if (!Inexact::Eq(Get<1>(inImpl2), Get<1>(ltrb)))
+                        if (!Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<1>()))
                         {
                             break;
                         }
@@ -254,7 +252,7 @@ struct Impl4 final
 
                 {
                     // Test the x and right component
-                    if (Get<0>(inImpl2) >= Get<2>(ltrb)) // Not less than
+                    if (inImpl2.Get<0>() >= ltrb.Get<2>()) // Not less than
                     {
                         break;
                     }
@@ -264,7 +262,7 @@ struct Impl4 final
                     {
                         // Approximately equal values are not contained within the rectangle
                         // Eg. y = 2.99999..., right = 3.0
-                        if (Inexact::Eq(Get<0>(inImpl2), Get<2>(ltrb)))
+                        if (Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<2>()))
                         {
                             break;
                         }
@@ -273,7 +271,7 @@ struct Impl4 final
 
                 {
                     // Test the y and bottom component
-                    if (Get<1>(inImpl2) >= Get<3>(ltrb)) // Not less than 
+                    if (inImpl2.Get<1>() >= ltrb.Get<3>()) // Not less than 
                     {
                         break;
                     }
@@ -283,7 +281,7 @@ struct Impl4 final
                     {
                         // Approximately equal values are not contained within the rectangle
                         // Eg. y = 2.99999..., bottom = 3.0
-                        if (Inexact::Eq(Get<1>(inImpl2), Get<3>(ltrb)))
+                        if (Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<3>()))
                         {
                             break;
                         }
@@ -878,18 +876,24 @@ struct Impl4 final
             return *this;
         }
 
-        constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
+        constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2)
         {
-            #if 0
-            Scalar ltrb = ToLTRB(mTuple);
+
+            // TODO: Use Simd128<T>::IsGe() and Simd128<T>::IsLe() from simd_sse.hpp
+            // Get LHS and RHS from Simd128<T>::Load2()
+
             bool isOverlapping = false;
             do 
             {
-                if (Get<0>(inImpl2) < Get<0>(ltrb)) // Not greater than or equal
+                auto isLt = Simd128<T>::IsGe(ltrb, inImpl2);
+                auto isRb = Simd128<T>::IsLe(ltrb, inImpl2);
+
+                // Impl2.x < ltrb.left?
+                if (inImpl2.Get<0>() < ltrb.Get<0>()) // Not greater than or equal
                 {
                     if constexpr(std::is_floating_point_v<T>)
                     {
-                        if (!Inexact::Eq(Get<0>(inImpl2), Get<0>(ltrb)))
+                        if (!Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<0>()))
                         {
                             break;
                         }
@@ -900,11 +904,12 @@ struct Impl4 final
                     }
                 }
 
-                if (Get<1>(inImpl2) < Get<1>(ltrb)) // Not greater than or equal
+                // Impl2.y < ltrb.top?
+                if (inImpl2.Get<1>() < ltrb.Get<1>()) // Not greater than or equal
                 {
                     if constexpr(std::is_floating_point_v<T>)
                     {
-                        if (!Inexact::Eq(Get<1>(inImpl2), Get<1>(ltrb)))
+                        if (!Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<1>()))
                         {
                             break;
                         }
@@ -915,27 +920,29 @@ struct Impl4 final
                     }
                 }
                 
-                if (Get<0>(inImpl2) >= Get<2>(ltrb)) // Not less than
+                // Impl2.x >= ltrb.right?
+                if (inImpl2.Get<0>() >= ltrb.Get<2>()) // Not less than
                 {
                     break;
                 }
 
                 if constexpr(std::is_floating_point_v<T>)
                 {
-                    if (Inexact::Eq(Get<0>(inImpl2), Get<2>(ltrb)))
+                    if (Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<2>()))
                     {
                         break;
                     }
                 }
                 
-                if (Get<1>(inImpl2) >= Get<3>(ltrb)) // Not less than 
+                // Impl2.y >= ltrb.bottom?
+                if (inImpl2.Get<1>() >= ltrb.Get<3>()) // Not less than 
                 {
                     break;
                 }
 
                 if constexpr(std::is_floating_point_v<T>)
                 {
-                    if (Inexact::Eq(Get<1>(inImpl2), Get<3>(ltrb)))
+                    if (Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<3>()))
                     {
                         break;
                     }
@@ -945,17 +952,14 @@ struct Impl4 final
             } while (false);
 
             return isOverlapping;
-            #endif
         }
 
-        constexpr bool IsOverlapping(const Scalar& inImpl4)
+        constexpr bool IsOverlapping(const Simd& inImpl4)
         {
-            #if 0
             auto intersection = Intersect(mTuple, inImpl4);
             bool result = !IsEmpty(intersection);
            
             return result;
-            #endif
         }
 
     private:
@@ -991,7 +995,7 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
     do
     {
         // check for "exact" width and height being zero or negative
-        isEmpty = (Get<2>(inScalar) <= 0) || (Get<3>(inScalar) <= 0);
+        isEmpty = (inScalar.Get<2>() <= 0) || (inScalar.Get<3>() <= 0);
         if (isEmpty)
         {
             break;
@@ -1000,7 +1004,7 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
         if constexpr(std::is_floating_point_v<T>)
         {
             // check for "inexact" width and height being zero
-            isEmpty = (Inexact::Eq(Get<2>(inScalar), 0) || Inexact::Eq(Get<3>(inScalar), 0));
+            isEmpty = (Inexact::Eq(inScalar.Get<2>(), 0) || Inexact::Eq(inScalar.Get<3>(), 0));
         }
 
     } while (false);
@@ -1015,7 +1019,7 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
     do
     {
         // check for "exact" width and height being zero or negative
-        isEmpty = (Get<2>(inSimd) <= 0) || (Get<3>(inSimd) <= 0);
+        isEmpty = (inSimd.Get<2>() <= 0) || (inSimd.Get<3>() <= 0);
         if (isEmpty)
         {
             break;
@@ -1024,7 +1028,7 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
         if constexpr(std::is_floating_point_v<T>)
         {
             // check for "inexact" width and height being zero
-            isEmpty = (Inexact::Eq(Get<2>(inSimd), 0) || Inexact::Eq(Get<3>(inSimd), 0));
+            isEmpty = (Inexact::Eq(inSimd.Get<2>(), 0) || Inexact::Eq(inSimd.Get<3>(), 0));
         }
 
     } while (false);
