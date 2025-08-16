@@ -98,8 +98,8 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Point::ctor() works correctly",
 	//
 	//	const Point<TestType> point2{11,12};
 	//	TestType z{}, w{};
-	// 	std::tie(z, std::ignore) = point2;
-	// 	std::tie(std::ignore, w) = point2;
+	//  std::tie(z, std::ignore) = point2;
+	//  std::tie(std::ignore, w) = point2;
 	//
 	// 	REQUIRE(point2.X() == z);
 	// 	REQUIRE(point2.Y() == w);
@@ -197,8 +197,8 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Size::ctor() works correctly",
 	//
 	//	const Size<TestType> size2{11,12};
 	//	TestType z{}, w{};
-	// 	std::tie(z, std::ignore) = size2;
-	// 	std::tie(std::ignore, w) = size2;
+	//  std::tie(z, std::ignore) = size2;
+	//  std::tie(std::ignore, w) = size2;
 	//
 	// 	REQUIRE(size2.Width() == z);
 	// 	REQUIRE(size2.Height() == w);
@@ -605,19 +605,23 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
         // Overlapping rectangles
         auto rect1 = Rectangle<TestType>{0,0,5,5};
         auto rect2 = Rectangle<TestType>{2,2,4,4};
-        REQUIRE(Union(rect1, rect2) == Rectangle<TestType>{0,0,6,6});
+        auto union1 = Union(rect1, rect2);
+        REQUIRE(union1 == Rectangle<TestType>{0,0,6,6});
 
         // One rectangle inside another
         auto rect3 = Rectangle<TestType>{1,1,2,2};
-        REQUIRE(Union(rect1, rect3) == rect1);
+        auto union2 = Union(rect1, rect3);
+        REQUIRE(union2 == rect1);
 
         // No overlap (should span both)
         auto rect4 = Rectangle<TestType>{10,10,2,2};
-        REQUIRE(Union(rect1, rect4) == Rectangle<TestType>{0,0,12,12});
+        auto union3 = Union(rect1, rect4);
+        REQUIRE(union3 == Rectangle<TestType>{0,0,12,12});
 
         // Touching at edge (should span both)
         auto rect5 = Rectangle<TestType>{5,0,2,2};
-        REQUIRE(Union(rect1, rect5) == Rectangle<TestType>{0,0,7,5});
+        auto union4 = Union(rect1, rect5);
+        REQUIRE(union4 == Rectangle<TestType>{0,0,7,5});
     }
 
 	SECTION("Intersect")

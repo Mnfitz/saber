@@ -419,35 +419,31 @@ inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Scale(T inXY)
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Union(const Rectangle& /*inRectangle*/)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Union(const Rectangle& inRectangle)
 {
-	// TODO: Add SIMD Union to Impl4
-	//mImpl.Union(inRectangle.mImpl);
+	mImpl.Union(inRectangle.mImpl);
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Intersect(const Rectangle& /*inRectangle*/)
+inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::Intersect(const Rectangle& inRectangle)
 {
-	// TODO: Add SIMD Intersect to Impl4
-	//mImpl.Intersect(inRectangle.mImpl);
+	mImpl.Intersect(inRectangle.mImpl);
 	return *this;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Point<T, Impl>& /*inPoint*/) const
+inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Point<T, Impl>& inPoint) const
 {
-	// TODO: Add a IsOverlapping() class method to impl4
-	//mImpl.IsOverlapping(inPoint.mImpl);
-	return false;
+	const bool isOverlapping = mImpl.IsOverlapping(inPoint.mImpl);
+	return isOverlapping;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Rectangle& /*inRectangle*/) const
+inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Rectangle& inRectangle) const
 {
-	// TODO: Add a IsOverlapping() class method to impl4
-	// mImpl.IsOverlapping(inRectangle.mImpl);
-	return false;
+	const bool isOverlapping = mImpl.IsOverlapping(inRectangle.mImpl);
+	return isOverlapping;
 }
 
 #pragma endregion
@@ -458,8 +454,6 @@ inline constexpr bool Rectangle<T, Impl>::IsEqual(const Rectangle& inRectangle) 
 	auto result = mImpl.IsEqual(inRectangle.mImpl);
 	return result;
 }
-
-
 
 // ------------------------------------------------------------------
 #pragma region Inline Rounding operations

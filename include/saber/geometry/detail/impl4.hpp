@@ -202,7 +202,7 @@ struct Impl4 final
             return *this;
         }
 
-        constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2)
+        constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2) const
         {
             Scalar ltrb = ToLTRB(mTuple);
             bool isOverlapping = false;
@@ -295,12 +295,13 @@ struct Impl4 final
             return isOverlapping;
         }
 
-        constexpr bool IsOverlapping(const Scalar& inImpl4)
+        constexpr bool IsOverlapping(const Scalar& inImpl4) const
         {
-            auto intersection = Intersect(mTuple, inImpl4);
-            bool result = !IsEmpty(intersection);
+            auto copy = this;
+            auto intersection = copy.Intersect(inImpl4);
+            const bool isOverlapping = !IsEmpty(intersection);
            
-            return result;
+            return isOverlapping;
         }
 
     private:
@@ -563,41 +564,40 @@ struct Impl4 final
 
         constexpr bool IsEqual(const Simd& inRHS) const
         {
-            bool result = false;
+            bool isEqual = false;
             // protect our interface so it can remain constexpr
             do 
             {
-        #if __cpp_lib_is_constant_evaluated
+#if __cpp_lib_is_constant_evaluated
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
                     Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
                     const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
-                    result = lhs == rhs;
+                    isEqual = lhs == rhs;
                     break;
                 }
-        #endif // __cpp_lib_is_constant_evaluated
-
+#endif // __cpp_lib_is_constant_evaluated
 
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&mArray[0]);
 					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEq(lhs, rhs);
+					isEqual = Simd128<T>::IsEq(lhs, rhs);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&mArray[0]);
 					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEq(lhs, rhs);
+					isEqual = Simd128<T>::IsEq(lhs, rhs);
 
-					if (result)
+					if (isEqual)
 					{
 						lhs = Simd128<T>::Load2(&mArray[2]);
 						rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
-						result = result && Simd128<T>::IsEq(lhs, rhs);
+						isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
 					}
 				}
 				else
@@ -607,7 +607,7 @@ struct Impl4 final
 
             } while (false);
 
-            return result;
+            return isEqual;
         }
 
         constexpr void RoundNearest()
@@ -837,24 +837,24 @@ struct Impl4 final
             return *this;
         }
 
-        constexpr Scalar& Intersect(const Scalar& inImpl4)
+        constexpr Simd& Intersect(const Simd& inImpl4)
         {
-            Simd result{};
+            Simd intersection{};
             if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
             {
                 auto lhs = Simd128<T>::Load4(ToLTRB(*this));
                 auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
-                result = Simd128<T>::MinMax(lhs, rhs);
-                result = ToXYWH(result);
-                Simd128<T>::Store4(&mArray[0], result);
+                intersection = Simd128<T>::MinMax(lhs, rhs);
+                intersection = ToXYWH(intersection);
+                Simd128<T>::Store4(&mArray[0], intersection);
             }
             else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
             {
                 // Find the maximum of the left and top values
                 auto lt1 = Simd128<T>::Load2(&mArray[0]);
                 auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
-                result = Simd128<T>::Max(lt1, lt2);
-                Simd128<T>::Store2(&mArray[0], result);
+                intersection = Simd128<T>::Max(lt1, lt2);
+                Simd128<T>::Store2(&mArray[0], intersection);
 
                 // Find the minimum of the right and bottom values
                 // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
@@ -862,9 +862,9 @@ struct Impl4 final
                 auto simdR = ToLTRB(inImpl4);
                 auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
                 auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
-                result = Simd128<T>::Min(rb1, rb2);
+                intersection = Simd128<T>::Min(rb1, rb2);
 
-                Simd128<T>::Store2(&mArray[2], result);
+                Simd128<T>::Store2(&mArray[2], intersection);
                 // Now convert right and bottom to width and height
                 ToXYWH(*this);
             }
@@ -876,90 +876,39 @@ struct Impl4 final
             return *this;
         }
 
-        constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2)
+        constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2) const
         {
-
-            // TODO: Use Simd128<T>::IsGe() and Simd128<T>::IsLe() from simd_sse.hpp
-            // Get LHS and RHS from Simd128<T>::Load2()
-
             bool isOverlapping = false;
-            do 
+            auto lt = Simd128<T>::Load2(&mArray[0]);
+            auto rb = Simd128<T>::Load2(ToLTRB(&mArray[2]));
+            auto xy = Simd128<T>::Load2(inImpl2);
+            
+            do
             {
-                auto isLt = Simd128<T>::IsGe(ltrb, inImpl2);
-                auto isRb = Simd128<T>::IsLe(ltrb, inImpl2);
-
-                // Impl2.x < ltrb.left?
-                if (inImpl2.Get<0>() < ltrb.Get<0>()) // Not greater than or equal
+                if (!Simd128<T>::IsGe(xy, lt)) // Fancy way of saying xy < lt
                 {
-                    if constexpr(std::is_floating_point_v<T>)
-                    {
-                        if (!Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<0>()))
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-
-                // Impl2.y < ltrb.top?
-                if (inImpl2.Get<1>() < ltrb.Get<1>()) // Not greater than or equal
-                {
-                    if constexpr(std::is_floating_point_v<T>)
-                    {
-                        if (!Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<1>()))
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                
-                // Impl2.x >= ltrb.right?
-                if (inImpl2.Get<0>() >= ltrb.Get<2>()) // Not less than
-                {
+                    // Impl2 is too far to the left/above the Impl4
                     break;
                 }
 
-                if constexpr(std::is_floating_point_v<T>)
+                if(Simd128<T>::IsGe(xy, rb)) 
                 {
-                    if (Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<2>()))
-                    {
-                        break;
-                    }
-                }
-                
-                // Impl2.y >= ltrb.bottom?
-                if (inImpl2.Get<1>() >= ltrb.Get<3>()) // Not less than 
-                {
+                    // Impl2 is too far to the right/below/touching the Impl4
                     break;
                 }
-
-                if constexpr(std::is_floating_point_v<T>)
-                {
-                    if (Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<3>()))
-                    {
-                        break;
-                    }
-                }
-
                 isOverlapping = true;
-            } while (false);
 
+            } while (false);
             return isOverlapping;
         }
 
-        constexpr bool IsOverlapping(const Simd& inImpl4)
+        constexpr bool IsOverlapping(const Simd& inImpl4) const
         {
-            auto intersection = Intersect(mTuple, inImpl4);
-            bool result = !IsEmpty(intersection);
+            Simd copy = *this;
+            auto intersection = copy.Intersect(inImpl4);
+            const bool isOverlapping = !IsEmpty(intersection);
            
-            return result;
+            return isOverlapping;
         }
 
     private:
@@ -988,7 +937,7 @@ struct Impl4 final
     }; // class Simd
 }; // struct Impl4<>
 
-template<typename T>
+template<typename T, ImplKind Impl>
 inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
 {
     bool isEmpty = false;
@@ -1012,9 +961,10 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
     return isEmpty;
 }
 
-template<typename T>
+template<typename T, ImplKind Impl>
 inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
 {
+    // TODO: Make this use Simd 
     bool isEmpty = false;
     do
     {
@@ -1032,10 +982,8 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
         }
 
     } while (false);
-   
     return isEmpty;
 }
-
 
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;

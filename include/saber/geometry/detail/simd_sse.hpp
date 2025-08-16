@@ -371,9 +371,11 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
+		// The cheap test
 		const auto le = _mm_cmple_ps(inLHS, inRHS);
 		const auto mask = _mm_movemask_ps(le);
 		bool allLe = (mask == 0xF);
+		// The expensive test
 		if (!allLe)
 		{
 			// We are testing if LHS is less than OR equal to RHS.
