@@ -12,6 +12,10 @@
 
 namespace saber::geometry {
 
+// Forward Declaration
+template<typename T, ImplKind Impl>
+class Rectangle;
+
 /// @brief 
 /// @tparam T 
 /// @tparam ImplType 
@@ -34,8 +38,13 @@ public:
     constexpr Point(const Point& inCopy) = default;
     constexpr Point& operator=(const Point& inCopy) = default;
 
+    // Getters
     constexpr T X() const;
     constexpr T Y() const;
+
+    // Setters
+    constexpr void X(T inX);
+	constexpr void Y(T inY);
 
     // Mathematical operations
     constexpr Point& operator+=(const Point& inPoint);
@@ -86,6 +95,7 @@ private:
 private:
     friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
+    friend class Rectangle<T, Impl>;
 
 private:
     using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
@@ -102,6 +112,7 @@ inline constexpr Point<T, Impl>::Point(T inX, T inY) :
     // Do nothing
 }
 
+// Getters
 template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::X() const
 {
@@ -112,6 +123,19 @@ template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::Y() const
 {
     return mImpl.Get<1>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Point<T, Impl>::X(T inX)
+{
+	mImpl.Set<0>(inX);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Point<T, Impl>::Y(T inY)
+{
+	mImpl.Set<1>(inY);
 }
 
 #pragma endregion

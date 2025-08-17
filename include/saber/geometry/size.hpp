@@ -12,6 +12,10 @@
 
 namespace saber::geometry {
 
+// Forward Declaration
+template<typename T, ImplKind Impl>
+class Rectangle;
+
 /// @brief 
 /// @tparam T 
 /// @tparam ImplKind 
@@ -34,8 +38,13 @@ public:
 	constexpr Size(const Size& inCopy) = default;
 	constexpr Size& operator=(const Size& inCopy) = default;
 
+	// Getters
 	constexpr T Width() const;
 	constexpr T Height() const;
+
+	// Setters
+	constexpr void Width(T inWidth);
+	constexpr void Height(T inHeight);
 
 	// Mathematical operations
 	constexpr Size& operator+=(const Size& inSize);
@@ -86,11 +95,12 @@ private:
 	// Friend Functions
 	friend constexpr bool operator==<Size>(const Size& inLHS, const Size& inRHS);
 	friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
+	friend class Rectangle<T, Impl>;
 
 private:
 	using ImplType = typename detail::Impl2Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
     ImplType mImpl{};
-}; // class size
+}; // class Size
 
 // ------------------------------------------------------------------
 #pragma region Inline Class Functions
@@ -102,6 +112,7 @@ inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
 	// Do nothing
 }
 
+// Getters
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Width() const
 {
@@ -112,6 +123,19 @@ template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Height() const
 {
 	return mImpl.Get<1>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Size<T, Impl>::Width(T inWidth)
+{
+	mImpl.Set<0>(inWidth);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Size<T, Impl>::Height(T inHeight)
+{
+	mImpl.Set<1>(inHeight);
 }
 
 #pragma endregion

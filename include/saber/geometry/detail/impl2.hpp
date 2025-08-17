@@ -11,7 +11,7 @@
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
-
+    
 template<typename T>
 struct Impl2 final
 {
@@ -36,6 +36,13 @@ struct Impl2 final
         {
             static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
             return std::get<Index>(mTuple);
+        }
+
+        template<std::size_t Index>
+        constexpr void Set(T inT)
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
+            std::get<Index>(mTuple) = inT;
         }
 
         constexpr Scalar& operator+=(const Scalar& inRHS)
@@ -147,6 +154,18 @@ struct Impl2 final
             return mArray[Index];
         }
 
+        template<std::size_t Index>
+        constexpr void Set(T inT)
+        {
+            static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
+            mArray[Index] = inT;
+        }
+
+        constexpr auto GetSimdType() const
+        {
+            return Simd128<T>::Load2(&mArray[0]);
+        }
+
         constexpr Simd& operator+=(const Simd& inRHS)
         {
             // NOTE: SIMD intrinsic functions lack a constexpr implementation; contaminating our interface
@@ -163,7 +182,7 @@ struct Impl2 final
                     const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     lhs += rhs;
                     mArray[0] = lhs.mArray[0];
-                    mArray[1] = lhs.mArray[0]; 
+                    mArray[1] = lhs.mArray[1]; 
                     break;
                 }
 #endif // __cpp_lib_is_constant_evaluated
@@ -269,7 +288,7 @@ struct Impl2 final
                 {
                     // Delegate to Scalar Impl which is constexpr capable
                     Scalar lhs{mArray[0], mArray[1]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]]()};
+                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1]};
                     result = lhs == rhs;
                     break;
                 }
