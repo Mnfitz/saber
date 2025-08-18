@@ -22,13 +22,16 @@ if(SABER_BUILD_DOCS)
 	# This allows us to get the path to doxygen-awesome.css
 	FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR DOXYGEN_AWESOME_DIR)
 
-	find_package(Doxygen)
-	if(NOT DOXYGEN_FOUND)
-		message(SEND_ERROR	"Doxygen not found. The 'docs' target is not available. "
-							"To generate documentation, you must install Doxygen, "
-							"ensure that it's available in your $PATH, and re-run CMake.")
+	# Build the docset requires previously installed tools:
+	# "Doxygen" and "Graphviz"
+	find_package(Doxygen REQUIRED dot) # "dot", meaning: Weird name given to Graphviz tool by Graphviz.org
+	if(NOT(Doxygen_FOUND AND Doxygen_dot_FOUND))
+		message(SEND_ERROR
+			"Doxygen and Graphviz not found. The 'docs' target is not available. "
+			"To generate documentation, you must install Doxygen, and Graphviz and "
+			"ensure that it's available in your $PATH, and re-run CMake.")
 		return()
-	endif() # NOT DOXYGEN_FOUND
+	endif()
 
 	set(DOXYGEN_OUTPUT_DIR ${PROJECT_BINARY_DIR}/doc/webdocs)
 	# Clean and rebuild output dir...

@@ -50,8 +50,7 @@
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
                 "MIMode": "gdb"
-            },
-            
+            }, 
             //"args": [], // No Args
             //"cwd": "${workspaceFolder}/lib/win-x64", // Change this to the directory of your executable
             "stopAtEntry": true, // Set to true to stop program execution at the first line of code
