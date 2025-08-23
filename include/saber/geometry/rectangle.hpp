@@ -562,29 +562,29 @@ inline constexpr Rectangle<T, Impl> Union(const Rectangle<T, Impl>& inLHS, const
 template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl> Intersect(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
-	auto result{inLHS};
-	return result.Intersect(inRHS);
+	auto intersect{inLHS};
+	return intersect.Intersect(inRHS);
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr bool IsEmpty(const Rectangle<T, Impl>& /*inRectangle*/)
+inline constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle)
 {
-	// TODO: Add IsEmpty to Impl4
-	//IsEmpty(inRectangle.mImpl);
-	return false;
+	// Note: Compiler cannot deduce IsEmpty's ImplKind, so we must specify template arg
+	const auto isEmpty = IsEmpty(inRectangle.mImpl);
+	return isEmpty;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
 {
-	auto isOverlapping = inRectangle.IsOverlapping(inPoint);
+	const auto isOverlapping = inRectangle.IsOverlapping(inPoint);
 	return isOverlapping;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
-	auto isOverlapping = inLHS.IsOverlapping(inRHS);
+	const auto isOverlapping = inLHS.IsOverlapping(inRHS);
 	return isOverlapping;
 }
 

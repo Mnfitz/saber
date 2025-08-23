@@ -322,12 +322,36 @@ struct Impl4 final
             return xywh;
         }
 
+        // Friend meaning free function (and always public)
+        friend constexpr bool IsEmpty(const Scalar& inScalar)
+        {
+            bool isEmpty = false;
+            do
+            {
+                // check for "exact" width and height being zero or negative
+                isEmpty = (inScalar.Get<2>() <= 0) || (inScalar.Get<3>() <= 0);
+                if (isEmpty)
+                {
+                    break;
+                }
+
+                if constexpr(std::is_floating_point_v<T>)
+                {
+                    // check for "inexact" width and height being zero
+                    isEmpty = (Inexact::Eq(inScalar.Get<2>(), 0) || Inexact::Eq(inScalar.Get<3>(), 0));
+                }
+
+            } while (false);
+        
+            return isEmpty;
+        }
+
     private:
         friend class Simd; // Permit Simd class to provide constexpr api
 
     private:
         std::tuple<T,T,T,T> mTuple{}; // Impl4: so 4 elements are assumed
-    };
+    }; // struct Scalar
 
     class Simd
     {
@@ -361,6 +385,8 @@ struct Impl4 final
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             mArray[Index] = inT;
         }
+
+        // TODO: Implement Impl4's version of GetSimdType
 
         constexpr Simd& operator+=(const Simd& inRHS)
         {
@@ -800,14 +826,17 @@ struct Impl4 final
 
         constexpr Simd& Union(const Simd& inImpl4)
         {
-            Simd result{};
+            typename Simd128<T>::SimdType result{};
             if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
             {
-                auto lhs = Simd128<T>::Load4(ToLTRB(*this));
-                auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
+                auto ltrbLHS = ToLTRB(*this);
+                auto ltrbRHS = ToLTRB(inImpl4);
+
+                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
+                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
                 result = Simd128<T>::MinMax(lhs, rhs);
-                result = ToXYWH(result);
                 Simd128<T>::Store4(&mArray[0], result);
+                *this = ToXYWH(*this);
             }
             else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
             {
@@ -827,7 +856,7 @@ struct Impl4 final
 
                 Simd128<T>::Store2(&mArray[2], result);
                 // Now convert right and bottom to width and height
-                ToXYWH(*this);
+                *this = ToXYWH(*this);
             }
             else
             {
@@ -839,14 +868,17 @@ struct Impl4 final
 
         constexpr Simd& Intersect(const Simd& inImpl4)
         {
-            Simd intersection{};
+            typename Simd128<T>::SimdType intersection{};
             if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
             {
-                auto lhs = Simd128<T>::Load4(ToLTRB(*this));
-                auto rhs = Simd128<T>::Load4(ToLTRB(inImpl4));
-                intersection = Simd128<T>::MinMax(lhs, rhs);
-                intersection = ToXYWH(intersection);
+                auto ltrbLHS = ToLTRB(*this);
+                auto ltrbRHS = ToLTRB(inImpl4);
+
+                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
+                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
+                intersection = Simd128<T>::MaxMin(lhs, rhs);
                 Simd128<T>::Store4(&mArray[0], intersection);
+                *this = ToXYWH(*this);
             }
             else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
             {
@@ -866,7 +898,7 @@ struct Impl4 final
 
                 Simd128<T>::Store2(&mArray[2], intersection);
                 // Now convert right and bottom to width and height
-                ToXYWH(*this);
+                *this = ToXYWH(*this);
             }
             else
             {
@@ -879,12 +911,16 @@ struct Impl4 final
         constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2) const
         {
             bool isOverlapping = false;
-            auto lt = Simd128<T>::Load2(&mArray[0]);
-            auto rb = Simd128<T>::Load2(ToLTRB(&mArray[2]));
-            auto xy = Simd128<T>::Load2(inImpl2);
+
+            auto ltrb = ToLTRB(*this);
+
+            auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
+            auto rb = Simd128<T>::Load2(&ltrb.mArray[2]);
+            auto xy = inImpl2.GetSimdType(); // Loads for us
             
             do
             {
+                // TODO: Fix up the high 2 elements of xy, since they're zeroed and can screw up comparison
                 if (!Simd128<T>::IsGe(xy, lt)) // Fancy way of saying xy < lt
                 {
                     // Impl2 is too far to the left/above the Impl4
@@ -918,7 +954,7 @@ struct Impl4 final
             auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
 			auto wh = Simd128<T>::Load2(&ltrb.mArray[2]);
 			auto rb = Simd128<T>::Add(lt, wh);
-            Simd128<T>::Store2(&ltrb[2], rb);
+            Simd128<T>::Store2(&ltrb.mArray[2], rb);
             return ltrb;
         }
 
@@ -928,14 +964,64 @@ struct Impl4 final
             auto lt = Simd128<T>::Load2(&xywh.mArray[0]);
 			auto rb = Simd128<T>::Load2(&xywh.mArray[2]);
 			auto wh = Simd128<T>::Sub(rb, lt);
-            Simd128<T>::Store2(&xywh[2], rb);
+            Simd128<T>::Store2(&xywh.mArray[2], wh);
             return xywh;
+        }
+
+        friend constexpr bool IsEmpty(const Simd& inSimd)
+        {
+            // TODO: Make this use Simd 
+            bool isEmpty = false;
+            do
+            {
+                // check for "exact" width and height being zero or negative
+                isEmpty = (inSimd.Get<2>() <= 0) || (inSimd.Get<3>() <= 0);
+                if (isEmpty)
+                {
+                    break;
+                }
+
+                if constexpr(std::is_floating_point_v<T>)
+                {
+                    // check for "inexact" width and height being zero
+                    isEmpty = (Inexact::IsEq(inSimd.Get<2>(), static_cast<T>(0)) 
+                        || Inexact::IsEq(inSimd.Get<3>(), static_cast<T>(0)));
+                }
+
+            } while (false);
+            return isEmpty;
         }
 
     private:
         std::array<T,4> mArray{}; // Impl4: so 4 elements are assumed
     }; // class Simd
 }; // struct Impl4<>
+
+// Traits Class
+#pragma region
+template<typename T, ImplKind Impl> // Primary template declaration
+struct Impl4Traits;
+
+template<typename T> // Partial template specialization
+struct Impl4Traits<T, ImplKind::kScalar>
+{
+    using ImplType = typename Impl4<T>::Scalar; // VOODOO: Nested template type requires `typename` prefix
+};
+
+template<typename T> // Partial template specialization
+struct Impl4Traits<T, ImplKind::kSimd>
+{
+    using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
+};
+#pragma endregion
+
+#if 0
+template<typename T, ImplKind Impl>
+constexpr bool IsEmpty(const Impl4<T>& inImpl4)
+{
+    using myImplType = Impl4Traits<T, Impl>::ImplType;
+    const bool isEmpty = IsEmpty()
+}
 
 template<typename T, ImplKind Impl>
 inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
@@ -984,22 +1070,7 @@ inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
     } while (false);
     return isEmpty;
 }
-
-template<typename T, ImplKind Impl> // Primary template declaration
-struct Impl4Traits;
-
-template<typename T> // Partial template specialization
-struct Impl4Traits<T, ImplKind::kScalar>
-{
-    using ImplType = typename Impl4<T>::Scalar; // VOODOO: Nested template type requires `typename` prefix
-};
-
-template<typename T> // Partial template specialization
-struct Impl4Traits<T, ImplKind::kSimd>
-{
-    using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
-};
-
+#endif
 } // namespace saber::geometry::detail
 
 #endif // SABER_GEOMETRY_DETAIL_IMPL4_HPP
