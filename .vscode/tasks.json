@@ -9,34 +9,45 @@
 				// will get the error "make failed with code 2."
 				"cwd": "${workspaceFolder}",
 		},
+
 	"tasks": [
 		{
 			"label": "build",
 			"type": "shell",
-			"command": "cmake --build ./build",
+			"windows": {
+				"command": "cmake --build --preset win"
+			},
+			"osx": {
+				"command": "cmake --build --preset mac"
+			},
+			"linux": {
+				"command": "cmake --build --preset linux-debug"
+			},
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			},
 			"problemMatcher": []
 		},
+
 		{
 			"label": "regenerate/build",
 			"type": "shell",
 			"windows": {
-				"command": "cmake -G \"Visual Studio 17 2022\" -S . -B ./build && cmake --build ./build"
+				"command": "cmake --preset win && cmake --build --preset win"
 			},
 			"osx": {
-				"command": "cmake -G \"Xcode\" -DIOS=OFF -DCMAKE_SYSTEM_NAME=Darwin -S . -B ./build && cmake --build ./build"
+				"command": "cmake --preset mac && cmake --build --preset mac"
 			},
 			"linux": {
-				"command": "cmake -G \"Unix Makefiles\" -S . -B ./build && cmake --build ./build"
+				"command": "cmake --preset linux-debug && cmake --build --preset linux-debug"
 			},
 			"group": {
 				"kind": "build",
 				"isDefault": false
 			}
 		},
+
 		{
 			"label": "regenerate/build iOS",
 			"type": "shell",
@@ -44,7 +55,7 @@
 				"command": "echo \"iOS builds not supported on Windows!\""
 			},
 			"osx": {
-				"command": "cmake -G \"Xcode\" -DIOS=ON -DCMAKE_SYSTEM_NAME=Darwin -S . -B ./build && cmake --build ./build"
+				"command": "cmake --preset ios && cmake --build --preset ios"
 			},
 			"linux": {
 				"command": "echo \"iOS builds not supported on Linux!\""
@@ -54,19 +65,29 @@
 				"isDefault": false
 			}
 		},
+
 		{
 			"label": "clean",
 			"type": "shell",
-			"command": "cmake --build ./build --target clean",
+			"windows": {
+				"command": "cmake --build --preset win --target clean"
+			},
+			"osx": {
+				"command": "cmake --build --preset mac --target clean && cmake --build --preset ios --target clean"
+			},
+			"linux": {
+				"command": "cmake --build --preset linux-debug --target clean"
+			},
 			"group": {
 				"kind": "build",
 				"isDefault": false
 			}
 		},
+
 		{
 			"label": "test",
 			"type": "shell",
-			"command": "(cd ./build && ctest -C Debug --verbose)",
+			"command": "(cd ${workspaceFolder}/build && ctest -C Debug --verbose)",
 			"group": {
 				"kind": "test",
 				"isDefault": true

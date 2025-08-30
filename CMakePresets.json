@@ -1,0 +1,158 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+
+  "configurePresets": [
+    {
+      "name": "win",
+      "displayName": "Windows",
+      "description": "Build for Windows using Visual Studio",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+
+    {
+      "name": "mac",
+      "displayName": "macOS",
+      "description": "Build for macOS using Xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug",
+		"IOS": "OFF"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+	{
+      "name": "ios",
+      "displayName": "iOS",
+      "description": "Build for iOS using Xcode",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug",
+		"IOS": "ON"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "description": "Debug build for Linux using Make",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "description": "Release build for Linux using Make",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "Release"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+
+    {
+      "name": "linux-relwithdebinfo",
+      "displayName": "Linux RelWithDebInfo",
+      "description": "RelWithDebInfo build for Linux using Make",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "SABER_BUILD_UNITTESTS": "ON",
+        "SABER_BUILD_BENCHMARKS": "ON",
+        "SABER_BUILD_DOCS": "OFF",
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    }
+  ],
+
+  "buildPresets": [
+    {
+      "name": "win",
+      "configurePreset": "win"
+    },
+
+    {
+      "name": "mac",
+      "configurePreset": "mac"
+    },
+
+    {
+      "name": "ios",
+      "configurePreset": "ios"
+    },
+
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug"
+    },
+
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release"
+    },
+
+    {
+      "name": "linux-relwithdebinfo",
+      "configurePreset": "linux-relwithdebinfo"
+    }
+  ]
+}
