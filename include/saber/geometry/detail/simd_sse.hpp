@@ -126,6 +126,18 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
+	static SimdType DupLo(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(1, 0, 1, 0));
+		return dup;
+	}
+
+	static SimdType DupHi(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(3, 2, 3, 2));
+		return dup;
+	}
+
 	/// @brief Compare two vector<int> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
@@ -140,17 +152,17 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
-		const auto ge = _mm_cmplt_epi32(inRHS, inLHS);
-		const auto mask = _mm_movemask_epi8(ge);
-		const bool allGe = (mask == 0xFFFF);
+		const auto lt = _mm_cmplt_epi32(inLHS, inRHS);
+		const auto mask = _mm_movemask_epi8(lt);
+		const bool allGe = (mask == 0x0000); // Note: inverted logic, !LT == GE
 		return allGe;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
-		const auto le = _mm_cmpgt_epi32(inRHS, inLHS);
-		const auto mask = _mm_movemask_epi8(le);
-		const bool allLe = (mask == 0xFFFF);
+		const auto gt = _mm_cmpgt_epi32(inLHS, inRHS);
+		const auto mask = _mm_movemask_epi8(gt);
+		const bool allLe = (mask == 0x0000); // Note; inverted logic, !GT == LE
 		return allLe;
 	}
 
@@ -311,6 +323,18 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 	{
 		auto div = _mm_div_ps(inLHS, inRHS);
 		return div;
+	}
+
+	static SimdType DupLo(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_ps(inSimd, inSimd, _MM_SHUFFLE(1, 0, 1, 0));
+		return dup;
+	}
+
+	static SimdType DupHi(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_ps(inSimd, inSimd, _MM_SHUFFLE(3, 2, 3, 2));
+		return dup;
 	}
 
 	/// @brief Compare two vector<float> values to check if all elements equal or inexactly equal.
@@ -585,6 +609,18 @@ using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 	{
 		auto div = _mm_div_pd(inLHS, inRHS);
 		return div;
+	}
+
+	static SimdType DupLo(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_pd(inSimd, inSimd, 0x0);
+		return dup;
+	}
+
+	static SimdType DupHi(SimdType inSimd)
+	{
+		auto dup = _mm_shuffle_pd(inSimd, inSimd, 0x1);
+		return dup;
 	}
 
 	/// @brief Compare two vector<double> values to check if all elements equal.

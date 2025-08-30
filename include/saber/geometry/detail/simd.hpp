@@ -213,6 +213,36 @@ struct Simd128 :
 		return div;
 	}
 
+	// DupLo
+	static constexpr SimdType DupLo(SimdType inSimd)
+	{
+		// DupLo(0123) = 0101;
+		// DupLo(45) = 44;
+		SimdType dup = inSimd;
+		constexpr std::size_t hi = Simd128Traits<T>::kSize/2;
+		for (std::size_t lo = 0; lo < hi; ++lo)
+		{
+			// The Hi elements are copies of the Lo
+			dup[hi + lo] = dup[lo];
+		}
+		return dup;
+	}
+
+	// DupHi
+	static constexpr SimdType DupHi(SimdType inSimd)
+	{
+		// DupHi(0123) = 2323;
+		// DupHi(45) = 55;
+		SimdType dup = inSimd;
+		constexpr std::size_t hi = Simd128Traits<T>::kSize/2;
+		for (std::size_t lo = 0; lo < hi; ++lo)
+		{
+			// The Lo elements are copies of the Hi
+			dup[lo] = dup[hi + lo];
+		}
+		return dup;
+	}
+
 	/// @brief Check all vector type`<T>` elements in `inRHS` to `inLHS` for equality.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term

@@ -868,7 +868,6 @@ struct Impl4 final
 
         constexpr Simd& Intersect(const Simd& inImpl4)
         {
-            typename Simd128<T>::SimdType intersection{};
             if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
             {
                 auto ltrbLHS = ToLTRB(*this);
@@ -876,7 +875,7 @@ struct Impl4 final
 
                 auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
                 auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
-                intersection = Simd128<T>::MaxMin(lhs, rhs);
+                auto intersection = Simd128<T>::MaxMin(lhs, rhs);
                 Simd128<T>::Store4(&mArray[0], intersection);
                 *this = ToXYWH(*this);
             }
@@ -885,8 +884,7 @@ struct Impl4 final
                 // Find the maximum of the left and top values
                 auto lt1 = Simd128<T>::Load2(&mArray[0]);
                 auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
-                intersection = Simd128<T>::Max(lt1, lt2);
-                Simd128<T>::Store2(&mArray[0], intersection);
+                auto intersectionLT = Simd128<T>::Max(lt1, lt2);
 
                 // Find the minimum of the right and bottom values
                 // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
@@ -894,9 +892,10 @@ struct Impl4 final
                 auto simdR = ToLTRB(inImpl4);
                 auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
                 auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
-                intersection = Simd128<T>::Min(rb1, rb2);
+                auto intersectionRB = Simd128<T>::Min(rb1, rb2);
 
-                Simd128<T>::Store2(&mArray[2], intersection);
+                Simd128<T>::Store2(&mArray[0], intersectionLT);
+                Simd128<T>::Store2(&mArray[2], intersectionRB);
                 // Now convert right and bottom to width and height
                 *this = ToXYWH(*this);
             }
@@ -916,11 +915,19 @@ struct Impl4 final
 
             auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
             auto rb = Simd128<T>::Load2(&ltrb.mArray[2]);
-            auto xy = inImpl2.GetSimdType(); // Loads for us
+            auto xy = inImpl2.GetSimdType(); // Get the underlying Simd value
+
+            constexpr bool is32BitData = (sizeof(T)*8 <= 32);
+            if constexpr (is32BitData) // int/float up to 32 bit data type
+            {
+                // Fix high 2 elements, since they're zeroed and can screw up comparison
+                lt = Simd128<T>::DupLo(lt);
+                rb = Simd128<T>::DupLo(rb);
+                xy = Simd128<T>::DupLo(xy);
+            }
             
             do
             {
-                // TODO: Fix up the high 2 elements of xy, since they're zeroed and can screw up comparison
                 if (!Simd128<T>::IsGe(xy, lt)) // Fancy way of saying xy < lt
                 {
                     // Impl2 is too far to the left/above the Impl4
