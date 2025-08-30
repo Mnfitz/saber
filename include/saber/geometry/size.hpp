@@ -355,6 +355,14 @@ inline constexpr Size<T, Impl> RoundFloor(const Size<T, Impl>& inSize)
 	return result.RoundFloor(); // RVO should apply here
 }
 
+template<typename T, ImplKind Impl>
+inline constexpr bool IsEmpty(const Size<T, Impl>& inSize)
+{
+	// Note: Compiler cannot deduce IsEmpty's ImplKind, so we must specify template arg
+	const auto isEmpty = IsEmpty<Impl>(inSize.mImpl);
+	return isEmpty;
+}
+
 #pragma endregion 
 
 // ------------------------------------------------------------------
