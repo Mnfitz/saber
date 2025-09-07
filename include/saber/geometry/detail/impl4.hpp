@@ -297,7 +297,7 @@ struct Impl4 final
 
         constexpr bool IsOverlapping(const Scalar& inImpl4) const
         {
-            auto copy = this;
+            auto copy = *this;
             auto intersection = copy.Intersect(inImpl4);
             const bool isOverlapping = !IsEmpty(intersection);
            
@@ -386,7 +386,10 @@ struct Impl4 final
             mArray[Index] = inT;
         }
 
-        // TODO: Implement Impl4's version of GetSimdType
+        constexpr auto GetSimdType() const
+        {
+            return Simd128<T>::Load4(&mArray[0]);
+        }
 
         constexpr Simd& operator+=(const Simd& inRHS)
         {
@@ -977,25 +980,14 @@ struct Impl4 final
 
         friend constexpr bool IsEmpty(const Simd& inSimd)
         {
-            // TODO: Make this use Simd 
-            bool isEmpty = false;
-            do
-            {
-                // check for "exact" width and height being zero or negative
-                isEmpty = (inSimd.Get<2>() <= 0) || (inSimd.Get<3>() <= 0);
-                if (isEmpty)
-                {
-                    break;
-                }
-
-                if constexpr(std::is_floating_point_v<T>)
-                {
-                    // check for "inexact" width and height being zero
-                    isEmpty = (Inexact::IsEq(inSimd.Get<2>(), static_cast<T>(0)) 
-                        || Inexact::IsEq(inSimd.Get<3>(), static_cast<T>(0)));
-                }
-
-            } while (false);
+            constexpr Simd kZero{};
+			auto width = Simd128<T>::Load1(&inSimd.mArray[2]);
+            auto height = Simd128<T>::Load1(&inSimd.mArray[3]);
+            auto min = Simd128<T>::Min(width, height);
+            auto zero = Simd128<T>::Load2(&kZero.mArray[0]);
+            // TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
+            // The logic works, since the empty zeroes will not affect the Le check
+            bool isEmpty = Simd128<T>::IsLe(min, zero);
             return isEmpty;
         }
 
@@ -1022,62 +1014,6 @@ struct Impl4Traits<T, ImplKind::kSimd>
 };
 #pragma endregion
 
-#if 0
-template<typename T, ImplKind Impl>
-constexpr bool IsEmpty(const Impl4<T>& inImpl4)
-{
-    using myImplType = Impl4Traits<T, Impl>::ImplType;
-    const bool isEmpty = IsEmpty()
-}
-
-template<typename T, ImplKind Impl>
-inline constexpr bool IsEmpty(const typename Impl4<T>::Scalar& inScalar)
-{
-    bool isEmpty = false;
-    do
-    {
-        // check for "exact" width and height being zero or negative
-        isEmpty = (inScalar.Get<2>() <= 0) || (inScalar.Get<3>() <= 0);
-        if (isEmpty)
-        {
-            break;
-        }
-
-        if constexpr(std::is_floating_point_v<T>)
-        {
-            // check for "inexact" width and height being zero
-            isEmpty = (Inexact::Eq(inScalar.Get<2>(), 0) || Inexact::Eq(inScalar.Get<3>(), 0));
-        }
-
-    } while (false);
-   
-    return isEmpty;
-}
-
-template<typename T, ImplKind Impl>
-inline constexpr bool IsEmpty(const typename Impl4<T>::Simd& inSimd)
-{
-    // TODO: Make this use Simd 
-    bool isEmpty = false;
-    do
-    {
-        // check for "exact" width and height being zero or negative
-        isEmpty = (inSimd.Get<2>() <= 0) || (inSimd.Get<3>() <= 0);
-        if (isEmpty)
-        {
-            break;
-        }
-
-        if constexpr(std::is_floating_point_v<T>)
-        {
-            // check for "inexact" width and height being zero
-            isEmpty = (Inexact::Eq(inSimd.Get<2>(), 0) || Inexact::Eq(inSimd.Get<3>(), 0));
-        }
-
-    } while (false);
-    return isEmpty;
-}
-#endif
 } // namespace saber::geometry::detail
 
 #endif // SABER_GEOMETRY_DETAIL_IMPL4_HPP
