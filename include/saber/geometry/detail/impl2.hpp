@@ -296,7 +296,7 @@ struct Impl2 final
 
                 auto lhs = Simd128<T>::Load2(&mArray[0]);
                 auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-                result = Simd128<T>::IsEQ(lhs, rhs);
+                result = Simd128<T>::IsEq(lhs, rhs);
             } while (false);
 
             return result;

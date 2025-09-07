@@ -213,6 +213,36 @@ struct Simd128 :
 		return div;
 	}
 
+	// DupLo
+	static constexpr SimdType DupLo(SimdType inSimd)
+	{
+		// DupLo(0123) = 0101;
+		// DupLo(45) = 44;
+		SimdType dup = inSimd;
+		constexpr std::size_t hi = Simd128Traits<T>::kSize/2;
+		for (std::size_t lo = 0; lo < hi; ++lo)
+		{
+			// The Hi elements are copies of the Lo
+			dup[hi + lo] = dup[lo];
+		}
+		return dup;
+	}
+
+	// DupHi
+	static constexpr SimdType DupHi(SimdType inSimd)
+	{
+		// DupHi(0123) = 2323;
+		// DupHi(45) = 55;
+		SimdType dup = inSimd;
+		constexpr std::size_t hi = Simd128Traits<T>::kSize/2;
+		for (std::size_t lo = 0; lo < hi; ++lo)
+		{
+			// The Lo elements are copies of the Hi
+			dup[lo] = dup[hi + lo];
+		}
+		return dup;
+	}
+
 	/// @brief Check all vector type`<T>` elements in `inRHS` to `inLHS` for equality.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
@@ -222,25 +252,89 @@ struct Simd128 :
 		bool isEq = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
-			if (inRHS[i] != inLHS[i])
+			// check for "exact" equality
+			if (inRHS[i] == inLHS[i])
 			{
-				isEq = false;
-				break;
+				continue;
 			}
+
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inRHS[i], inLHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isEq = false;
+			break;
 		}
 		return isEq;
 	}
 
-	/// @brief Round all elements of SimdType to the nearest whole number 
-	/// @param inRound The SimdType to be rounded
-	/// @return Return the rounded result
-	static constexpr SimdType RoundNearest(SimdType inRound)
+	static constexpr bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
+		bool isGe = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
-			inRound[i] = std::round(inRound[i]);
+			// check for "exact" greater than
+			if (inLHS[i] >= inRHS[i])
+			{
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isGe = false;
+			break;
 		}
-		return inRound;
+		return isGe;
+	}
+
+	static constexpr bool IsLe(SimdType inLHS, SimdType inRHS)
+	{
+		bool isLe = true;
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			// check for "exact" greater than
+			if (inLHS[i] <= inRHS[i])
+			{
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					continue;
+				}
+			}
+
+			isLe = false;
+			break;
+		}
+		return isLe;
+	}
+
+	static constexpr bool IsGt(SimdType inLHS, SimdType inRHS)
+	{
+		bool isGt = !IsLe(inRHS, inLHS);
+		return isGt;
+	}
+
+	static constexpr bool IsLt(SimdType inLHS, SimdType inRHS)
+	{
+		bool isLt = !IsGe(inRHS, inLHS);
+		return isLt;
 	}
 
 	/// @brief Round all elements of SimdType toward positive infinity 
@@ -278,6 +372,47 @@ struct Simd128 :
 		}
 		return inRound;
 	}
+
+	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum/maximum values for each pair of element of SimdType
+	static constexpr SimdType MinMax(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+
+		constexpr auto kMin = 0;
+		constexpr auto kMax = Simd128Traits<T>::kSize/2;
+		SimdType minMax{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize/2; i++)
+		{
+			minMax[i+kMin] = std::min(inLHS[i+kMin], inRHS[i+kMin]);
+			minMax[i+kMax] = std::max(inLHS[i+kMax], inRHS[i+kMax]);
+		}
+		return minMax;
+	}
+
+	/// @brief Find the maximum/minimum values for each pair ofelement of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum/minimum values for each pair of element of SimdType
+	static constexpr SimdType MaxMin(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+
+		constexpr auto kMin = 0;
+		constexpr auto kMax = Simd128Traits<T>::kSize/2;
+		SimdType maxMin{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize/2; i++)
+		{
+			maxMin[i+kMin] = std::max(inLHS[i+kMin], inRHS[i+kMin]);
+			maxMin[i+kMax] = std::min(inLHS[i+kMax], inRHS[i+kMax]);
+		}
+		return maxMin;
+	}
+
 }; // struct Simd128<T>
 
 } // namespace saber::geometry::detail

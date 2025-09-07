@@ -149,10 +149,201 @@ struct Impl4 final
             constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
             static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
             
-            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple));
-            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple));
-			std::get<2>(mTuple) = std::trunc(std::get<2>(mTuple));
-            std::get<3>(mTuple) = std::trunc(std::get<3>(mTuple));
+            std::get<0>(mTuple) = std::trunc(std::get<0>(mTuple)); // 0 = Origin.X
+            std::get<1>(mTuple) = std::trunc(std::get<1>(mTuple)); // 1 = Origin.Y
+			std::get<2>(mTuple) = std::trunc(std::get<2>(mTuple)); // 2 = Size.Width
+            std::get<3>(mTuple) = std::trunc(std::get<3>(mTuple)); // 3 = Size.Height
+        }
+
+        constexpr Scalar& Union(const Scalar& inImpl4)
+        {
+            // By default Scalar is in X,Y,Width,Height format
+            // Convert to L,T,R,B format
+            auto lhs = ToLTRB(*this);
+            auto rhs = ToLTRB(inImpl4);
+
+            // Figure out the top left of the union rectangle
+            std::get<0>(lhs.mTuple) = std::min(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple)); // Min Left
+            std::get<1>(lhs.mTuple) = std::min(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple)); // Min Top
+
+            // Figure out the bottom right of the union rectangle
+            std::get<2>(lhs.mTuple) = std::max(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple)); // Max Right
+            std::get<3>(lhs.mTuple) = std::max(std::get<3>(lhs.mTuple), std::get<3>(rhs.mTuple)); // Max Bottom
+
+            // Remember to revert back to XYWH format
+            *this = ToXYWH(lhs);
+            return *this;
+        }
+
+        constexpr Scalar& Intersect(const Scalar& inImpl4)
+        {
+            // Reverse of Union operation
+            // Note: some intersection rectangles may be empty (size = 0)
+
+            // By default Scalar is in X,Y,Width,Height format
+            // Convert to L,T,R,B format
+            auto lhs = ToLTRB(*this);
+            auto rhs = ToLTRB(inImpl4);
+
+            // Figure out the bottom right of the intersect rectangle
+            std::get<0>(lhs.mTuple) = std::max(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple));
+            std::get<1>(lhs.mTuple) = std::max(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple));
+
+            // Figure out the top left of the intersect rectangle
+            std::get<2>(lhs.mTuple) = std::min(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple));
+            std::get<3>(lhs.mTuple) = std::min(std::get<3>(lhs.mTuple), std::get<2>(rhs.mTuple));
+
+            // Remember to revert back to XYWH format
+            *this = ToXYWH(lhs);
+
+            // Convert the bottom right to width and height, ensuring we do not end up with negative values
+            std::get<2>(mTuple) = max(std::get<2>(mTuple), 0);
+            std::get<3>(mTuple) = max(std::get<3>(mTuple), 0);
+            return *this;
+        }
+
+        constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2) const
+        {
+            Scalar ltrb = ToLTRB(mTuple);
+            bool isOverlapping = false;
+            do 
+            {
+                // Test the x and left component
+                if (inImpl2.Get<0>() < ltrb.Get<0>()) // Not greater than or equal
+                {
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. x = 2.99999..., left = 3.0
+                        if (!Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<0>()))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
+                    else
+                    {
+                        // Point is left of the rectangle
+                        break;
+                    }
+                }
+
+                // Test the y and top component
+                if (inImpl2.Get<1>() < ltrb.Get<1>()) // Not greater than or equal
+                {
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are contained within the rectangle
+                        // Eg. y = 2.99999..., top = 3.0
+                        if (!Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<1>()))
+                        {
+                            break;
+                        }
+                        // Continue checking, since point is approximately contained within the rectangle
+                    }
+                    // Point is above the rectangle
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                {
+                    // Test the x and right component
+                    if (inImpl2.Get<0>() >= ltrb.Get<2>()) // Not less than
+                    {
+                        break;
+                    }
+
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are not contained within the rectangle
+                        // Eg. y = 2.99999..., right = 3.0
+                        if (Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<2>()))
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                {
+                    // Test the y and bottom component
+                    if (inImpl2.Get<1>() >= ltrb.Get<3>()) // Not less than 
+                    {
+                        break;
+                    }
+
+                    // Extra step needed for floating point equality
+                    if constexpr(std::is_floating_point_v<T>)
+                    {
+                        // Approximately equal values are not contained within the rectangle
+                        // Eg. y = 2.99999..., bottom = 3.0
+                        if (Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<3>()))
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                // Point is contained within the rectangle
+                isOverlapping = true;
+            } while (false);
+
+            return isOverlapping;
+        }
+
+        constexpr bool IsOverlapping(const Scalar& inImpl4) const
+        {
+            auto copy = *this;
+            auto intersection = copy.Intersect(inImpl4);
+            const bool isOverlapping = !IsEmpty(intersection);
+           
+            return isOverlapping;
+        }
+
+    private:
+        // TRICKY: There is no way to discern whether a Scalar is in LTRB or XYWH format, therefore methods are kept private
+        static constexpr Scalar ToLTRB(const Scalar& inXYWH)
+        {
+            Scalar ltrb = inXYWH;
+            std::get<2>(ltrb.mTuple) += std::get<0>(ltrb.mTuple);
+            std::get<3>(ltrb.mTuple) += std::get<1>(ltrb.mTuple);
+            return ltrb;
+        }
+
+        static constexpr Scalar ToXYWH(const Scalar& inLTRB)
+        {
+            Scalar xywh = inLTRB;
+            std::get<2>(xywh.mTuple) -= std::get<0>(xywh.mTuple);
+            std::get<3>(xywh.mTuple) -= std::get<1>(xywh.mTuple);
+            return xywh;
+        }
+
+        // Friend meaning free function (and always public)
+        friend constexpr bool IsEmpty(const Scalar& inScalar)
+        {
+            bool isEmpty = false;
+            do
+            {
+                // check for "exact" width and height being zero or negative
+                isEmpty = (inScalar.Get<2>() <= 0) || (inScalar.Get<3>() <= 0);
+                if (isEmpty)
+                {
+                    break;
+                }
+
+                if constexpr(std::is_floating_point_v<T>)
+                {
+                    // check for "inexact" width and height being zero
+                    isEmpty = (Inexact::Eq(inScalar.Get<2>(), 0) || Inexact::Eq(inScalar.Get<3>(), 0));
+                }
+
+            } while (false);
+        
+            return isEmpty;
         }
 
     private:
@@ -160,7 +351,7 @@ struct Impl4 final
 
     private:
         std::tuple<T,T,T,T> mTuple{}; // Impl4: so 4 elements are assumed
-    };
+    }; // struct Scalar
 
     class Simd
     {
@@ -193,6 +384,11 @@ struct Impl4 final
         {
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             mArray[Index] = inT;
+        }
+
+        constexpr auto GetSimdType() const
+        {
+            return Simd128<T>::Load4(&mArray[0]);
         }
 
         constexpr Simd& operator+=(const Simd& inRHS)
@@ -397,41 +593,40 @@ struct Impl4 final
 
         constexpr bool IsEqual(const Simd& inRHS) const
         {
-            bool result = false;
+            bool isEqual = false;
             // protect our interface so it can remain constexpr
             do 
             {
-        #if __cpp_lib_is_constant_evaluated
+#if __cpp_lib_is_constant_evaluated
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
                     Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
                     const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
-                    result = lhs == rhs;
+                    isEqual = lhs == rhs;
                     break;
                 }
-        #endif // __cpp_lib_is_constant_evaluated
-
+#endif // __cpp_lib_is_constant_evaluated
 
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&mArray[0]);
 					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEQ(lhs, rhs);
+					isEqual = Simd128<T>::IsEq(lhs, rhs);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&mArray[0]);
 					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
-					result = Simd128<T>::IsEQ(lhs, rhs);
+					isEqual = Simd128<T>::IsEq(lhs, rhs);
 
-					if (result)
+					if (isEqual)
 					{
 						lhs = Simd128<T>::Load2(&mArray[2]);
 						rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
-						result = result && Simd128<T>::IsEQ(lhs, rhs);
+						isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
 					}
 				}
 				else
@@ -441,7 +636,7 @@ struct Impl4 final
 
             } while (false);
 
-            return result;
+            return isEqual;
         }
 
         constexpr void RoundNearest()
@@ -632,11 +827,177 @@ struct Impl4 final
             } while (false);
         }
 
+        constexpr Simd& Union(const Simd& inImpl4)
+        {
+            typename Simd128<T>::SimdType result{};
+            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
+            {
+                auto ltrbLHS = ToLTRB(*this);
+                auto ltrbRHS = ToLTRB(inImpl4);
+
+                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
+                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
+                result = Simd128<T>::MinMax(lhs, rhs);
+                Simd128<T>::Store4(&mArray[0], result);
+                *this = ToXYWH(*this);
+            }
+            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
+            {
+                // Find the minimum of the left and top values
+                auto lt1 = Simd128<T>::Load2(&mArray[0]);
+                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                result = Simd128<T>::Min(lt1, lt2);
+                Simd128<T>::Store2(&mArray[0], result);
+
+                // Find the maximum of the right and bottom values
+                // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
+                auto simdL = ToLTRB(*this);
+                auto simdR = ToLTRB(inImpl4);
+                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
+                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                result = Simd128<T>::Max(rb1, rb2);
+
+                Simd128<T>::Store2(&mArray[2], result);
+                // Now convert right and bottom to width and height
+                *this = ToXYWH(*this);
+            }
+            else
+            {
+                static_assert("Unsupported T");
+            }
+            
+            return *this;
+        }
+
+        constexpr Simd& Intersect(const Simd& inImpl4)
+        {
+            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
+            {
+                auto ltrbLHS = ToLTRB(*this);
+                auto ltrbRHS = ToLTRB(inImpl4);
+
+                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
+                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
+                auto intersection = Simd128<T>::MaxMin(lhs, rhs);
+                Simd128<T>::Store4(&mArray[0], intersection);
+                *this = ToXYWH(*this);
+            }
+            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
+            {
+                // Find the maximum of the left and top values
+                auto lt1 = Simd128<T>::Load2(&mArray[0]);
+                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                auto intersectionLT = Simd128<T>::Max(lt1, lt2);
+
+                // Find the minimum of the right and bottom values
+                // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
+                auto simdL = ToLTRB(*this);
+                auto simdR = ToLTRB(inImpl4);
+                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
+                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                auto intersectionRB = Simd128<T>::Min(rb1, rb2);
+
+                Simd128<T>::Store2(&mArray[0], intersectionLT);
+                Simd128<T>::Store2(&mArray[2], intersectionRB);
+                // Now convert right and bottom to width and height
+                *this = ToXYWH(*this);
+            }
+            else
+            {
+                static_assert("Unsupported T");
+            }
+            
+            return *this;
+        }
+
+        constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2) const
+        {
+            bool isOverlapping = false;
+
+            auto ltrb = ToLTRB(*this);
+
+            auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
+            auto rb = Simd128<T>::Load2(&ltrb.mArray[2]);
+            auto xy = inImpl2.GetSimdType(); // Get the underlying Simd value
+
+            constexpr bool is32BitData = (sizeof(T)*8 <= 32);
+            if constexpr (is32BitData) // int/float up to 32 bit data type
+            {
+                // Fix high 2 elements, since they're zeroed and can screw up comparison
+                lt = Simd128<T>::DupLo(lt);
+                rb = Simd128<T>::DupLo(rb);
+                xy = Simd128<T>::DupLo(xy);
+            }
+            
+            do
+            {
+                if (!Simd128<T>::IsGe(xy, lt)) // Fancy way of saying xy < lt
+                {
+                    // Impl2 is too far to the left/above the Impl4
+                    break;
+                }
+
+                if(Simd128<T>::IsGe(xy, rb)) 
+                {
+                    // Impl2 is too far to the right/below/touching the Impl4
+                    break;
+                }
+                isOverlapping = true;
+
+            } while (false);
+            return isOverlapping;
+        }
+
+        constexpr bool IsOverlapping(const Simd& inImpl4) const
+        {
+            Simd copy = *this;
+            auto intersection = copy.Intersect(inImpl4);
+            const bool isOverlapping = !IsEmpty(intersection);
+           
+            return isOverlapping;
+        }
+
+    private:
+        static constexpr Simd ToLTRB(const Simd& inXYWH)
+        {
+            Simd ltrb = inXYWH;
+            auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
+			auto wh = Simd128<T>::Load2(&ltrb.mArray[2]);
+			auto rb = Simd128<T>::Add(lt, wh);
+            Simd128<T>::Store2(&ltrb.mArray[2], rb);
+            return ltrb;
+        }
+
+        static constexpr Simd ToXYWH(const Simd& inLTRB)
+        {
+            Simd xywh = inLTRB;
+            auto lt = Simd128<T>::Load2(&xywh.mArray[0]);
+			auto rb = Simd128<T>::Load2(&xywh.mArray[2]);
+			auto wh = Simd128<T>::Sub(rb, lt);
+            Simd128<T>::Store2(&xywh.mArray[2], wh);
+            return xywh;
+        }
+
+        friend constexpr bool IsEmpty(const Simd& inSimd)
+        {
+            constexpr Simd kZero{};
+			auto width = Simd128<T>::Load1(&inSimd.mArray[2]);
+            auto height = Simd128<T>::Load1(&inSimd.mArray[3]);
+            auto min = Simd128<T>::Min(width, height);
+            auto zero = Simd128<T>::Load2(&kZero.mArray[0]);
+            // TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
+            // The logic works, since the empty zeroes will not affect the Le check
+            bool isEmpty = Simd128<T>::IsLe(min, zero);
+            return isEmpty;
+        }
+
     private:
         std::array<T,4> mArray{}; // Impl4: so 4 elements are assumed
     }; // class Simd
 }; // struct Impl4<>
 
+// Traits Class
+#pragma region
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;
 
@@ -651,6 +1012,7 @@ struct Impl4Traits<T, ImplKind::kSimd>
 {
     using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
 };
+#pragma endregion
 
 } // namespace saber::geometry::detail
 
