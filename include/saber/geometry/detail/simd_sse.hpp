@@ -12,7 +12,8 @@ template<>
 struct Simd128<int> :
     public Simd128Traits<int> // is-a: Simd128Traits<int>
 {
-using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
+	using typename Simd128Traits<int>::SimdType; // __m128i
+	using typename Simd128Traits<int>::ValueType; // int
 
 	/// @brief Load 4 elements of type`<int>` from memory specified by `inAddr`.
 	/// @param inAddr Address of &elements[4] to load
@@ -114,29 +115,31 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 	{
 		// Note: Intel SSE does not support SIMD integer division
 		// Therefore, we do it the hard way
-		std::array<int, 4> lhs{};
-		std::array<int, 4> rhs{};
-		Store4(lhs.data(), inLHS);
-		Store4(rhs.data(), inRHS);
-		lhs.at(0) = (rhs.at(0) != 0 ? lhs.at(0) / rhs.at(0) : 0);
-		lhs.at(1) = (rhs.at(1) != 0 ? lhs.at(1) / rhs.at(1) : 0);
-		lhs.at(2) = (rhs.at(2) != 0 ? lhs.at(2) / rhs.at(2) : 0);
-		lhs.at(3) = (rhs.at(3) != 0 ? lhs.at(3) / rhs.at(3) : 0);
-		auto div = Load4(lhs.data());
-		return div;
+		std::array<int, 4> lhs, rhs;
+        Store4(lhs.data(), inLHS);
+        Store4(rhs.data(), inRHS);
+        for (int i = 0; i < 4; ++i)
+            lhs[i] = (rhs[i] != 0 ? lhs[i] / rhs[i] : 0);
+        return Load4(lhs.data());
 	}
 
+	/// @brief Duplicate the low half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with low half duplicated.
 	static SimdType DupLo(SimdType inSimd)
 	{
-		auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(1, 0, 1, 0));
-		return dup;
-	}
+        auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(1, 0, 1, 0));
+        return dup;
+    }
 
-	static SimdType DupHi(SimdType inSimd)
+    /// @brief Duplicate the high half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with high half duplicated.
+    static SimdType DupHi(SimdType inSimd)
 	{
-		auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(3, 2, 3, 2));
-		return dup;
-	}
+        auto dup = _mm_shuffle_epi32(inSimd, _MM_SHUFFLE(3, 2, 3, 2));
+        return dup;
+    }
 
 	/// @brief Compare two vector<int> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
@@ -219,9 +222,10 @@ using typename Simd128Traits<int>::SimdType; // Expose `SimdType` as our own
 // float
 template<>
 struct Simd128<float> :
-    public Simd128Traits<float> // is-a: Simd128Traits<int>
+    public Simd128Traits<float> // is-a: Simd128Traits<float>
 {
-using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
+	using typename Simd128Traits<float>::SimdType; // __m128
+	using typename Simd128Traits<float>::ValueType; // float
 
 	/// @brief Load 4 elements of type`<float>` from memory specified by `inAddr`.
 	/// @param inAddr Address of &elements[4] to load
@@ -325,12 +329,18 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
+	/// @brief Duplicate the low half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with low half duplicated.
 	static SimdType DupLo(SimdType inSimd)
 	{
 		auto dup = _mm_shuffle_ps(inSimd, inSimd, _MM_SHUFFLE(1, 0, 1, 0));
 		return dup;
 	}
 
+	/// @brief Duplicate the high half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with high half duplicated.
 	static SimdType DupHi(SimdType inSimd)
 	{
 		auto dup = _mm_shuffle_ps(inSimd, inSimd, _MM_SHUFFLE(3, 2, 3, 2));
@@ -504,9 +514,10 @@ using typename Simd128Traits<float>::SimdType; // Expose `SimdType` as our own
 // double
 template<>
 struct Simd128<double> :
-    public Simd128Traits<double> // is-a: Simd128Traits<int>
+    public Simd128Traits<double> // is-a: Simd128Traits<double>
 {
-using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
+	using typename Simd128Traits<double>::SimdType; // __m128d
+	using typename Simd128Traits<double>::ValueType; // double
 
 /*
 	/// @brief Load 4 elements of type`<double>` from memory specified by `inAddr`.
@@ -611,12 +622,18 @@ using typename Simd128Traits<double>::SimdType; // Expose `SimdType` as our own
 		return div;
 	}
 
+	/// @brief Duplicate the low half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with low half duplicated.
 	static SimdType DupLo(SimdType inSimd)
 	{
 		auto dup = _mm_shuffle_pd(inSimd, inSimd, 0x0);
 		return dup;
 	}
 
+	/// @brief Duplicate the high half of the SIMD register into both halves.
+    /// @param inSimd Input SIMD register.
+    /// @return SIMD register with high half duplicated.
 	static SimdType DupHi(SimdType inSimd)
 	{
 		auto dup = _mm_shuffle_pd(inSimd, inSimd, 0x1);

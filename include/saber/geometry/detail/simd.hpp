@@ -31,6 +31,7 @@ struct Simd128 :
 	public Simd128Traits<T> // is-a: Simd128Traits<T>
 {
 	using typename Simd128Traits<T>::SimdType; // Expose `SimdType` as our own
+	using typename Simd128Traits<T>::ValueType; // Expose `ValueType` as our own
 
 	/// @brief Load 4 elements of type`<T>` from memory specified by `inAddr`.
 	/// @code{.cpp}

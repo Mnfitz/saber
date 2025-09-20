@@ -106,6 +106,51 @@ struct Simd128Traits<double>
 
 // Platform-specific SIMD definitions for ARM...
 
+// int
+template<>
+struct Simd128Traits<int>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = int;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = int32x4_t;  // vector of int
+
+}; // struct SimdTraits<>
+
+// float
+template<>
+struct Simd128Traits<float>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = float;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float32x4_t; // vector of float
+
+}; // struct SimdTraits<>
+
+// double
+template<>
+struct Simd128Traits<double>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 2;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = double;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float64x2_t; // vector of double
+
+}; // struct SimdTraits<>
+
 #endif // SABER_CPU(ARM)
 #pragma endregion {}
 
