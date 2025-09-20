@@ -2,6 +2,12 @@
 #define SABER_GEOMETRY_DETAIL_SIMD_NEON_HPP
 #pragma once
 
+// This file was generated using ChatGPT 4.1 using the following query:
+// Using the pattern established in file "simd_sse.hpp", create an 
+// equivalent set of C++ classes that has identical functionality, 
+// except that it is implemented using arm64 neon intrinsic functions. 
+// It will have 3 specializations of the template struct Simd128.
+
 // neon
 #include <arm_neon.h>
 #include <array>
@@ -15,7 +21,7 @@ struct Simd128<int> :
     public Simd128Traits<int>
 {
     using typename Simd128Traits<int>::SimdType; // int32x4_t
-    using typename Simd128Traits<int>::ValueType;
+    using typename Simd128Traits<int>::ValueType; // int
 
     /// @brief Load 4 elements of type`<int>` from memory specified by `inAddr`.
     /// @param inAddr Address of &elements[4] to load
@@ -39,12 +45,11 @@ struct Simd128<int> :
     /// @brief Load 1 element of type`<int>` from memory specified by `inAddr`.
     /// Loaded element is placed in low order position in result SimdType.
     /// Any unused high order elements are set to zero.
-    /// @param inAddr Address of &element[1] to load
+    /// @param inAddr Address of &element[0] to load
     /// @return Vector type`<int>` of loaded elements
     static SimdType Load1(const int* inAddr)
     {
-        int32x2_t low = vdup_n_s32(inAddr[0]);
-        return vcombine_s32(vset_lane_s32(inAddr[0], vdup_n_s32(0), 0), vdup_n_s32(0));
+        return vset_lane_s32(inAddr[0], vdup_n_s32(0), 0);
     }
 
     /// @brief Store 4 elements of type`<int>` to memory specified by `outAddr`.
@@ -145,6 +150,10 @@ struct Simd128<int> :
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<int> values to check if all elements are greater than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are greater than or equal, false otherwise
     static bool IsGe(SimdType inLHS, SimdType inRHS)
     {
         uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
@@ -152,6 +161,10 @@ struct Simd128<int> :
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<int> values to check if all elements are less than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
         uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
@@ -206,7 +219,7 @@ struct Simd128<float> :
     public Simd128Traits<float>
 {
     using typename Simd128Traits<float>::SimdType; // float32x4_t
-    using typename Simd128Traits<float>::ValueType;
+    using typename Simd128Traits<float>::ValueType; // float
 
     /// @brief Load 4 elements of type`<float>` from memory specified by `inAddr`.
     /// @param inAddr Address of &elements[4] to load
@@ -234,8 +247,7 @@ struct Simd128<float> :
     /// @return Vector type`<float>` of loaded elements
     static SimdType Load1(const float* inAddr)
     {
-        float32x2_t low = vdup_n_f32(inAddr[0]);
-        return vcombine_f32(vset_lane_f32(inAddr[0], vdup_n_f32(0.0f), 0), vdup_n_f32(0.0f));
+        return vset_lane_f32(inAddr[0], vdup_n_f32(0.0f), 0);
     }
 
     /// @brief Store 4 elements of type`<float>` to memory specified by `outAddr`.
@@ -334,6 +346,10 @@ struct Simd128<float> :
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<float> values to check if all elements are greater than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are greater than or equal, false otherwise
     static bool IsGe(SimdType inLHS, SimdType inRHS)
     {
         uint32x4_t cmp = vcgeq_f32(inLHS, inRHS);
@@ -341,6 +357,10 @@ struct Simd128<float> :
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<float> values to check if all elements are less than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
         uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
@@ -427,7 +447,7 @@ struct Simd128<double> :
     public Simd128Traits<double>
 {
     using typename Simd128Traits<double>::SimdType; // float64x2_t
-    using typename Simd128Traits<double>::ValueType;
+    using typename Simd128Traits<double>::ValueType; // double
 
     /// @brief Load 2 elements of type`<double>` from memory specified by `inAddr`.
     /// Loaded elements are placed in low order position in result SimdType.
@@ -446,8 +466,7 @@ struct Simd128<double> :
     /// @return Vector type`<double>` of loaded elements
     static SimdType Load1(const double* inAddr)
     {
-        float64x1_t low = vdup_n_f64(inAddr[0]);
-        return vcombine_f64(vset_lane_f64(inAddr[0], vdup_n_f64(0.0), 0), vdup_n_f64(0.0));
+        return vset_lane_f64(inAddr[0], vdup_n_f64(0.0), 0);
     }
 
     /// @brief Store 2 elements of type`<double>` to memory specified by `outAddr`.
@@ -537,12 +556,20 @@ struct Simd128<double> :
         return (vgetq_lane_u64(cmp, 0) == ~0ULL) && (vgetq_lane_u64(cmp, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<double> values to check if all elements are greater than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are greater than or equal, false otherwise
     static bool IsGe(SimdType inLHS, SimdType inRHS)
     {
         uint64x2_t cmp = vcgeq_f64(inLHS, inRHS);
         return (vgetq_lane_u64(cmp, 0) == ~0ULL) && (vgetq_lane_u64(cmp, 1) == ~0ULL);
     }
 
+    /// @brief Compare two vector<double> values to check if all elements are less than or equal.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
         uint64x2_t cmp = vcleq_f64(inLHS, inRHS);
