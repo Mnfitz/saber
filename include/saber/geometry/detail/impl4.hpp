@@ -13,6 +13,25 @@
 
 namespace saber::geometry::detail {
 
+// Helpers
+#pragma region
+
+template<typename T>
+constexpr bool Is32BitDataType() 
+{
+    constexpr bool is32Bit = (sizeof(T)*8 <= 32);
+    return is32Bit;
+}
+
+template<typename T>
+constexpr bool Is64BitDataType() 
+{
+    constexpr bool is64Bit = (sizeof(T)*8 <= 64);
+    return is64Bit;
+}
+
+#pragma endregion
+
 template<typename T>
 struct Impl4 final
 {
@@ -39,17 +58,29 @@ struct Impl4 final
         }
 
         template<std::size_t Index>
-        constexpr T Get() const
+        constexpr const T& Get() const
         {
             static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
-            return std::get<Index>(mTuple);
+            return &std::get<Index>(mTuple);
         }
 
         template<std::size_t Index>
-        constexpr void Set(T inT)
+        constexpr T& Get()
         {
             static_assert(Index < std::tuple_size_v<decltype(mTuple)>, "Provided index out of bounds.");
-            std::get<Index>(mTuple) = inT;
+            return &std::get<Index>(mTuple);
+        }
+
+        constexpr void SetLo(const typename Impl2<T>::Scalar& inImpl2)
+        {
+            Get<0>() = inImpl2.Get<0>();
+            Get<1>() = inImpl2.Get<1>();
+        }
+
+        constexpr void SetHi(const typename Impl2<T>::Scalar& inImpl2)
+        {
+            Get<2>() = inImpl2.Get<0>();
+            Get<3>() = inImpl2.Get<1>();
         }
 
         constexpr Scalar& operator+=(const Scalar& inRHS)
@@ -159,19 +190,20 @@ struct Impl4 final
         {
             // By default Scalar is in X,Y,Width,Height format
             // Convert to L,T,R,B format
-            auto lhs = ToLTRB(*this);
-            auto rhs = ToLTRB(inImpl4);
+            ToLTRB(*this);
+            Simd ltrb = inImpl4;
+            ToLTRB(ltrb);
 
             // Figure out the top left of the union rectangle
-            std::get<0>(lhs.mTuple) = std::min(std::get<0>(lhs.mTuple), std::get<0>(rhs.mTuple)); // Min Left
-            std::get<1>(lhs.mTuple) = std::min(std::get<1>(lhs.mTuple), std::get<1>(rhs.mTuple)); // Min Top
+            Get<0>() = std::min(Get<0>(), ltrb.Get<0>()); // Min Left
+            Get<1>() = std::min(Get<1>(), ltrb.Get<1>()); // Min Top
 
             // Figure out the bottom right of the union rectangle
-            std::get<2>(lhs.mTuple) = std::max(std::get<2>(lhs.mTuple), std::get<2>(rhs.mTuple)); // Max Right
-            std::get<3>(lhs.mTuple) = std::max(std::get<3>(lhs.mTuple), std::get<3>(rhs.mTuple)); // Max Bottom
+            Get<2>() = std::min(Get<2>(), ltrb.Get<2>()); // Max Right
+            Get<3>() = std::min(Get<3>(), ltrb.Get<3>()); // Max Bottom
 
             // Remember to revert back to XYWH format
-            *this = ToXYWH(lhs);
+            FromLTRB(*this);
             return *this;
         }
 
@@ -194,7 +226,7 @@ struct Impl4 final
             std::get<3>(lhs.mTuple) = std::min(std::get<3>(lhs.mTuple), std::get<2>(rhs.mTuple));
 
             // Remember to revert back to XYWH format
-            *this = ToXYWH(lhs);
+            *this = FromLTRB(lhs);
 
             // Convert the bottom right to width and height, ensuring we do not end up with negative values
             std::get<2>(mTuple) = max(std::get<2>(mTuple), 0);
@@ -306,20 +338,16 @@ struct Impl4 final
 
     private:
         // TRICKY: There is no way to discern whether a Scalar is in LTRB or XYWH format, therefore methods are kept private
-        static constexpr Scalar ToLTRB(const Scalar& inXYWH)
+        static constexpr void ToLTRB(Scalar inXYWH)
         {
-            Scalar ltrb = inXYWH;
-            std::get<2>(ltrb.mTuple) += std::get<0>(ltrb.mTuple);
-            std::get<3>(ltrb.mTuple) += std::get<1>(ltrb.mTuple);
-            return ltrb;
+            std::get<2>(inXYWH.mTuple) += std::get<0>(inXYWH.mTuple);
+            std::get<3>(inXYWH.mTuple) += std::get<1>(inXYWH.mTuple);
         }
 
-        static constexpr Scalar ToXYWH(const Scalar& inLTRB)
+        static constexpr void FromLTRB(Scalar inLTRB)
         {
-            Scalar xywh = inLTRB;
-            std::get<2>(xywh.mTuple) -= std::get<0>(xywh.mTuple);
-            std::get<3>(xywh.mTuple) -= std::get<1>(xywh.mTuple);
-            return xywh;
+            std::get<2>(inLTRB.mTuple) -= std::get<0>(inLTRB.mTuple);
+            std::get<3>(inLTRB.mTuple) -= std::get<1>(inLTRB.mTuple);
         }
 
         // Friend meaning free function (and always public)
@@ -368,27 +396,37 @@ struct Impl4 final
 
         constexpr Simd(const typename Impl2<T>::Simd& inFirst, const typename Impl2<T>::Simd& inSecond)
         {
-            Simd128<T>::Store2(&mArray[0], inFirst.GetSimdType());
-            Simd128<T>::Store2(&mArray[2], inSecond.GetSimdType());
+            Simd128<T>::Store2(&Get<0>(), inFirst.GetSimdType());
+            Simd128<T>::Store2(&Get<2>(), inSecond.GetSimdType());
         }
 
         template<std::size_t Index>
-        constexpr T Get() const
+        constexpr const T& Get() const
         {
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
             return mArray[Index];
         }
 
         template<std::size_t Index>
-        constexpr void Set(T inT)
+        constexpr T& Get()
         {
             static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
-            mArray[Index] = inT;
+            return mArray[Index];
+        }
+
+        constexpr void SetLo(const typename Impl2<T>::Simd& inImpl2)
+        {
+            Simd128<T>::Store2(&Get<0>(), inImpl2.GetSimdType());
+        }
+
+        constexpr void SetHi(const typename Impl2<T>::Simd& inImpl2)
+        {
+            Simd128<T>::Store2(&Get<2>(), inImpl2.GetSimdType());
         }
 
         constexpr auto GetSimdType() const
         {
-            return Simd128<T>::Load4(&mArray[0]);
+            return Simd128<T>::Load4(&Get<0>());
         }
 
         constexpr Simd& operator+=(const Simd& inRHS)
@@ -399,12 +437,12 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    Scalar lhs{Get<0>(), mArray[1], Get<2>(), mArray[3]};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.mArray[1], inRHS.Get<2>(), inRHS.mArray[3]};
                     lhs += rhs;
-                    mArray[0] = lhs.mArray[0];
+                    Get<0>() = lhs.Get<0>();
                     mArray[1] = lhs.mArray[1]; 
-					mArray[2] = lhs.mArray[2];
+					Get<2>() = lhs.Get<2>();
                     mArray[3] = lhs.mArray[3]; 
                     break;
                 }
@@ -413,23 +451,23 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto lhs = Simd128<T>::Load4(&mArray[0]);
-					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load4(&Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
 					auto result = Simd128<T>::Add(lhs, rhs);
-                	Simd128<T>::Store4(&mArray[0], result);
+                	Simd128<T>::Store4(&Get<0>(), result);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto lhs = Simd128<T>::Load2(&mArray[0]);
-					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load2(&Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
 					auto result = Simd128<T>::Add(lhs, rhs);
-					Simd128<T>::Store2(&mArray[0], result);
+					Simd128<T>::Store2(&Get<0>(), result);
 
-					lhs = Simd128<T>::Load2(&mArray[2]);
-					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					lhs = Simd128<T>::Load2(&Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
 					result = Simd128<T>::Add(lhs, rhs);
-					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -450,12 +488,12 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    Scalar lhs{Get<0>(), mArray[1], Get<2>(), mArray[3]};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.mArray[1], inRHS.Get<2>(), inRHS.mArray[3]};
                     lhs -= rhs;
-                    mArray[0] = lhs.mArray[0];
+                    Get<0>() = lhs.Get<0>();
                     mArray[1] = lhs.mArray[1];
-					mArray[2] = lhs.mArray[2];
+					Get<2>() = lhs.Get<2>();
                     mArray[3] = lhs.mArray[3];
                     break;
                 }
@@ -464,23 +502,23 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto lhs = Simd128<T>::Load4(&mArray[0]);
-					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load4(&Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
 					auto result = Simd128<T>::Sub(lhs, rhs);
-					Simd128<T>::Store4(&mArray[0], result);
+					Simd128<T>::Store4(&Get<0>(), result);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto lhs = Simd128<T>::Load2(&mArray[0]);
-					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load2(&Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
 					auto result = Simd128<T>::Sub(lhs, rhs);
-					Simd128<T>::Store2(&mArray[0], result);
+					Simd128<T>::Store2(&Get<0>(), result);
 
-					lhs = Simd128<T>::Load2(&mArray[2]);
-					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					lhs = Simd128<T>::Load2(&Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
 					result = Simd128<T>::Sub(lhs, rhs);
-					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -500,12 +538,12 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    Scalar lhs{Get<0>(), mArray[1], Get<2>(), mArray[3]};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.mArray[1], inRHS.Get<2>(), inRHS.mArray[3]};
                     lhs *= rhs;
-                    mArray[0] = lhs.mArray[0];
+                    Get<0>() = lhs.Get<0>();
                     mArray[1] = lhs.mArray[1]; 
-					mArray[2] = lhs.mArray[2];
+					Get<2>() = lhs.Get<2>();
                     mArray[3] = lhs.mArray[3]; 
                     break;
                 }
@@ -514,23 +552,23 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto lhs = Simd128<T>::Load4(&mArray[0]);
-					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load4(&Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
 					auto result = Simd128<T>::Mul(lhs, rhs);
-					Simd128<T>::Store4(&mArray[0], result);
+					Simd128<T>::Store4(&Get<0>(), result);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto lhs = Simd128<T>::Load2(&mArray[0]);
-					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load2(&Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
 					auto result = Simd128<T>::Mul(lhs, rhs);
-					Simd128<T>::Store2(&mArray[0], result);
+					Simd128<T>::Store2(&Get<0>(), result);
 
-					lhs = Simd128<T>::Load2(&mArray[2]);
-					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					lhs = Simd128<T>::Load2(&Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
 					result = Simd128<T>::Mul(lhs, rhs);
-					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -550,12 +588,12 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    Scalar lhs{Get<0>(), mArray[1], Get<2>(), mArray[3]};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.mArray[1], inRHS.Get<2>(), inRHS.mArray[3]};
                     lhs /= rhs;
-                    mArray[0] = lhs.mArray[0];
+                    Get<0>() = lhs.Get<0>();
                     mArray[1] = lhs.mArray[1]; 
-					mArray[2] = lhs.mArray[2];
+					Get<2>() = lhs.Get<2>();
                     mArray[3] = lhs.mArray[3]; 
                     break;
                 }
@@ -564,23 +602,23 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto lhs = Simd128<T>::Load4(&mArray[0]);
-					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load4(&Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
 					auto result = Simd128<T>::Div(lhs, rhs);
-					Simd128<T>::Store4(&mArray[0], result);
+					Simd128<T>::Store4(&Get<0>(), result);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto lhs = Simd128<T>::Load2(&mArray[0]);
-					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load2(&Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
 					auto result = Simd128<T>::Div(lhs, rhs);
-					Simd128<T>::Store2(&mArray[0], result);
+					Simd128<T>::Store2(&Get<0>(), result);
 
-					lhs = Simd128<T>::Load2(&mArray[2]);
-					rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+					lhs = Simd128<T>::Load2(&Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
 					result = Simd128<T>::Div(lhs, rhs);
-					Simd128<T>::Store2(&mArray[2], result); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -601,8 +639,8 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    Scalar lhs{mArray[0], mArray[1], mArray[2], mArray[3]};
-                    const Scalar rhs{inRHS.mArray[0], inRHS.mArray[1], inRHS.mArray[2], inRHS.mArray[3]};
+                    Scalar lhs{Get<0>(), mArray[1], Get<2>(), mArray[3]};
+                    const Scalar rhs{inRHS.Get<0>(), inRHS.mArray[1], inRHS.Get<2>(), inRHS.mArray[3]};
                     isEqual = lhs == rhs;
                     break;
                 }
@@ -611,21 +649,21 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto lhs = Simd128<T>::Load4(&mArray[0]);
-					auto rhs = Simd128<T>::Load4(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load4(&Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
 					isEqual = Simd128<T>::IsEq(lhs, rhs);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto lhs = Simd128<T>::Load2(&mArray[0]);
-					auto rhs = Simd128<T>::Load2(&inRHS.mArray[0]);
+					auto lhs = Simd128<T>::Load2(&Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
 					isEqual = Simd128<T>::IsEq(lhs, rhs);
 
 					if (isEqual)
 					{
-						lhs = Simd128<T>::Load2(&mArray[2]);
-						rhs = Simd128<T>::Load2(&inRHS.mArray[2]);
+						lhs = Simd128<T>::Load2(&Get<2>());
+						rhs = Simd128<T>::Load2(&inRHS.Get<2>());
 						isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
 					}
 				}
@@ -651,11 +689,11 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar round{Get<0>(), mArray[1], Get<2>(), mArray[3]};
                     round.RoundNearest();
-                    mArray[0] = std::get<0>(round.mTuple);
+                    Get<0>() = std::get<0>(round.mTuple);
                     mArray[1] = std::get<1>(round.mTuple);
-					mArray[2] = std::get<2>(round.mTuple);
+					Get<2>() = std::get<2>(round.mTuple);
                     mArray[3] = std::get<3>(round.mTuple);
                     break;
                 }
@@ -664,20 +702,20 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto round = Simd128<T>::Load4(&mArray[0]);
+					auto round = Simd128<T>::Load4(&Get<0>());
 					round = Simd128<T>::RoundNearest(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					Simd128<T>::Store4(&Get<0>(), round);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					auto round1 = Simd128<T>::Load2(&Get<0>());
 					round1 = Simd128<T>::RoundNearest(round1);
-					Simd128<T>::Store2(&mArray[0], round1);
+					Simd128<T>::Store2(&Get<0>(), round1);
 
-					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					auto round2 = Simd128<T>::Load2(&Get<2>());
 					round2 = Simd128<T>::RoundNearest(round2);
-					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -698,11 +736,11 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar round{Get<0>(), mArray[1], Get<2>(), mArray[3]};
                     round.RoundCeil();
-                    mArray[0] = std::get<0>(round.mTuple);
+                    Get<0>() = std::get<0>(round.mTuple);
                     mArray[1] = std::get<1>(round.mTuple);
-					mArray[2] = std::get<2>(round.mTuple);
+					Get<2>() = std::get<2>(round.mTuple);
                     mArray[3] = std::get<3>(round.mTuple);
                     break;
                 }
@@ -711,20 +749,20 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto round = Simd128<T>::Load4(&mArray[0]);
+					auto round = Simd128<T>::Load4(&Get<0>());
 					round = Simd128<T>::RoundCeil(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					Simd128<T>::Store4(&Get<0>(), round);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					auto round1 = Simd128<T>::Load2(&Get<0>());
 					round1 = Simd128<T>::RoundCeil(round1);
-					Simd128<T>::Store2(&mArray[0], round1);
+					Simd128<T>::Store2(&Get<0>(), round1);
 
-					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					auto round2 = Simd128<T>::Load2(&Get<2>());
 					round2 = Simd128<T>::RoundCeil(round2);
-					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -745,11 +783,11 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar round{Get<0>(), mArray[1], Get<2>(), mArray[3]};
                     round.RoundFloor();
-                    mArray[0] = std::get<0>(round.mTuple);
+                    Get<0>() = std::get<0>(round.mTuple);
                     mArray[1] = std::get<1>(round.mTuple);
-					mArray[2] = std::get<2>(round.mTuple);
+					Get<2>() = std::get<2>(round.mTuple);
                     mArray[3] = std::get<3>(round.mTuple);
                     break;
                 }
@@ -758,20 +796,20 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto round = Simd128<T>::Load4(&mArray[0]);
+					auto round = Simd128<T>::Load4(&Get<0>());
 					round = Simd128<T>::RoundFloor(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					Simd128<T>::Store4(&Get<0>(), round);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					auto round1 = Simd128<T>::Load2(&Get<0>());
 					round1 = Simd128<T>::RoundFloor(round1);
-					Simd128<T>::Store2(&mArray[0], round1);
+					Simd128<T>::Store2(&Get<0>(), round1);
 
-					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					auto round2 = Simd128<T>::Load2(&Get<2>());
 					round2 = Simd128<T>::RoundFloor(round2);
-					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -792,11 +830,11 @@ struct Impl4 final
                 if (std::is_constant_evaluated())
                 {
                     // Delegate to Scalar Impl which is constexpr capable
-                    const Scalar round{mArray[0], mArray[1], mArray[2], mArray[3]};
+                    const Scalar round{Get<0>(), mArray[1], Get<2>(), mArray[3]};
                     round.RoundTrunc();
-                    mArray[0] = std::get<0>(round.mTuple);
+                    Get<0>() = std::get<0>(round.mTuple);
                     mArray[1] = std::get<1>(round.mTuple);
-					mArray[2] = std::get<2>(round.mTuple);
+					Get<2>() = std::get<2>(round.mTuple);
                     mArray[3] = std::get<3>(round.mTuple);
                     break;
                 }
@@ -805,20 +843,20 @@ struct Impl4 final
 				if constexpr (sizeof(T) <= 4) // Int/Float up to 32 bit data type
 				{
 					// 32 bits means 4 elements at a time
-					auto round = Simd128<T>::Load4(&mArray[0]);
+					auto round = Simd128<T>::Load4(&Get<0>());
 					round = Simd128<T>::RoundTrunc(round);
-					Simd128<T>::Store4(&mArray[0], round);
+					Simd128<T>::Store4(&Get<0>(), round);
 				}
 				else if constexpr (sizeof(T) <= 8) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
-					auto round1 = Simd128<T>::Load2(&mArray[0]);
+					auto round1 = Simd128<T>::Load2(&Get<0>());
 					round1 = Simd128<T>::RoundTrunc(round1);
-					Simd128<T>::Store2(&mArray[0], round1);
+					Simd128<T>::Store2(&Get<0>(), round1);
 
-					auto round2 = Simd128<T>::Load2(&mArray[2]);
+					auto round2 = Simd128<T>::Load2(&Get<2>());
 					round2 = Simd128<T>::RoundTrunc(round2);
-					Simd128<T>::Store2(&mArray[2], round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
+					Simd128<T>::Store2(&Get<2>(), round2); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
 				else
 				{
@@ -830,36 +868,39 @@ struct Impl4 final
         constexpr Simd& Union(const Simd& inImpl4)
         {
             typename Simd128<T>::SimdType result{};
-            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
+            if constexpr (Is32BitDataType<T>()) // Int/Float up to 32 bit data type
             {
-                auto ltrbLHS = ToLTRB(*this);
-                auto ltrbRHS = ToLTRB(inImpl4);
+                ToLTRB(*this);
+                Simd ltrb = inImpl4;
+                ToLTRB(ltrb);
 
-                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
-                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
+                auto lhs = Simd128<T>::Load4(&Get<0>());
+                auto rhs = Simd128<T>::Load4(&ltrb.Get<0>());
                 result = Simd128<T>::MinMax(lhs, rhs);
-                Simd128<T>::Store4(&mArray[0], result);
-                *this = ToXYWH(*this);
+                Simd128<T>::Store4(&Get<0>(), result);
+                FromLTRB(*this);
             }
-            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
+            else if constexpr (Is64BitDataType<T>()) // Double up to 64 bit data type
             {
                 // Find the minimum of the left and top values
-                auto lt1 = Simd128<T>::Load2(&mArray[0]);
-                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                Simd ltrb = inImpl4;
+
+                auto lt1 = Simd128<T>::Load2(&Get<0>());
+                auto lt2 = Simd128<T>::Load2(&ltrb.Get<0>());
                 result = Simd128<T>::Min(lt1, lt2);
-                Simd128<T>::Store2(&mArray[0], result);
+                Simd128<T>::Store2(&Get<0>(), result);
 
                 // Find the maximum of the right and bottom values
                 // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
-                auto simdL = ToLTRB(*this);
-                auto simdR = ToLTRB(inImpl4);
-                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
-                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                ToLTRB(*this);
+                ToLTRB(ltrb);
+                auto rb1 = Simd128<T>::Load2(&Get<2>());
+                auto rb2 = Simd128<T>::Load2(&ltrb.Get<2>());
                 result = Simd128<T>::Max(rb1, rb2);
 
-                Simd128<T>::Store2(&mArray[2], result);
+                Simd128<T>::Store2(&Get<2>(), result);
                 // Now convert right and bottom to width and height
-                *this = ToXYWH(*this);
+                FromLTRB(*this);
             }
             else
             {
@@ -871,36 +912,38 @@ struct Impl4 final
 
         constexpr Simd& Intersect(const Simd& inImpl4)
         {
-            if constexpr (sizeof(T)*8 <= 32) // Int/Float up to 32 bit data type
+            if constexpr (Is32BitDataType<T>()) // Int/Float up to 32 bit data type
             {
-                auto ltrbLHS = ToLTRB(*this);
-                auto ltrbRHS = ToLTRB(inImpl4);
+                ToLTRB(*this);
+                Simd ltrb = inImpl4;
+                ToLTRB(ltrb);
 
-                auto lhs = Simd128<T>::Load4(&ltrbLHS.mArray[0]);
-                auto rhs = Simd128<T>::Load4(&ltrbRHS.mArray[0]);
+                auto lhs = Simd128<T>::Load4(&Get<0>());
+                auto rhs = Simd128<T>::Load4(&ltrb.Get<0>());
                 auto intersection = Simd128<T>::MaxMin(lhs, rhs);
-                Simd128<T>::Store4(&mArray[0], intersection);
-                *this = ToXYWH(*this);
+                Simd128<T>::Store4(&Get<0>(), intersection);
+                FromLTRB(*this);
             }
-            else if constexpr (sizeof(T)*8 <= 64) // Double up to 64 bit data type
+            else if constexpr (Is64BitDataType<T>()) // Double up to 64 bit data type
             {
+                Simd ltrb = inImpl4;
                 // Find the maximum of the left and top values
-                auto lt1 = Simd128<T>::Load2(&mArray[0]);
-                auto lt2 = Simd128<T>::Load2(&inImpl4.mArray[0]);
+                auto lt1 = Simd128<T>::Load2(&Get<0>());
+                auto lt2 = Simd128<T>::Load2(&ltrb.Get<0>());
                 auto intersectionLT = Simd128<T>::Max(lt1, lt2);
 
                 // Find the minimum of the right and bottom values
                 // NOTE: Requires ToLTRB() conversion of width/height to right/bottom
-                auto simdL = ToLTRB(*this);
-                auto simdR = ToLTRB(inImpl4);
-                auto rb1 = Simd128<T>::Load2(&simdL.mArray[2]);
-                auto rb2 = Simd128<T>::Load2(&simdR.mArray[2]);
+                ToLTRB(*this);
+                ToLTRB(ltrb);
+                auto rb1 = Simd128<T>::Load2(&Get<2>());
+                auto rb2 = Simd128<T>::Load2(&ltrb.Get<2>());
                 auto intersectionRB = Simd128<T>::Min(rb1, rb2);
 
-                Simd128<T>::Store2(&mArray[0], intersectionLT);
-                Simd128<T>::Store2(&mArray[2], intersectionRB);
+                Simd128<T>::Store2(&Get<0>(), intersectionLT);
+                Simd128<T>::Store2(&Get<2>(), intersectionRB);
                 // Now convert right and bottom to width and height
-                *this = ToXYWH(*this);
+                FromLTRB(*this);
             }
             else
             {
@@ -913,15 +956,14 @@ struct Impl4 final
         constexpr bool IsOverlapping(const typename Impl2<T>::Simd& inImpl2) const
         {
             bool isOverlapping = false;
+            Simd ltrb = *this;
+            ToLTRB(ltrb);
 
-            auto ltrb = ToLTRB(*this);
-
-            auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
-            auto rb = Simd128<T>::Load2(&ltrb.mArray[2]);
+            auto lt = Simd128<T>::Load2(&ltrb.Get<0>());
+            auto rb = Simd128<T>::Load2(&ltrb.Get<2>());
             auto xy = inImpl2.GetSimdType(); // Get the underlying Simd value
 
-            constexpr bool is32BitData = (sizeof(T)*8 <= 32);
-            if constexpr (is32BitData) // int/float up to 32 bit data type
+            if constexpr (Is32BitDataType<T>()) // int/float up to 32 bit data type
             {
                 // Fix high 2 elements, since they're zeroed and can screw up comparison
                 lt = Simd128<T>::DupLo(lt);
@@ -958,33 +1000,29 @@ struct Impl4 final
         }
 
     private:
-        static constexpr Simd ToLTRB(const Simd& inXYWH)
+        static constexpr void ToLTRB(Simd& inXYWH)
         {
-            Simd ltrb = inXYWH;
-            auto lt = Simd128<T>::Load2(&ltrb.mArray[0]);
-			auto wh = Simd128<T>::Load2(&ltrb.mArray[2]);
+            auto lt = Simd128<T>::Load2(&inXYWH.Get<0>());
+			auto wh = Simd128<T>::Load2(&inXYWH.Get<2>());
 			auto rb = Simd128<T>::Add(lt, wh);
-            Simd128<T>::Store2(&ltrb.mArray[2], rb);
-            return ltrb;
+            Simd128<T>::Store2(&inXYWH.Get<2>(), rb);
         }
 
-        static constexpr Simd ToXYWH(const Simd& inLTRB)
+        static constexpr void FromLTRB(Simd& inLTRB)
         {
-            Simd xywh = inLTRB;
-            auto lt = Simd128<T>::Load2(&xywh.mArray[0]);
-			auto rb = Simd128<T>::Load2(&xywh.mArray[2]);
+            auto lt = Simd128<T>::Load2(&inLTRB.Get<0>());
+			auto rb = Simd128<T>::Load2(&inLTRB.Get<2>());
 			auto wh = Simd128<T>::Sub(rb, lt);
-            Simd128<T>::Store2(&xywh.mArray[2], wh);
-            return xywh;
+            Simd128<T>::Store2(&inLTRB.Get<2>(), wh);
         }
 
         friend constexpr bool IsEmpty(const Simd& inSimd)
         {
             constexpr Simd kZero{};
-			auto width = Simd128<T>::Load1(&inSimd.mArray[2]);
-            auto height = Simd128<T>::Load1(&inSimd.mArray[3]);
+			auto width = Simd128<T>::Load1(&inSimd.Get<2>());
+            auto height = Simd128<T>::Load1(&inSimd.Get<3>());
             auto min = Simd128<T>::Min(width, height);
-            auto zero = Simd128<T>::Load2(&kZero.mArray[0]);
+            auto zero = Simd128<T>::Load2(&kZero.Get<0>());
             // TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
             // The logic works, since the empty zeroes will not affect the Le check
             bool isEmpty = Simd128<T>::IsLe(min, zero);
@@ -996,8 +1034,7 @@ struct Impl4 final
     }; // class Simd
 }; // struct Impl4<>
 
-// Traits Class
-#pragma region
+#pragma region struct Impl4Traits
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;
 
@@ -1012,6 +1049,7 @@ struct Impl4Traits<T, ImplKind::kSimd>
 {
     using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
 };
+
 #pragma endregion
 
 } // namespace saber::geometry::detail

@@ -598,6 +598,10 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,0});
 		rectangle.Height(4);
 		REQUIRE(rectangle == Rectangle<TestType>{1,2,3,4});
+		rectangle.Origin({9,8});
+		REQUIRE(rectangle == Rectangle<TestType>{9,8,3,4});
+		rectangle.Size({7,6});
+		REQUIRE(rectangle == Rectangle<TestType>{9,8,7,6});
 	}
 
 	SECTION("Union")
