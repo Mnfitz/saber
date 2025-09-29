@@ -152,6 +152,16 @@ struct Simd128<int> :
 		const bool allEq = (mask == 0xFFFF);
 		return allEq;
 	}
+	/// @brief Compare two vector<int> values to check if all elements equal.
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	{
+        const auto eq = _mm_cmpeq_epi32(inLHS, inRHS);
+		const auto mask = _mm_movemask_epi8(eq);
+		return mask;
+	}
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
@@ -159,6 +169,13 @@ struct Simd128<int> :
 		const auto mask = _mm_movemask_epi8(lt);
 		const bool allGe = (mask == 0x0000); // Note: inverted logic, !LT == GE
 		return allGe;
+	}
+	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	{
+		const auto lt = _mm_cmplt_epi32(inLHS, inRHS);
+		auto mask = _mm_movemask_ps(_mm_castsi128_ps(lt));
+		mask = mask ^ ((1U << 4)-1); // Note; inverted logic, !LT == GE
+		return mask;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
@@ -168,7 +185,13 @@ struct Simd128<int> :
 		const bool allLe = (mask == 0x0000); // Note; inverted logic, !GT == LE
 		return allLe;
 	}
-
+	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	{
+		const auto gt = _mm_cmpgt_epi32(inLHS, inRHS);
+		auto mask = _mm_movemask_ps(_mm_castsi128_ps(gt)); // 4 ps results instead of 16 epi8 results
+		mask = mask ^ ((1U << 4)-1); // Note; inverted logic, !GT == LE
+		return mask;
+	}
 	//static SimdType RoundNearest(SimdType inRound)
 	// Not Implemented for integers
 
@@ -382,6 +405,39 @@ struct Simd128<float> :
 		const bool approxEq = (mask == 0xF);
 		return approxEq;
 	}
+	/// @brief Compare two vector<float> values to check if all elements equal or inexactly equal.
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	{
+		// Create a vector mask to remove the sign bit for floats so that we can take the absolute value of a vector of floats
+		constexpr auto signMask = ~(1U << (sizeof(float) * 8 - 1)); // Most significant bit of the float = sign bit (0x7FFFFFFF)
+		const auto absMask = _mm_castsi128_ps(_mm_set1_epi32(signMask));
+
+		// Take the absolute value of four floats at a time for LHS and RHS
+		const auto absLHS = _mm_and_ps(inLHS, absMask);
+		const auto absRHS = _mm_and_ps(inRHS, absMask);
+
+		// Create the magnitude of the largest 4 floats, between LHS and RHS, such that they are greater than 1.0
+		const auto minMagnitude = _mm_set_ps1(1);
+		const auto magnitude = _mm_max_ps(_mm_max_ps(absLHS, absRHS), minMagnitude);
+
+		// Create the tolerance for the comparison based on the largest LHS or RHS value being compared
+		// The bigger the number, the greater the allowed inexactness for IsEqual()
+		const auto epsilon = _mm_mul_ps(magnitude, _mm_set_ps1(std::numeric_limits<float>::epsilon()));
+
+		// Compare LHS to RHS via subtraction, and take its absolute value
+		const auto comparison = _mm_and_ps(_mm_sub_ps(inLHS, inRHS), absMask);
+
+		// See if the difference is within the allowed computed epsilon/tolerance
+		const auto result = _mm_cmple_ps(comparison, epsilon);
+
+		// Get the 4 comparison results into a single comparable mask, such that it makes a simple bool
+		const auto mask = _mm_movemask_ps(result);
+
+		return mask;
+	}
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
@@ -401,6 +457,25 @@ struct Simd128<float> :
 			allGe = IsEq(lhs, inRHS);
 		}
 		return allGe;
+	}
+	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	{
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
+		const auto ge = _mm_cmpge_ps(inLHS, inRHS);
+		auto mask = _mm_movemask_ps(ge); // Convert _m128 to a binary mask
+		const bool allGe = (mask == 0xF); // if mask == 0b1111, all are 'exactly' greater than or equal
+		if (!allGe)
+		{
+			// We are testing if LHS is greater than OR equal to RHS.
+			// If an element is not 'exactly' greater than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' greater than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly greater than or equal.
+			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
+			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
+			const auto lhs = _mm_blendv_ps(inLHS, inRHS, ge); 
+			mask &= IsEq2(lhs, inRHS);
+		}
+		return mask;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
@@ -422,6 +497,27 @@ struct Simd128<float> :
 			allLe = IsEq(lhs, inRHS);
 		}
 		return allLe;
+	}
+
+	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	{
+		// The cheap test
+		const auto le = _mm_cmple_ps(inLHS, inRHS);
+		auto mask = _mm_movemask_ps(le);
+		const bool allLe = (mask == 0xF);
+		// The expensive test
+		if (!allLe)
+		{
+			// We are testing if LHS is less than OR equal to RHS.
+			// If an element is not 'exactly' less than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' less than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly less than or equal.
+			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
+			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
+			const auto lhs = _mm_blendv_ps(inLHS, inRHS, le); 
+			mask &= IsEq2(lhs, inRHS);
+		}
+		return mask;
 	}
 
 	/// @brief Round all <float> values toward the nearest whole number
@@ -677,6 +773,41 @@ struct Simd128<double> :
 		const bool approxEq = (mask == 0x3);
 		return approxEq;
 	}
+	/// @brief Compare two vector<double> values to check if all elements equal.
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return true if corresponding elements are equal, false otherwise
+	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	{
+		// Create a vector mask to remove the sign bit for doubles so that we can take the absolute value of a vector of doubles
+		constexpr auto signMask = ~(1ULL << (sizeof(double) * 8 - 1));
+		// 64 bits in a double. 1 << 63
+		// sizeof(double) = 8/*bytes*/ x 8 /*bits*/ = 64
+		const auto absMask = _mm_castsi128_pd(_mm_set1_epi64x(signMask));
+
+		// Take the absolute value of two doubles at a time for LHS and RHS
+		const auto absLHS = _mm_and_pd(inLHS, absMask);
+		const auto absRHS = _mm_and_pd(inRHS, absMask);
+
+		// Create the magnitude of the largest 2 doubles, between LHS and RHS, such that they are greater than 1.0
+		const auto minMagnitude = _mm_set1_pd(1);
+		const auto magnitude = _mm_max_pd(_mm_max_pd(absLHS, absRHS), minMagnitude);
+
+		// Create the tolerance for the comparison based on the largest LHS or RHS value being compared
+		// The bigger the number, the greater the allowed inexactness for IsEqual()
+		const auto epsilon = _mm_mul_pd(magnitude, _mm_set1_pd(std::numeric_limits<double>::epsilon()));
+
+		// Compare LHS to RHS via subtraction, and take its absolute value
+		const auto comparison = _mm_and_pd(_mm_sub_pd(inLHS, inRHS), absMask);
+
+		// See if the difference is within the allowed computed epsilon/tolerance
+		const auto result = _mm_cmple_pd(comparison, epsilon);
+
+		// Get the 2 comparison results into a single comparable mask, such that it makes a simple bool
+		const auto mask = _mm_movemask_pd(result);
+
+		return mask;
+	}
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
@@ -696,6 +827,25 @@ struct Simd128<double> :
 			allGe = IsEq(lhs, inRHS);
 		}
 		return allGe;
+	}
+	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	{
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
+		const auto ge = _mm_cmpge_pd(inLHS, inRHS);
+		auto mask = _mm_movemask_pd(ge); // Convert _m128d to a binary mask
+		const bool allGe = (mask == 0x3); // if mask == 0b0011, all are 'exactly' greater than or equal
+		if (!allGe)
+		{
+			// We are testing if LHS is greater than OR equal to RHS.
+			// If an element is not 'exactly' greater than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' greater than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly greater than or equal.
+			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
+			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [1.1, 1.0]
+			const auto lhs = _mm_blendv_pd(inLHS, inRHS, ge); 
+			mask &= IsEq2(lhs, inRHS);
+		}
+		return mask;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
@@ -717,7 +867,25 @@ struct Simd128<double> :
 		}
 		return allLe;
 	}
-
+	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	{
+		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
+		const auto le = _mm_cmple_pd(inLHS, inRHS);
+		auto mask = _mm_movemask_pd(le); // Convert _m128d to a binary mask
+		const bool allLe = (mask == 0x3); // if mask == 0b0011, all are 'exactly' greater than or equal
+		if (!allLe)
+		{
+			// We are testing if LHS is less than OR equal to RHS.
+			// If an element is not 'exactly' less than or equal, than we must check if it is 'inexactly' equal
+			// If an element is 'exactly' less than or equal, there is no need to check if it is 'inexactly' equal
+			// Create a new lhs that eliminates from testing the elements that are already exactly less than or equal.
+			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
+			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [5.0, 1.1]
+			const auto lhs = _mm_blendv_pd(inLHS, inRHS, le); 
+			mask &= IsEq2(lhs, inRHS);
+		}
+		return mask;
+	}
 	/// @brief Round all <double> values toward the nearest whole number
 	/// @param inRound Input to be rounded
 	/// @return Return rounded SimdType values

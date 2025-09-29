@@ -664,7 +664,8 @@ struct Impl4 final
 					{
 						lhs = Simd128<T>::Load2(&Get<2>());
 						rhs = Simd128<T>::Load2(&inRHS.Get<2>());
-						isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
+						//isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
+                        isEqual = isEqual && (Simd128<T>::IsEq2(lhs, rhs) == 15);
 					}
 				}
 				else
@@ -979,7 +980,8 @@ struct Impl4 final
                     break;
                 }
 
-                if(Simd128<T>::IsGe(xy, rb)) 
+                //if (Simd128<T>::IsGe(xy, rb)) 
+                if (Simd128<T>::IsGe2(xy, rb) == 15) 
                 {
                     // Impl2 is too far to the right/below/touching the Impl4
                     break;
@@ -1025,7 +1027,8 @@ struct Impl4 final
             auto zero = Simd128<T>::Load2(&kZero.Get<0>());
             // TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
             // The logic works, since the empty zeroes will not affect the Le check
-            bool isEmpty = Simd128<T>::IsLe(min, zero);
+            //bool isEmpty = Simd128<T>::IsLe(min, zero);
+            bool isEmpty = (Simd128<T>::IsLe2(min, zero) == 15);
             return isEmpty;
         }
 
