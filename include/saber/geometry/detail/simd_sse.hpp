@@ -157,7 +157,7 @@ struct Simd128<int> :
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
-	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	static int EqMask(SimdType inLHS, SimdType inRHS)
 	{
         const auto eq = _mm_cmpeq_epi32(inLHS, inRHS);
 		auto mask = _mm_movemask_ps(_mm_castsi128_ps(eq)); // 4 ps results instead of 16 epi8 results
@@ -172,7 +172,7 @@ struct Simd128<int> :
 		return allGe;
 	}
 
-	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	static int GeMask(SimdType inLHS, SimdType inRHS)
 	{
 		const auto lt = _mm_cmplt_epi32(inLHS, inRHS);
 		auto mask = _mm_movemask_ps(_mm_castsi128_ps(lt)); // 4 ps results instead of 16 epi8 results
@@ -188,7 +188,7 @@ struct Simd128<int> :
 		return allLe;
 	}
 
-	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	static int LeMask(SimdType inLHS, SimdType inRHS)
 	{
 		const auto gt = _mm_cmpgt_epi32(inLHS, inRHS);
 		auto mask = _mm_movemask_ps(_mm_castsi128_ps(gt)); // 4 ps results instead of 16 epi8 results
@@ -414,7 +414,7 @@ struct Simd128<float> :
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
 
-	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	static int EqMask(SimdType inLHS, SimdType inRHS)
 	{
 		// Create a vector mask to remove the sign bit for floats so that we can take the absolute value of a vector of floats
 		constexpr auto signMask = ~(1U << (sizeof(float) * 8 - 1)); // Most significant bit of the float = sign bit (0x7FFFFFFF)
@@ -464,7 +464,7 @@ struct Simd128<float> :
 		return allGe;
 	}
 
-	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	static int GeMask(SimdType inLHS, SimdType inRHS)
 	{
 		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto ge = _mm_cmpge_ps(inLHS, inRHS);
@@ -479,7 +479,7 @@ struct Simd128<float> :
 			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
 			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
 			const auto lhs = _mm_blendv_ps(inLHS, inRHS, ge); 
-			mask &= IsEq2(lhs, inRHS);
+			mask &= EqMask(lhs, inRHS);
 		}
 		return mask;
 	}
@@ -505,7 +505,7 @@ struct Simd128<float> :
 		return allLe;
 	}
 
-	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	static int LeMask(SimdType inLHS, SimdType inRHS)
 	{
 		// The cheap test
 		const auto le = _mm_cmple_ps(inLHS, inRHS);
@@ -521,7 +521,7 @@ struct Simd128<float> :
 			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
 			// Ex: LHS = [5.0, 1.0, 1.1, 1.1], RHS = [1.1, 1.1, 1.1, 1.1]. New LHS = [1.1, 1.0, 1.1, 1.1]
 			const auto lhs = _mm_blendv_ps(inLHS, inRHS, le); 
-			mask &= IsEq2(lhs, inRHS);
+			mask &= EqMask(lhs, inRHS);
 		}
 		return mask;
 	}
@@ -748,6 +748,11 @@ struct Simd128<double> :
 	/// @return Return true if corresponding elements are equal, false otherwise
 	static bool IsEq(SimdType inLHS, SimdType inRHS)
 	{
+		const int mask = EqMask(inLHS, inRHS);
+		const bool allEq = (mask == 0x3);
+		return allEq;
+
+		#if 0
 		// Create a vector mask to remove the sign bit for doubles so that we can take the absolute value of a vector of doubles
 		constexpr auto signMask = ~(1ULL << (sizeof(double) * 8 - 1));
 		// 64 bits in a double. 1 << 63
@@ -778,13 +783,14 @@ struct Simd128<double> :
 		// See is all 2 bits of the mask were true (if so, IsEq() returns true)
 		const bool approxEq = (mask == 0x3);
 		return approxEq;
+		#endif
 	}
 
 	/// @brief Compare two vector<double> values to check if all elements equal.
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return true if corresponding elements are equal, false otherwise
-	static int IsEq2(SimdType inLHS, SimdType inRHS)
+	static int EqMask(SimdType inLHS, SimdType inRHS)
 	{
 		// Create a vector mask to remove the sign bit for doubles so that we can take the absolute value of a vector of doubles
 		constexpr auto signMask = ~(1ULL << (sizeof(double) * 8 - 1));
@@ -818,6 +824,10 @@ struct Simd128<double> :
 
 	static bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
+		const int mask = GeMask(inLHS, inRHS);
+		const bool allGe = (mask == 0x3);
+		return allGe;
+		#if 0
 		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto ge = _mm_cmpge_pd(inLHS, inRHS);
 		const auto mask = _mm_movemask_pd(ge); // Convert _m128d to a binary mask
@@ -834,9 +844,10 @@ struct Simd128<double> :
 			allGe = IsEq(lhs, inRHS);
 		}
 		return allGe;
+		#endif
 	}
 
-	static int IsGe2(SimdType inLHS, SimdType inRHS)
+	static int GeMask(SimdType inLHS, SimdType inRHS)
 	{
 		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto ge = _mm_cmpge_pd(inLHS, inRHS);
@@ -851,13 +862,17 @@ struct Simd128<double> :
 			// We swap out LHS 'greater than' elements the corresponding RHS element, leaving the LHS elements that weren't greater than
 			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [1.1, 1.0]
 			const auto lhs = _mm_blendv_pd(inLHS, inRHS, ge); 
-			mask &= IsEq2(lhs, inRHS);
+			mask &= EqMask(lhs, inRHS);
 		}
 		return mask;
 	}
 
 	static bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
+		const int mask = LeMask(inLHS, inRHS);
+		const bool allLe = (mask == 0x3);
+		return allLe;
+		#if 0
 		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto le = _mm_cmple_pd(inLHS, inRHS);
 		const auto mask = _mm_movemask_pd(le); // Convert _m128d to a binary mask
@@ -874,9 +889,10 @@ struct Simd128<double> :
 			allLe = IsEq(lhs, inRHS);
 		}
 		return allLe;
+		#endif
 	}
 
-	static int IsLe2(SimdType inLHS, SimdType inRHS)
+	static int LeMask(SimdType inLHS, SimdType inRHS)
 	{
 		// Compare each inLHS with each inRHS to see if inLHS is 'exactly' greater than or equal
 		const auto le = _mm_cmple_pd(inLHS, inRHS);
@@ -891,7 +907,7 @@ struct Simd128<double> :
 			// We swap out LHS 'less than' elements the corresponding RHS element, leaving the LHS elements that weren't less than
 			// Ex: LHS = [5.0, 1.0], RHS = [1.1, 1.1]. New LHS = [5.0, 1.1]
 			const auto lhs = _mm_blendv_pd(inLHS, inRHS, le); 
-			mask &= IsEq2(lhs, inRHS);
+			mask &= EqMask(lhs, inRHS);
 		}
 		return mask;
 	}

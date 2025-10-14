@@ -567,27 +567,77 @@ TEMPLATE_TEST_CASE(	"saber::geometry::Rectangle::ctor() works correctly",
 	// CLASS METHOD
 	SECTION("Translate(Rectangle)")
 	{
-		REQUIRE(Rectangle<TestType>{Point<TestType>{2,1}}.Translate(Point<TestType>{4,3}) == Rectangle<TestType>{Point<TestType>{6,4}});
-		REQUIRE(Rectangle<TestType>{Point<TestType>{3,2}}.Translate(5,4) == Rectangle<TestType>{Point<TestType>{8,6}});
-		REQUIRE(Rectangle<TestType>{Point<TestType>{4,6}}.Translate(3) == Rectangle<TestType>{Point<TestType>{7,9}});
-	}
+        auto r0 = Rectangle<TestType>{Point<TestType>{2,1}};
+        auto a0 = Point<TestType>{4,3};
+        auto expected0 = Rectangle<TestType>{Point<TestType>{6,4}};
+        auto result0 = r0.Translate(a0);
+        REQUIRE(result0 == expected0);
 
-	SECTION("Enlarge(Rectangle)")
-	{
-		REQUIRE(Rectangle<TestType>{Size<TestType>{2,1}}.Enlarge(Size<TestType>{4,3}) == Rectangle<TestType>{Size<TestType>{6,4}});
-		REQUIRE(Rectangle<TestType>{Size<TestType>{3,2}}.Enlarge(5,4) == Rectangle<TestType>{Size<TestType>{8,6}});
-		REQUIRE(Rectangle<TestType>{Size<TestType>{4,6}}.Enlarge(3) == Rectangle<TestType>{Size<TestType>{7,9}});
-	}
+        auto r1 = Rectangle<TestType>{Point<TestType>{3,2}};
+        auto a1x = TestType{5};
+        auto a1y = TestType{4};
+        auto expected1 = Rectangle<TestType>{Point<TestType>{8,6}};
+        auto result1 = r1.Translate(a1x, a1y);
+        REQUIRE(result1 == expected1);
 
-	SECTION("Scale(Rectangle)")
-	{
-		REQUIRE(Rectangle<TestType>{2,3,2,3}.Scale(Point<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
-		REQUIRE(Rectangle<TestType>{2,3,2,3}.Scale(Size<TestType>{4,3}) == Rectangle<TestType>{8,9,8,9});
-		REQUIRE(Rectangle<TestType>{5,3,5,3}.Scale(2,4) == Rectangle<TestType>{10,12,10,12});
-		REQUIRE(Rectangle<TestType>{6,7,6,7}.Scale(2) == Rectangle<TestType>{12,14,12,14});
-	}
+        auto r2 = Rectangle<TestType>{Point<TestType>{4,6}};
+        auto a2 = TestType{3};
+        auto expected2 = Rectangle<TestType>{Point<TestType>{7,9}};
+        auto result2 = r2.Translate(a2);
+        REQUIRE(result2 == expected2);
+    }
 
-	SECTION("Setters")
+    SECTION("Enlarge(Rectangle)")
+    {
+        auto r0 = Rectangle<TestType>{Size<TestType>{2,1}};
+        auto s0 = Size<TestType>{4,3};
+        auto expected0 = Rectangle<TestType>{Size<TestType>{6,4}};
+        auto result0 = r0.Enlarge(s0);
+        REQUIRE(result0 == expected0);
+
+        auto r1 = Rectangle<TestType>{Size<TestType>{3,2}};
+        auto e1x = TestType{5};
+        auto e1y = TestType{4};
+        auto expected1 = Rectangle<TestType>{Size<TestType>{8,6}};
+        auto result1 = r1.Enlarge(e1x, e1y);
+        REQUIRE(result1 == expected1);
+
+        auto r2 = Rectangle<TestType>{Size<TestType>{4,6}};
+        auto e2 = TestType{3};
+        auto expected2 = Rectangle<TestType>{Size<TestType>{7,9}};
+        auto result2 = r2.Enlarge(e2);
+        REQUIRE(result2 == expected2);
+    }
+
+    SECTION("Scale(Rectangle)")
+    {
+        auto r0 = Rectangle<TestType>{TestType{2},TestType{3},TestType{2},TestType{3}};
+        auto s0 = Point<TestType>{TestType{4},TestType{3}};
+        auto expected0 = Rectangle<TestType>{TestType{8},TestType{9},TestType{8},TestType{9}};
+        auto result0 = r0.Scale(s0);
+        REQUIRE(result0 == expected0);
+
+        auto r1 = Rectangle<TestType>{TestType{2},TestType{3},TestType{2},TestType{3}};
+        auto s1 = Size<TestType>{TestType{4},TestType{3}};
+        auto expected1 = Rectangle<TestType>{TestType{8},TestType{9},TestType{8},TestType{9}};
+        auto result1 = r1.Scale(s1);
+        REQUIRE(result1 == expected1);
+
+        auto r2 = Rectangle<TestType>{TestType{5},TestType{3},TestType{5},TestType{3}};
+        auto sx = TestType{2};
+        auto sy = TestType{4};
+        auto expected2 = Rectangle<TestType>{TestType{10},TestType{12},TestType{10},TestType{12}};
+        auto result2 = r2.Scale(sx, sy);
+        REQUIRE(result2 == expected2);
+
+        auto r3 = Rectangle<TestType>{TestType{6},TestType{7},TestType{6},TestType{7}};
+        auto s3 = TestType{2};
+        auto expected3 = Rectangle<TestType>{TestType{12},TestType{14},TestType{12},TestType{14}};
+        auto result3 = r3.Scale(s3);
+        REQUIRE(result3 == expected3);
+    }
+
+    SECTION("Setters")
 	{
 		auto rectangle = Rectangle<TestType>{0,0,0,0};
 		rectangle.X(1);

@@ -278,7 +278,7 @@ struct Simd128 :
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
 	/// @return Return mask of all corresponding vector elements that are equal
-	static constexpr int IsEq2(SimdType inLHS, SimdType inRHS)
+	static constexpr int EqMask(SimdType inLHS, SimdType inRHS)
 	{
 		int eqMask = 0;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
@@ -328,7 +328,7 @@ struct Simd128 :
 		}
 		return isGe;
 	}
-	static constexpr int IsGe2(SimdType inLHS, SimdType inRHS)
+	static constexpr int GeMask(SimdType inLHS, SimdType inRHS)
 	{
 		int geMask = 0;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
@@ -380,7 +380,7 @@ struct Simd128 :
 		}
 		return isLe;
 	}
-	static constexpr int IsLe2(SimdType inLHS, SimdType inRHS)
+	static constexpr int LeMask(SimdType inLHS, SimdType inRHS)
 	{
 		int leMask = 0;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
@@ -414,7 +414,7 @@ struct Simd128 :
 	}
 	static constexpr bool IsGt2(SimdType inLHS, SimdType inRHS)
 	{
-		int leMask = IsLe2(inRHS, inLHS);
+		int leMask = LeMask(inRHS, inLHS);
 		int gtMask = leMask ^ ((1U << Simd128Traits<T>::kSize)-1);
 		return gtMask;
 	}
@@ -426,7 +426,7 @@ struct Simd128 :
 	}
 	static constexpr int IsLt2(SimdType inLHS, SimdType inRHS)
 	{
-		int geMask = IsGe2(inRHS, inLHS);
+		int geMask = GeMask(inRHS, inLHS);
 		int ltMask = geMask ^ ((1U << Simd128Traits<T>::kSize)-1);
 		return ltMask;
 	}
