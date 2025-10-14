@@ -211,6 +211,42 @@ struct Simd128<int> :
         int32x4_t min = vminq_s32(inLHS, inRHS);
         return vcombine_s32(vget_low_s32(max), vget_high_s32(min));
     }
+
+    /// @brief Compare two vector<int> values to check if all elements are equal and return a 4-bit mask.
+    /// @param inLHS Left hand side vector term
+    /// @param inRHS Right hand side vector term
+    /// @return 4-bit mask: bit i set if lane i comparison is true.
+    static int EqMask(SimdType inLHS, SimdType inRHS)
+    {
+        const uint32x4_t cmp = vceqq_s32(inLHS, inRHS);
+        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
+        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
+        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
+        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
+        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+    }
+
+    /// @brief Return GE mask (bit per lane) for integer vectors.
+    static int GeMask(SimdType inLHS, SimdType inRHS)
+    {
+        const uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
+        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
+        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
+        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
+        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
+        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+    }
+
+    /// @brief Return LE mask (bit per lane) for integer vectors.
+    static int LeMask(SimdType inLHS, SimdType inRHS)
+    {
+        const uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
+        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
+        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
+        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
+        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
+        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+    }
 };
 
 // float
@@ -439,6 +475,54 @@ struct Simd128<float> :
         float32x4_t min = vminq_f32(inLHS, inRHS);
         return vcombine_f32(vget_low_f32(max), vget_high_f32(min));
     }
+
+    /// @brief Compute per-lane equality mask for floating vectors using inexact comparison logic.
+    /// @param inLHS Left hand side vector
+    /// @param inRHS Right hand side vector
+    /// @return 4-bit mask: bit i set if lane i considered equal (within tolerance).
+    static int EqMask(SimdType inLHS, SimdType inRHS)
+    {
+        const float32x4_t absLHS = vabsq_f32(inLHS);
+        const float32x4_t absRHS = vabsq_f32(inRHS);
+        const float32x4_t minMag = vdupq_n_f32(1.0f);
+        const float32x4_t maxMag = vmaxq_f32(vmaxq_f32(absLHS, absRHS), minMag);
+        const float32x4_t epsilon = vmulq_f32(maxMag, vdupq_n_f32(std::numeric_limits<float>::epsilon()));
+        const float32x4_t diff = vabsq_f32(vsubq_f32(inLHS, inRHS));
+        const uint32x4_t cmp = vcleq_f32(diff, epsilon);
+
+        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
+        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
+        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
+        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
+        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+    }
+
+    /// @brief Return GE mask (bit per lane) for float vectors using inexact-equality fallback.
+    static int GeMask(SimdType inLHS, SimdType inRHS)
+    {
+        uint32x4_t cmp = vcgeq_f32(inLHS, inRHS);
+        int mask = (vgetq_lane_u32(cmp,0)?1:0) | (vgetq_lane_u32(cmp,1)?2:0) | (vgetq_lane_u32(cmp,2)?4:0) | (vgetq_lane_u32(cmp,3)?8:0);
+        if (mask != 0xF)
+        {
+            // blendv: where cmp is true keep inLHS else take inRHS
+            const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
+            mask &= EqMask(lhs_blend, inRHS);
+        }
+        return mask;
+    }
+
+    /// @brief Return LE mask (bit per lane) for float vectors using inexact-equality fallback.
+    static int LeMask(SimdType inLHS, SimdType inRHS)
+    {
+        uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
+        int mask = (vgetq_lane_u32(cmp,0)?1:0) | (vgetq_lane_u32(cmp,1)?2:0) | (vgetq_lane_u32(cmp,2)?4:0) | (vgetq_lane_u32(cmp,3)?8:0);
+        if (mask != 0xF)
+        {
+            const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
+            mask &= EqMask(lhs_blend, inRHS);
+        }
+        return mask;
+    }
 };
 
 // double
@@ -646,6 +730,52 @@ struct Simd128<double> :
         float64x2_t max = vmaxq_f64(inLHS, inRHS);
         float64x2_t min = vminq_f64(inLHS, inRHS);
         return vcombine_f64(vget_low_f64(max), vget_high_f64(min));
+    }
+
+    /// @brief Compute per-lane equality mask for double vectors using inexact comparison logic.
+    /// @param inLHS Left hand side vector
+    /// @param inRHS Right hand side vector
+    /// @return 2-bit mask: bit i set if lane i considered equal (within tolerance).
+    static int EqMask(SimdType inLHS, SimdType inRHS)
+    {
+        const float64x2_t absLHS = vabsq_f64(inLHS);
+        const float64x2_t absRHS = vabsq_f64(inRHS);
+        const float64x2_t minMag = vdupq_n_f64(1.0);
+        const float64x2_t maxMag = vmaxq_f64(vmaxq_f64(absLHS, absRHS), minMag);
+        const float64x2_t epsilon = vmulq_f64(maxMag, vdupq_n_f64(std::numeric_limits<double>::epsilon()));
+        const float64x2_t diff = vabsq_f64(vsubq_f64(inLHS, inRHS));
+        const uint64x2_t cmp = vcleq_f64(diff, epsilon);
+
+        const int b0 = vgetq_lane_u64(cmp, 0) ? 1 : 0;
+        const int b1 = vgetq_lane_u64(cmp, 1) ? 1 : 0;
+        return (b0) | (b1 << 1);
+    }
+
+    /// @brief Return GE mask (bit per lane) for double vectors using inexact-equality fallback.
+    static int GeMask(SimdType inLHS, SimdType inRHS)
+    {
+        uint64x2_t cmp = vcgeq_f64(inLHS, inRHS);
+        int mask = (vgetq_lane_u64(cmp,0)?1:0) | (vgetq_lane_u64(cmp,1)?2:0);
+        if (mask != 0x3)
+        {
+            // blend: use vbslq_f64 where cmp true keep LHS else RHS
+            const float64x2_t lhs_blend = vreinterpretq_f64_u64(vbslq_u64(vreinterpretq_u64_f64(cmp), vreinterpretq_u64_f64(inLHS), vreinterpretq_u64_f64(inRHS)));
+            mask &= EqMask(lhs_blend, inRHS);
+        }
+        return mask;
+    }
+
+    /// @brief Return LE mask (bit per lane) for double vectors using inexact-equality fallback.
+    static int LeMask(SimdType inLHS, SimdType inRHS)
+    {
+        uint64x2_t cmp = vcleq_f64(inLHS, inRHS);
+        int mask = (vgetq_lane_u64(cmp,0)?1:0) | (vgetq_lane_u64(cmp,1)?2:0);
+        if (mask != 0x3)
+        {
+            const float64x2_t lhs_blend = vreinterpretq_f64_u64(vbslq_u64(vreinterpretq_u64_f64(cmp), vreinterpretq_u64_f64(inLHS), vreinterpretq_u64_f64(inRHS)));
+            mask &= EqMask(lhs_blend, inRHS);
+        }
+        return mask;
     }
 };
 

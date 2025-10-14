@@ -357,6 +357,7 @@ struct Simd128 :
 
 	static constexpr bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
+		// TODO mnfitz 13oct2025: IsLe() should call LeMask()
 		bool isLe = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
