@@ -8,17 +8,23 @@
 
   "configurePresets": [
     {
-      "name": "win",
-      "displayName": "Windows",
-      "description": "Build for Windows using Visual Studio",
-      "generator": "Visual Studio 17 2022",
+      "name": "config-default",
+      "description": "Default build setting for saber",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "SABER_BUILD_UNITTESTS": "ON",
         "SABER_BUILD_BENCHMARKS": "ON",
         "SABER_BUILD_DOCS": "OFF",
         "CMAKE_BUILD_TYPE": "Debug"
-      },
+      }
+    },
+
+    {
+      "name": "config-default-win",
+      "description": "Default settings for Windows using Visual Studio 2022",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/x64",
+      "inherits": "config-default",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -27,37 +33,29 @@
     },
 
     {
-      "name": "mac",
-      "displayName": "macOS",
-      "description": "Build for macOS using Xcode",
-      "generator": "Xcode",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "SABER_BUILD_UNITTESTS": "ON",
-        "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "Debug",
-		"IOS": "OFF"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Darwin"
-      }
+      "name": "config-win-x64",
+      "displayName": "Windows x64",
+      "description": "Build for Windows/x64 using Visual Studio",
+      "inherits": "config-default-win",
+      "architecture": "x64"
     },
 
-	{
-      "name": "ios",
-      "displayName": "iOS",
-      "description": "Build for iOS using Xcode",
+    {
+      "name": "config-win-arm64",
+      "displayName": "Windows ARM64",
+      "description": "Build for Windows/ARM64 using Visual Studio",
+      "inherits": "config-default-win",
+      "architecture": "ARM64"
+    },
+
+    {
+      "name": "config-default-mac",
+      "description": "Default settings for macOS using Xcode",
+      "inherits": "config-default",
       "generator": "Xcode",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
-        "SABER_BUILD_UNITTESTS": "ON",
-        "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "Debug",
-		"IOS": "ON"
+        "IOS": "OFF"
       },
       "condition": {
         "type": "equals",
@@ -67,9 +65,25 @@
     },
 
     {
-      "name": "linux-debug",
-      "displayName": "Linux Debug",
-      "description": "Debug build for Linux using Make",
+      "name": "config-mac",
+      "displayName": "macOS ARM64",
+      "description": "Build for macOS/ARM64 using Xcode",
+      "inherits": "config-default-mac"
+    },
+
+    {
+      "name": "config-ios",
+      "displayName": "iOS ARM64",
+      "description": "Build for iOS/ARM64 using Xcode",
+      "inherits": "config-default-mac",
+      "cacheVariables": {
+        "IOS": "ON"
+      }
+    },
+
+    {
+      "name": "config-default-linux",
+      "description": "Default settings for Linux using Make",
       "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
@@ -86,73 +100,134 @@
     },
 
     {
-      "name": "linux-release",
-      "displayName": "Linux Release",
-      "description": "Release build for Linux using Make",
-      "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "SABER_BUILD_UNITTESTS": "ON",
-        "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
+      "name": "config-linux-x64",
+      "displayName": "Linux x64",
+      "description": "Build for Linux/x64 using Make",
+      "inherits": "config-default-linux"
     },
 
     {
-      "name": "linux-relwithdebinfo",
-      "displayName": "Linux RelWithDebInfo",
-      "description": "RelWithDebInfo build for Linux using Make",
-      "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "SABER_BUILD_UNITTESTS": "ON",
-        "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
+      "name": "config-linux-arm64",
+      "displayName": "Linux ARM64",
+      "description": "Build for Linux/ARM64 using Make",
+      "inherits": "config-default-linux"
     }
   ],
 
   "buildPresets": [
     {
-      "name": "win",
-      "configurePreset": "win"
+      "name": "build-win-default",
+      "configurePreset": "config-default-win",
+      "jobs": 0,
+      "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "mac",
-      "configurePreset": "mac"
+      "name": "build-win-debug",
+      "configurePreset": "config-default-win",
+      "configuration": "Debug",
+      "inherits": "build-win-default"
     },
 
     {
-      "name": "ios",
-      "configurePreset": "ios"
+      "name": "build-win-relwithdebinfo",
+      "configurePreset": "config-default-win",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-win-default"
     },
 
     {
-      "name": "linux-debug",
-      "configurePreset": "linux-debug"
+      "name": "build-win-release",
+      "configurePreset": "config-default-win",
+      "configuration": "Release",
+      "inherits": "build-win-default"
     },
 
     {
-      "name": "linux-release",
-      "configurePreset": "linux-release"
+      "name": "build-mac-default",
+      "configurePreset": "config-mac",
+      "configuration": "Debug",
+      "jobs": 0,
+      "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "linux-relwithdebinfo",
-      "configurePreset": "linux-relwithdebinfo"
+      "name": "build-mac-debug",
+      "configurePreset": "config-mac",
+      "configuration": "Debug",
+      "inherits": "build-mac-default"
+    },
+
+    {
+      "name": "build-mac-relwithdebinfo",
+      "configurePreset": "config-mac",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-mac-default"
+    },
+
+    {
+      "name": "build-mac-release",
+      "configurePreset": "config-mac",
+      "configuration": "Release",
+      "inherits": "build-mac-default"
+    },
+
+    {
+      "name": "build-ios-default",
+      "configurePreset": "config-ios",
+      "configuration": "Debug",
+      "jobs": 0,
+      "targets": [ "ALL_BUILD" ]
+    },
+
+    {
+      "name": "build-ios-debug",
+      "configurePreset": "config-ios",
+      "configuration": "Debug",
+      "inherits": "build-ios-default"
+    },
+
+    {
+      "name": "build-ios-relwithdebinfo",
+      "configurePreset": "config-ios",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-ios-default"
+    },
+
+    {
+      "name": "build-ios-release",
+      "configurePreset": "config-ios",
+      "configuration": "Release",
+      "inherits": "build-ios-default"
+    },
+
+    {
+      "name": "build-linux-default",
+      "configurePreset": "config-default-linux",
+      "configuration": "Debug",
+      "jobs": 0,
+      "targets": [ "ALL_BUILD" ]
+    },
+
+    {
+      "name": "build-linux-debug",
+      "configurePreset": "config-default-linux",
+      "configuration": "Debug",
+      "inherits": "build-linux-default"
+    },
+
+    {
+      "name": "build-linux-relwithdebinfo",
+      "configurePreset": "config-default-linux",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-linux-default"
+    },
+
+    {
+      "name": "build-linux-release",
+      "configurePreset": "config-default-linux",
+      "configuration": "Release",
+      "inherits": "build-linux-default"
     }
   ]
 }

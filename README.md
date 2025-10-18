@@ -14,19 +14,98 @@ So to workaround this, I have to use bogus embedded HTML instead
 <h1><code>saber</code><br/>C++ Header Library of Utility Classes</h1>
 -->
 
-# `saber`<br/>C++ Header Library of Utility Classes<br/>
-A header-only C++ geometry toolkit of generic, templated value types and utilities suitable for numeric, graphics, or geometry code. Types are templated for numeric types and have platform-specific SIMD accelerated implementations.
+# `saber`<br/>C++ utility header library<br/>
+A header-only C++ geometry toolkit of generic, templated types
+and utilities suitable for numeric, graphics, or geometry code.
+Types are templated for numeric types and some have platform-specific
+SIMD accelerated implementations.
 
 ### C++ version specific features:
-- C++17 adds structured binding for geometry classes
-- C++20 adds constexpr math for geometry classes
+- C++11 minimum required
+- C++17 adds structured binding `[]` for geometry classes
+- C++20 adds `constexpr` math for geometry classes
+
+### Using `saber` in an existing project
+`saber` is a header-only library, so merely add it to your project `#include` path:
+```makefile
+cc -I<WHERE PLACED>/saber/include -o main main.c
+```
+```c++
+// Then, use saber header files in your source
+#include "saber/utility.hpp"
+#include "saber/geometry/point.hpp"
+```
+<details>
+<summary>Example cmake usage</summary>
+Example usage via: FetchContent plus cmake INTERFACE library
+
+```cmake
+include(FetchContent)
+
+# Get mnfitz/saber repo...
+FetchContent_Declare(
+	saber
+	GIT_REPOSITORY	https://github.com/mnfitz/saber.git
+	GIT_TAG			"${SOME COMMIT OF YOUR CHOOSING}")
+
+# FetchContent places this clone at: ./build/_deps/saber-*.
+FetchContent_MakeAvailable(saber)
+
+# saber as: header-only "interface library" containing
+# it's own include/link dependencies
+add_library(mnfitz.saber INTERFACE)
+target_include_directories(mnfitz.saber INTERFACE
+	${saber_SOURCE_DIR}/include)
+
+###
+### Then add saber as dependency for your project target
+###
+add_dependencies(${MY_PROJECT}
+	mnfitz.saber)
+```
+</details>
+
+#### Building `saber` unittests
+
+There are 3 `saber` build targets, dis/enabled via macro defines:
+* `-DSABER_BUILD_UNITTESTS` (ON by default)
+* `-DSABER_BUILD_BENCHMARKS` (ON by default)
+* `-DSABER_BUILD_DOCS` (OFF by default)
+
+CMakePresets.json provides presets for building
+these targets on a variety of supported platforms.
+These are the available presets for configuring (regenerate) project/make files from cmake:
+* `config-win-{x64|arm64}`
+* `config-mac`
+* `config-ios`
+* `config-linux-{x64|arm64}`
+```
+> cmake --preset config-win-x64
+```
+Presets available for building projects directly from cmake:
+* `build-win-{debug|release|relwithdebinfo}`
+* `build-mac-{debug|release|relwithdebinfo}`
+* `build-ios-{debug|release|relwithdebinfo}`
+* `build-linux--{debug|release|relwithdebinfo}`
+```
+> cmake --build --preset build-win-debug
+```
+
+
+
+Note: The cmake generators 'Visual Studio 17 2022' and 'Xcode'
+are multi-configuration capable. Meaning: Once the project file
+ is 'generated', you can switch between configs:
+Debug/Release/RelWithDebInfo/MinSizeRel within the IDE. However,
+the 'Ninja' generator used by Linux is single-configuration only.
+Meaning: switching between Debug/Release/RelWithDebInfo/MinSizeRel
+requires you to cmake 'regenerate' a new build project.
 
 #### External Dependencies (requiring manual install)
 - For API documentation generation
   - Doxygen (https://www.doxygen.nl/download.html)
   - Grafviz (https://graphviz.org/download/)
   (Used by Doxygen to generate diagrams/charts/etc.)
-
 
 <!--
 Provide me a summary of the functionality provided by the template classes in this repo that would be suitable as an overview for the repo's README.md
