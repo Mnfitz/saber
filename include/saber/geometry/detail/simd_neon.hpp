@@ -38,7 +38,7 @@ struct Simd128<int> :
     /// @return Vector type`<int>` of loaded elements
     static SimdType Load2(const int* inAddr)
     {
-        int32x2_t low = vld1_s32(inAddr);
+        const int32x2_t low = vld1_s32(inAddr);
         return vcombine_s32(low, vdup_n_s32(0));
     }
 
@@ -126,7 +126,7 @@ struct Simd128<int> :
     /// @return SIMD register with low half duplicated.
     static SimdType DupLo(SimdType inSimd)
     {
-        int32x2_t low = vget_low_s32(inSimd);
+        const int32x2_t low = vget_low_s32(inSimd);
         return vcombine_s32(low, low);
     }
 
@@ -135,7 +135,7 @@ struct Simd128<int> :
     /// @return SIMD register with high half duplicated.
     static SimdType DupHi(SimdType inSimd)
     {
-        int32x2_t hi = vget_high_s32(inSimd);
+        const int32x2_t hi = vget_high_s32(inSimd);
         return vcombine_s32(hi, hi);
     }
 
@@ -145,8 +145,8 @@ struct Simd128<int> :
     /// @return Return true if corresponding elements are equal, false otherwise
     static bool IsEq(SimdType inLHS, SimdType inRHS)
     {
-        uint32x4_t cmp = vceqq_s32(inLHS, inRHS);
-        uint64x2_t pair = vreinterpretq_u64_u32(cmp);
+        const uint32x4_t cmp = vceqq_s32(inLHS, inRHS);
+        const uint64x2_t pair = vreinterpretq_u64_u32(cmp);
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
@@ -156,8 +156,8 @@ struct Simd128<int> :
     /// @return Return true if corresponding elements are greater than or equal, false otherwise
     static bool IsGe(SimdType inLHS, SimdType inRHS)
     {
-        uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
-        uint64x2_t pair = vreinterpretq_u64_u32(cmp);
+        const uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
+        const uint64x2_t pair = vreinterpretq_u64_u32(cmp);
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
@@ -167,8 +167,8 @@ struct Simd128<int> :
     /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
-        uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
-        uint64x2_t pair = vreinterpretq_u64_u32(cmp);
+        const uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
+        const uint64x2_t pair = vreinterpretq_u64_u32(cmp);
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
@@ -196,8 +196,8 @@ struct Simd128<int> :
     /// @return Return the minimum/maximum values for each pair of element of SimdType
     static SimdType MinMax(SimdType inLHS, SimdType inRHS)
     {
-        int32x4_t min = vminq_s32(inLHS, inRHS);
-        int32x4_t max = vmaxq_s32(inLHS, inRHS);
+        const int32x4_t min = vminq_s32(inLHS, inRHS);
+        const int32x4_t max = vmaxq_s32(inLHS, inRHS);
         return vcombine_s32(vget_low_s32(min), vget_high_s32(max));
     }
 
@@ -207,8 +207,8 @@ struct Simd128<int> :
     /// @return Return the maximum/minimum values for each pair of element of SimdType
     static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
     {
-        int32x4_t max = vmaxq_s32(inLHS, inRHS);
-        int32x4_t min = vminq_s32(inLHS, inRHS);
+        const int32x4_t max = vmaxq_s32(inLHS, inRHS);
+        const int32x4_t min = vminq_s32(inLHS, inRHS);
         return vcombine_s32(vget_low_s32(max), vget_high_s32(min));
     }
 
@@ -272,7 +272,7 @@ struct Simd128<float> :
     /// @return Vector type`<float>` of loaded elements
     static SimdType Load2(const float* inAddr)
     {
-        float32x2_t low = vld1_f32(inAddr);
+        const float32x2_t low = vld1_f32(inAddr);
         return vcombine_f32(low, vdup_n_f32(0.0f));
     }
 
@@ -364,7 +364,7 @@ struct Simd128<float> :
     /// @return SIMD register with high half duplicated.
     static SimdType DupHi(SimdType inSimd)
     {
-        float32x2_t hi = vget_high_f32(inSimd);
+        const float32x2_t hi = vget_high_f32(inSimd);
         return vcombine_f32(hi, hi);
     }
 
@@ -374,11 +374,11 @@ struct Simd128<float> :
     /// @return Return true if corresponding elements are equal, false otherwise
     static bool IsEq(SimdType inLHS, SimdType inRHS)
     {
-        float32x4_t diff = vabsq_f32(vsubq_f32(inLHS, inRHS));
-        float32x4_t maxMag = vmaxq_f32(vmaxq_f32(vabsq_f32(inLHS), vabsq_f32(inRHS)), vdupq_n_f32(1.0f));
-        float32x4_t epsilon = vmulq_f32(maxMag, vdupq_n_f32(std::numeric_limits<float>::epsilon()));
-        uint32x4_t cmp = vcleq_f32(diff, epsilon);
-        uint64x2_t pair = vreinterpretq_u64_u32(cmp);
+        const float32x4_t diff = vabsq_f32(vsubq_f32(inLHS, inRHS));
+        const float32x4_t maxMag = vmaxq_f32(vmaxq_f32(vabsq_f32(inLHS), vabsq_f32(inRHS)), vdupq_n_f32(1.0f));
+        const float32x4_t epsilon = vmulq_f32(maxMag, vdupq_n_f32(std::numeric_limits<float>::epsilon()));
+        const uint32x4_t cmp = vcleq_f32(diff, epsilon);
+        const uint64x2_t pair = vreinterpretq_u64_u32(cmp);
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
@@ -399,8 +399,8 @@ struct Simd128<float> :
     /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
-        uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
-        uint64x2_t pair = vreinterpretq_u64_u32(cmp);
+        const uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
+        const uint64x2_t pair = vreinterpretq_u64_u32(cmp);
         return (vgetq_lane_u64(pair, 0) == ~0ULL) && (vgetq_lane_u64(pair, 1) == ~0ULL);
     }
 
@@ -460,8 +460,8 @@ struct Simd128<float> :
     /// @return Return the minimum/maximum values for each pair of element of SimdType
     static SimdType MinMax(SimdType inLHS, SimdType inRHS)
     {
-        float32x4_t min = vminq_f32(inLHS, inRHS);
-        float32x4_t max = vmaxq_f32(inLHS, inRHS);
+        const float32x4_t min = vminq_f32(inLHS, inRHS);
+        const float32x4_t max = vmaxq_f32(inLHS, inRHS);
         return vcombine_f32(vget_low_f32(min), vget_high_f32(max));
     }
 
@@ -471,8 +471,8 @@ struct Simd128<float> :
     /// @return Return the maximum/minimum values for each pair of element of SimdType
     static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
     {
-        float32x4_t max = vmaxq_f32(inLHS, inRHS);
-        float32x4_t min = vminq_f32(inLHS, inRHS);
+        const float32x4_t max = vmaxq_f32(inLHS, inRHS);
+        const float32x4_t min = vminq_f32(inLHS, inRHS);
         return vcombine_f32(vget_low_f32(max), vget_high_f32(min));
     }
 
@@ -514,11 +514,11 @@ struct Simd128<float> :
     /// @brief Return LE mask (bit per lane) for float vectors using inexact-equality fallback.
     static int LeMask(SimdType inLHS, SimdType inRHS)
     {
-        uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
+        const uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
         int mask = (vgetq_lane_u32(cmp,0)?1:0) | (vgetq_lane_u32(cmp,1)?2:0) | (vgetq_lane_u32(cmp,2)?4:0) | (vgetq_lane_u32(cmp,3)?8:0);
         if (mask != 0xF)
         {
-            const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
+            const const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
             mask &= EqMask(lhs_blend, inRHS);
         }
         return mask;
@@ -614,7 +614,7 @@ struct Simd128<double> :
     /// @return SIMD register with low half duplicated.
     static SimdType DupLo(SimdType inSimd)
     {
-        float64x1_t low = vget_low_f64(inSimd);
+        const float64x1_t low = vget_low_f64(inSimd);
         return vcombine_f64(low, low);
     }
 
@@ -623,7 +623,7 @@ struct Simd128<double> :
     /// @return SIMD register with high half duplicated.
     static SimdType DupHi(SimdType inSimd)
     {
-        float64x1_t hi = vget_high_f64(inSimd);
+        const float64x1_t hi = vget_high_f64(inSimd);
         return vcombine_f64(hi, hi);
     }
 
@@ -633,10 +633,10 @@ struct Simd128<double> :
     /// @return Return true if corresponding elements are equal, false otherwise
     static bool IsEq(SimdType inLHS, SimdType inRHS)
     {
-        float64x2_t diff = vabsq_f64(vsubq_f64(inLHS, inRHS));
-        float64x2_t maxMag = vmaxq_f64(vmaxq_f64(vabsq_f64(inLHS), vabsq_f64(inRHS)), vdupq_n_f64(1.0));
-        float64x2_t epsilon = vmulq_f64(maxMag, vdupq_n_f64(std::numeric_limits<double>::epsilon()));
-        uint64x2_t cmp = vcleq_f64(diff, epsilon);
+        const float64x2_t diff = vabsq_f64(vsubq_f64(inLHS, inRHS));
+        const float64x2_t maxMag = vmaxq_f64(vmaxq_f64(vabsq_f64(inLHS), vabsq_f64(inRHS)), vdupq_n_f64(1.0));
+        const float64x2_t epsilon = vmulq_f64(maxMag, vdupq_n_f64(std::numeric_limits<double>::epsilon()));
+        const uint64x2_t cmp = vcleq_f64(diff, epsilon);
         return (vgetq_lane_u64(cmp, 0) == ~0ULL) && (vgetq_lane_u64(cmp, 1) == ~0ULL);
     }
 
@@ -646,7 +646,7 @@ struct Simd128<double> :
     /// @return Return true if corresponding elements are greater than or equal, false otherwise
     static bool IsGe(SimdType inLHS, SimdType inRHS)
     {
-        uint64x2_t cmp = vcgeq_f64(inLHS, inRHS);
+        const uint64x2_t cmp = vcgeq_f64(inLHS, inRHS);
         return (vgetq_lane_u64(cmp, 0) == ~0ULL) && (vgetq_lane_u64(cmp, 1) == ~0ULL);
     }
 
@@ -656,7 +656,7 @@ struct Simd128<double> :
     /// @return Return true if corresponding elements are less than or equal, false otherwise
     static bool IsLe(SimdType inLHS, SimdType inRHS)
     {
-        uint64x2_t cmp = vcleq_f64(inLHS, inRHS);
+        const uint64x2_t cmp = vcleq_f64(inLHS, inRHS);
         return (vgetq_lane_u64(cmp, 0) == ~0ULL) && (vgetq_lane_u64(cmp, 1) == ~0ULL);
     }
 
@@ -716,8 +716,8 @@ struct Simd128<double> :
     /// @return Return the minimum/maximum values for each pair of element of SimdType
     static SimdType MinMax(SimdType inLHS, SimdType inRHS)
     {
-        float64x2_t min = vminq_f64(inLHS, inRHS);
-        float64x2_t max = vmaxq_f64(inLHS, inRHS);
+        const float64x2_t min = vminq_f64(inLHS, inRHS);
+        const float64x2_t max = vmaxq_f64(inLHS, inRHS);
         return vcombine_f64(vget_low_f64(min), vget_high_f64(max));
     }
 
@@ -727,8 +727,8 @@ struct Simd128<double> :
     /// @return Return the maximum/minimum values for each pair of element of SimdType
     static SimdType MaxMin(SimdType inLHS, SimdType inRHS)
     {
-        float64x2_t max = vmaxq_f64(inLHS, inRHS);
-        float64x2_t min = vminq_f64(inLHS, inRHS);
+        const float64x2_t max = vmaxq_f64(inLHS, inRHS);
+        const float64x2_t min = vminq_f64(inLHS, inRHS);
         return vcombine_f64(vget_low_f64(max), vget_high_f64(min));
     }
 

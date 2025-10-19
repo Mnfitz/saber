@@ -413,7 +413,7 @@ struct Simd128 :
 		bool isGt = !IsLe(inRHS, inLHS);
 		return isGt;
 	}
-	static constexpr bool IsGt2(SimdType inLHS, SimdType inRHS)
+	static constexpr bool GtMask(SimdType inLHS, SimdType inRHS)
 	{
 		int leMask = LeMask(inRHS, inLHS);
 		int gtMask = leMask ^ ((1U << Simd128Traits<T>::kSize)-1);
@@ -425,7 +425,7 @@ struct Simd128 :
 		bool isLt = !IsGe(inRHS, inLHS);
 		return isLt;
 	}
-	static constexpr int IsLt2(SimdType inLHS, SimdType inRHS)
+	static constexpr int LtMask(SimdType inLHS, SimdType inRHS)
 	{
 		int geMask = GeMask(inRHS, inLHS);
 		int ltMask = geMask ^ ((1U << Simd128Traits<T>::kSize)-1);

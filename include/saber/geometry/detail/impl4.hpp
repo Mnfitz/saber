@@ -199,8 +199,8 @@ struct Impl4 final
 			Get<1>() = std::min(Get<1>(), ltrb.Get<1>()); // Min Top
 
 			// Figure out the bottom right of the union rectangle
-			Get<2>() = std::min(Get<2>(), ltrb.Get<2>()); // Max Right
-			Get<3>() = std::min(Get<3>(), ltrb.Get<3>()); // Max Bottom
+			Get<2>() = std::max(Get<2>(), ltrb.Get<2>()); // Max Right
+			Get<3>() = std::max(Get<3>(), ltrb.Get<3>()); // Max Bottom
 
 			// Remember to revert back to XYWH format
 			FromLTRB(*this);
