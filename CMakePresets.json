@@ -20,7 +20,7 @@
     },
 
     {
-      "name": "config-default-win",
+      "name": "config-win-default",
       "description": "Default settings for Windows using Visual Studio 2022",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build/x64",
@@ -36,7 +36,7 @@
       "name": "config-win-x64",
       "displayName": "Windows x64",
       "description": "Build for Windows/x64 using Visual Studio",
-      "inherits": "config-default-win",
+      "inherits": "config-win-default",
       "architecture": "x64"
     },
 
@@ -44,12 +44,13 @@
       "name": "config-win-arm64",
       "displayName": "Windows ARM64",
       "description": "Build for Windows/ARM64 using Visual Studio",
-      "inherits": "config-default-win",
-      "architecture": "ARM64"
+      "inherits": "config-win-default",
+      "architecture": "ARM64",
+      "binaryDir": "${sourceDir}/build/arm64"
     },
 
     {
-      "name": "config-default-mac",
+      "name": "config-mac-default",
       "description": "Default settings for macOS using Xcode",
       "inherits": "config-default",
       "generator": "Xcode",
@@ -68,24 +69,25 @@
       "name": "config-mac",
       "displayName": "macOS ARM64",
       "description": "Build for macOS/ARM64 using Xcode",
-      "inherits": "config-default-mac"
+      "inherits": "config-mac-default"
     },
 
     {
       "name": "config-ios",
       "displayName": "iOS ARM64",
       "description": "Build for iOS/ARM64 using Xcode",
-      "inherits": "config-default-mac",
+      "inherits": "config-mac-default",
       "cacheVariables": {
         "IOS": "ON"
       }
     },
 
     {
-      "name": "config-default-linux",
+      "name": "config-linux-default",
       "description": "Default settings for Linux using Make",
       "generator": "Unix Makefiles",
-      "binaryDir": "${sourceDir}/build",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/x64",
       "cacheVariables": {
         "SABER_BUILD_UNITTESTS": "ON",
         "SABER_BUILD_BENCHMARKS": "ON",
@@ -103,42 +105,65 @@
       "name": "config-linux-x64",
       "displayName": "Linux x64",
       "description": "Build for Linux/x64 using Make",
-      "inherits": "config-default-linux"
+      "inherits": "config-linux-default"
     },
 
     {
       "name": "config-linux-arm64",
       "displayName": "Linux ARM64",
       "description": "Build for Linux/ARM64 using Make",
-      "inherits": "config-default-linux"
+      "inherits": "config-linux-default",
+      "architecture": "ARM64",
+      "binaryDir": "${sourceDir}/build/arm64"
     }
   ],
 
   "buildPresets": [
     {
       "name": "build-win-default",
-      "configurePreset": "config-default-win",
+      "configurePreset": "config-win-default",
       "jobs": 0,
       "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "build-win-debug",
-      "configurePreset": "config-default-win",
+      "name": "build-win-x64-debug",
+      "configurePreset": "config-win-x64",
       "configuration": "Debug",
       "inherits": "build-win-default"
     },
 
     {
-      "name": "build-win-relwithdebinfo",
-      "configurePreset": "config-default-win",
+      "name": "build-win-arm64-debug",
+      "configurePreset": "config-win-arm64",
+      "configuration": "Debug",
+       "inherits": "build-win-default"
+    },
+
+    {
+      "name": "build-win-x64-relwithdebinfo",
+      "configurePreset": "config-win-x64",
       "configuration": "RelWithDebInfo",
       "inherits": "build-win-default"
     },
 
     {
-      "name": "build-win-release",
-      "configurePreset": "config-default-win",
+      "name": "build-win-arm64-relwithdebinfo",
+      "configurePreset": "config-win-arm64",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-win-default"
+    },
+
+    {
+      "name": "build-win-x64-release",
+      "configurePreset": "config-win-x64",
+      "configuration": "Release",
+      "inherits": "build-win-default"
+    },
+
+    {
+      "name": "build-win-arm64-release",
+      "configurePreset": "config-win-arm64",
       "configuration": "Release",
       "inherits": "build-win-default"
     },
@@ -203,29 +228,50 @@
 
     {
       "name": "build-linux-default",
-      "configurePreset": "config-default-linux",
+      "configurePreset": "config-linux-default",
       "configuration": "Debug",
       "jobs": 0,
       "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "build-linux-debug",
-      "configurePreset": "config-default-linux",
+      "name": "build-linux-x64-debug",
+      "configurePreset": "config-linux-x64",
       "configuration": "Debug",
       "inherits": "build-linux-default"
     },
 
     {
-      "name": "build-linux-relwithdebinfo",
-      "configurePreset": "config-default-linux",
+      "name": "build-linux-arm64-debug",
+      "configurePreset": "config-linux-arm64",
+      "configuration": "Debug",
+      "inherits": "build-linux-default"
+    },
+
+    {
+      "name": "build-linux-x64-relwithdebinfo",
+      "configurePreset": "config-linux-x64",
       "configuration": "RelWithDebInfo",
       "inherits": "build-linux-default"
     },
 
     {
-      "name": "build-linux-release",
-      "configurePreset": "config-default-linux",
+      "name": "build-linux-arm64-relwithdebinfo",
+      "configurePreset": "config-linux-arm64",
+      "configuration": "RelWithDebInfo",
+      "inherits": "build-linux-default"
+    },
+
+    {
+      "name": "build-linux-x64-release",
+      "configurePreset": "config-linux-x64",
+      "configuration": "Release",
+      "inherits": "build-linux-default"
+    },
+
+    {
+      "name": "build-linux-arm64-release",
+      "configurePreset": "config-linux-arm64",
       "configuration": "Release",
       "inherits": "build-linux-default"
     }

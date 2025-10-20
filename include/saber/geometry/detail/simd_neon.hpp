@@ -8,8 +8,10 @@
 // except that it is implemented using arm64 neon intrinsic functions. 
 // It will have 3 specializations of the template struct Simd128.
 
-// neon
-#include <arm_neon.h>
+// saber
+#include "saber/config.hpp"
+
+// std
 #include <array>
 #include <limits>
 
@@ -49,7 +51,7 @@ struct Simd128<int> :
     /// @return Vector type`<int>` of loaded elements
     static SimdType Load1(const int* inAddr)
     {
-        return vset_lane_s32(inAddr[0], vdup_n_s32(0), 0);
+        return vsetq_lane_s32(inAddr[0], vdupq_n_s32(0), 0);
     }
 
     /// @brief Store 4 elements of type`<int>` to memory specified by `outAddr`.
@@ -247,7 +249,7 @@ struct Simd128<float> :
     /// @return Vector type`<float>` of loaded elements
     static SimdType Load1(const float* inAddr)
     {
-        return vset_lane_f32(inAddr[0], vdup_n_f32(0.0f), 0);
+        return vsetq_lane_f32(inAddr[0], vdupq_n_f32(0.0f), 0);
     }
 
     /// @brief Store 4 elements of type`<float>` to memory specified by `outAddr`.
@@ -466,7 +468,7 @@ struct Simd128<double> :
     /// @return Vector type`<double>` of loaded elements
     static SimdType Load1(const double* inAddr)
     {
-        return vset_lane_f64(inAddr[0], vdup_n_f64(0.0), 0);
+        return vsetq_lane_f64(inAddr[0], vdupq_n_f64(0.0), 0);
     }
 
     /// @brief Store 2 elements of type`<double>` to memory specified by `outAddr`.

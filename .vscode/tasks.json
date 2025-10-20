@@ -12,7 +12,7 @@
 
   "tasks": [
     {
-      "label": "regenerate",
+      "label": "generate",
       "type": "shell",
       "windows": {
         "command": "cmake --preset config-win-${input:buildPlatform}"
@@ -21,7 +21,7 @@
         "command": "cmake --preset config-mac"
       },
       "linux": {
-        "command": "cmake --preset config-linux-${input:buildPlatformConfig}"
+        "command": "cmake --preset config-linux-${input:buildPlatform}-${input:buildConfig}"
       },
       "group": {
         "kind": "build",
@@ -33,13 +33,13 @@
       "label": "build",
       "type": "shell",
       "windows": {
-        "command": "cmake --build --preset build-win-${input:buildConfig}"
+        "command": "cmake --build --preset build-win-${input:buildPlatform}-${input:buildConfig}"
       },
       "osx": {
         "command": "cmake --build --preset build-mac-${input:buildConfig}"
       },
       "linux": {
-        "command": "cmake --build --preset build-linux-${input:buildConfig}"
+        "command": "cmake --build --preset build-linux--${input:buildPlatform}-${input:buildConfig}"
       },
       "group": {
         "kind": "build",
@@ -49,7 +49,7 @@
     },
 
     {
-      "label": "regenerate iOS",
+      "label": "generate iOS",
       "type": "shell",
       "windows": {
         "command": "echo \"iOS builds not supported on Windows!\""
@@ -128,6 +128,5 @@
       "options": [ "debug", "release", "relwithdebinfo", "minsizerel" ],
       "default": "debug"
     }
-
   ]
 }

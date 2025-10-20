@@ -2,8 +2,8 @@
 #define SABER_GEOMETRY_DETAIL_SIMD_SSE_HPP
 #pragma once
 
-// sse
-#include <immintrin.h>
+// saber
+#include "saber/config.hpp"
 
 namespace saber::geometry::detail {
 

@@ -8,9 +8,18 @@
 #include <array>
 
 #if SABER_CPU(X86)
-// sse
-#include <emmintrin.h>
-#endif
+	// sse
+	#include <immintrin.h>
+#elif SABER_CPU(ARM)
+	// neon
+	#if SABER_COMPILER(MSVC)
+	#include "arm64_neon.h"
+	#else
+	#include "arm_neon.h"
+	#endif // SABER_COMPILER()
+#else
+	#error "Unsupported CPU architecture"
+#endif // SABER_CPU()
 
 namespace saber::geometry::detail {
 
