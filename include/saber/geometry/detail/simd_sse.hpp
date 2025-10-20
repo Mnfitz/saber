@@ -4,10 +4,68 @@
 
 // saber
 #include "saber/config.hpp"
+#include "saber/geometry/detail/simd.hpp"
+
+// sse
+#include <immintrin.h>
 
 namespace saber::geometry::detail {
 
+// ------------------------------------------------------------------
+#pragma region SimdTraits<> SSE specializations
+
+// Platform-specific SIMD definitions for SSE...
+
 // int
+template<>
+struct Simd128Traits<int>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 4;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = int;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128i;  // vector of int
+
+}; // struct SimdTraits<>
+
+// float
+template<>
+struct Simd128Traits<float>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 4;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = float;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128; // vector of float
+
+}; // struct SimdTraits<>
+
+// double
+template<>
+struct Simd128Traits<double>
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = 2;
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = double;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = __m128d; // vector of double
+
+}; // struct SimdTraits<>
+
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<int> SSE specialization
+
 template<>
 struct Simd128<int> :
     public Simd128Traits<int> // is-a: Simd128Traits<int>
@@ -219,7 +277,11 @@ struct Simd128<int> :
 	}
 };
 
-// float
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<float> SSE specialization
+
 template<>
 struct Simd128<float> :
     public Simd128Traits<float> // is-a: Simd128Traits<float>
@@ -511,7 +573,11 @@ struct Simd128<float> :
 	}
 };
 
-// double
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<double> SSE specialization
+
 template<>
 struct Simd128<double> :
     public Simd128Traits<double> // is-a: Simd128Traits<double>
@@ -758,7 +824,6 @@ struct Simd128<double> :
 		return round;
 	}
 
-
 	/// @brief Find the minimum value for each pair of element of SimdType
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
@@ -805,6 +870,8 @@ struct Simd128<double> :
 		return maxMin;
 	}
 };
+
+#pragma endregion {}
 
 } // namespace saber::geometry::detail
 

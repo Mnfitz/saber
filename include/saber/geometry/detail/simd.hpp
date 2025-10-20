@@ -3,9 +3,37 @@
 
 // saber
 #include "saber/geometry/config.hpp"
-#include "saber/geometry/detail/simd_traits.hpp"
 
 namespace saber::geometry::detail {
+
+// ------------------------------------------------------------------
+#pragma region SimdTraits<NBits, T>
+
+/// @brief Traits struct defining platform-specific SIMD types.
+///
+/// Used by the `detail::Simd<NBits, T>` implementation. Note:
+/// This "primary" template definition describes it's types in a
+/// platform-independent way. Use template specializations of this
+/// struct to define platform-specific SIMD types for a given CPU.
+/// @tparam T Typeof underlying SIMD elements described by this trait
+template<typename T>
+struct Simd128Traits
+{
+	/// @brief Number of elements of type T in a SIMD vector
+	static constexpr std::size_t kSize = (128/8)/sizeof(T);
+
+	/// @brief Underlying type of a SIMD element
+	using ValueType = T;
+
+	/// @brief Platform-specific type of a SIMD vector of elements
+	using SimdType = std::array<T, kSize>; // As many `T`'s that will fit in NBits
+
+}; // struct SimdTraits<>
+
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<T>
 
 template<typename T> // Primary template definition
 struct Simd128;
@@ -416,6 +444,8 @@ struct Simd128 :
 
 }; // struct Simd128<T>
 
+#pragma endregion {}
+
 } // namespace saber::geometry::detail
 
 #if SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
@@ -431,6 +461,8 @@ struct Simd128 :
 // #include "saber/geometry/detail/simd_altivec.hpp"
 // #elif SABER_CPU(RISCV)
 // #include "saber/geometry/detail/simd_rvv.hpp"
+#else
+#error "Unsupported CPU architecture"
 #endif // SABER_CPU()
 #endif // SABER_GEOMETRY_CONFIG_ISENABLED_SIMD
 

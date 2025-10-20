@@ -10,14 +10,76 @@
 
 // saber
 #include "saber/config.hpp"
+#include "saber/geometry/detail/simd.hpp"
 
 // std
 #include <array>
 #include <limits>
 
+//neon
+#if SABER_COMPILER(MSVC)
+#include "arm64_neon.h"
+#else
+#include "arm_neon.h"
+#endif // SABER_COMPILER()
+
 namespace saber::geometry::detail {
 
+// ------------------------------------------------------------------
+#pragma region SimdTraits<> NEON specializations
+
+// Platform-specific SIMD definitions for NEON...
+
 // int
+template<>
+struct Simd128Traits<int>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = int;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = int32x4_t;  // vector of int
+
+}; // struct SimdTraits<>
+
+// float
+template<>
+struct Simd128Traits<float>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = float;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float32x4_t; // vector of float
+
+}; // struct SimdTraits<>
+
+// double
+template<>
+struct Simd128Traits<double>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 2;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = double;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float64x2_t; // vector of double
+
+}; // struct SimdTraits<>
+
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<int> NEON specialization
+
 template<>
 struct Simd128<int> :
     public Simd128Traits<int>
@@ -215,7 +277,11 @@ struct Simd128<int> :
     }
 };
 
-// float
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<float> NEON specialization
+
 template<>
 struct Simd128<float> :
     public Simd128Traits<float>
@@ -443,7 +509,11 @@ struct Simd128<float> :
     }
 };
 
-// double
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<double> NEON specialization
+
 template<>
 struct Simd128<double> :
     public Simd128Traits<double>
@@ -650,6 +720,8 @@ struct Simd128<double> :
         return vcombine_f64(vget_low_f64(max), vget_high_f64(min));
     }
 };
+
+#pragma endregion {}
 
 } // namespace saber::geometry::detail
 
