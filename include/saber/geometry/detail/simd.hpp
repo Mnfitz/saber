@@ -42,17 +42,22 @@ struct Simd128;
 ///
 /// Implemented as a "partial" template specialization for `<NBits=128>`.
 /// (e.g: 128bits = 4x 32bit elements; or 2x 64bit elements).
-///
-/// For T=`int`:
-///     |   0-31   |   32-63  |   64-95  |  96-127  |
-///     |----------|----------|----------|----------|
-///     |  int[0]  |  int[1]  |  int[2]  |  int[3]  |
-///
-/// For T=`double`: 
-///     |        0-63         |       64-127        |
-///     |---------------------|---------------------|
-///     |      double[0]      |      double[1]      |
-///
+/// @code{.cpp}
+/// // For T=`int`:
+/// //     |   0-31   |   32-63  |   64-95  |  96-127  |
+/// //     |----------|----------|----------|----------|
+/// //     |  int[0]  |  int[1]  |  int[2]  |  int[3]  |
+///	//
+/// // For T=`float`:
+/// //     |   0-31   |   32-63  |   64-95  |  96-127  |
+/// //     |----------|----------|----------|----------|
+/// //     | float[0] | float[1] | float[2] | float[3] |
+///	//
+/// // For T=`double`: 
+/// //     |        0-63         |       64-127        |
+/// //     |---------------------|---------------------|
+/// //     |      double[0]      |      double[1]      |
+/// @endcode
 /// @tparam T Underlying type of element of a SIMD vector
 template<typename T>
 struct Simd128 :

@@ -83,15 +83,13 @@ These are the available presets for configuring (regenerate) project/make files 
 > cmake --preset config-win-x64
 ```
 Presets available for building projects directly from cmake:
-* `build-win-{debug|release|relwithdebinfo}`
+* `build-win-{x64|arm64}-{debug|release|relwithdebinfo}`
 * `build-mac-{debug|release|relwithdebinfo}`
 * `build-ios-{debug|release|relwithdebinfo}`
-* `build-linux--{debug|release|relwithdebinfo}`
+* `build-linux-{x64|arm64}-{debug|release|relwithdebinfo}`
 ```
-> cmake --build --preset build-win-debug
+> cmake --build --preset build-win-x64-debug
 ```
-
-
 
 Note: The cmake generators 'Visual Studio 17 2022' and 'Xcode'
 are multi-configuration capable. Meaning: Once the project file
