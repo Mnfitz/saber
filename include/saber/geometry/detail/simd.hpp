@@ -302,6 +302,35 @@ struct Simd128 :
 		return isEq;
 	}
 
+	/// @brief Check all vector type`<T>` elements in `inRHS` to `inLHS` for equality.
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return mask of all corresponding vector elements that are equal
+	static constexpr int EqMask(SimdType inLHS, SimdType inRHS)
+	{
+		int eqMask = 0;
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			// check for "exact" equality
+			if (inRHS[i] == inLHS[i])
+			{
+				eqMask |= (1 << i);
+				continue;
+			}
+
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inRHS[i], inLHS[i]))
+				{
+					eqMask |= (1 << i);
+					continue;
+				}
+			}
+		}
+		return eqMask;
+	}
+
 	static constexpr bool IsGe(SimdType inLHS, SimdType inRHS)
 	{
 		bool isGe = true;
@@ -327,9 +356,36 @@ struct Simd128 :
 		}
 		return isGe;
 	}
+	static constexpr int GeMask(SimdType inLHS, SimdType inRHS)
+	{
+		int geMask = 0;
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			// check for "exact" greater than
+			if (inLHS[i] >= inRHS[i])
+			{
+				geMask |= (1 << i);
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					geMask |= (1 << i);
+					continue;
+				}
+			}
+
+			break;
+		}
+		return geMask;
+	}
 
 	static constexpr bool IsLe(SimdType inLHS, SimdType inRHS)
 	{
+		// TODO mnfitz 13oct2025: IsLe() should call LeMask()
 		bool isLe = true;
 		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
 		{
@@ -353,17 +409,55 @@ struct Simd128 :
 		}
 		return isLe;
 	}
+	static constexpr int LeMask(SimdType inLHS, SimdType inRHS)
+	{
+		int leMask = 0;
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			// check for "exact" greater than
+			if (inLHS[i] <= inRHS[i])
+			{
+				leMask |= (1 << i);
+				continue;
+			}
+			
+			// check for "inexact" equality for floating point types
+			if constexpr(std::is_floating_point_v<T>)
+			{
+				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				{
+					leMask |= (1 << i);
+					continue;
+				}
+			}
+
+			break;
+		}
+		return leMask;
+	}
 
 	static constexpr bool IsGt(SimdType inLHS, SimdType inRHS)
 	{
 		bool isGt = !IsLe(inRHS, inLHS);
 		return isGt;
 	}
+	static constexpr bool GtMask(SimdType inLHS, SimdType inRHS)
+	{
+		int leMask = LeMask(inRHS, inLHS);
+		int gtMask = leMask ^ ((1U << Simd128Traits<T>::kSize)-1);
+		return gtMask;
+	}
 
 	static constexpr bool IsLt(SimdType inLHS, SimdType inRHS)
 	{
 		bool isLt = !IsGe(inRHS, inLHS);
 		return isLt;
+	}
+	static constexpr int LtMask(SimdType inLHS, SimdType inRHS)
+	{
+		int geMask = GeMask(inRHS, inLHS);
+		int ltMask = geMask ^ ((1U << Simd128Traits<T>::kSize)-1);
+		return ltMask;
 	}
 
 	/// @brief Round all elements of SimdType toward positive infinity 
