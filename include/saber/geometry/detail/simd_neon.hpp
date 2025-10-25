@@ -8,14 +8,78 @@
 // except that it is implemented using arm64 neon intrinsic functions. 
 // It will have 3 specializations of the template struct Simd128.
 
-// neon
-#include <arm_neon.h>
+// saber
+#include "saber/config.hpp"
+#include "saber/geometry/detail/simd.hpp"
+
+// std
 #include <array>
 #include <limits>
 
+//neon
+#if SABER_COMPILER(MSVC)
+#include "arm64_neon.h"
+#else
+#include "arm_neon.h"
+#endif // SABER_COMPILER()
+
 namespace saber::geometry::detail {
 
+// ------------------------------------------------------------------
+#pragma region SimdTraits<> NEON specializations
+
+// Platform-specific SIMD definitions for NEON...
+
 // int
+template<>
+struct Simd128Traits<int>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = int;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = int32x4_t;  // vector of int
+
+}; // struct SimdTraits<>
+
+// float
+template<>
+struct Simd128Traits<float>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 4;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = float;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float32x4_t; // vector of float
+
+}; // struct SimdTraits<>
+
+// double
+template<>
+struct Simd128Traits<double>
+{
+    /// @brief Number of elements of type T in a SIMD vector
+    static constexpr std::size_t kSize = 2;
+
+    /// @brief Underlying type of a SIMD element
+    using ValueType = double;
+
+    /// @brief Platform-specific type of a SIMD vector of elements
+    using SimdType = float64x2_t; // vector of double
+
+}; // struct SimdTraits<>
+
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<int> NEON specialization
+
 template<>
 struct Simd128<int> :
     public Simd128Traits<int>
@@ -49,7 +113,7 @@ struct Simd128<int> :
     /// @return Vector type`<int>` of loaded elements
     static SimdType Load1(const int* inAddr)
     {
-        return vset_lane_s32(inAddr[0], vdup_n_s32(0), 0);
+        return vsetq_lane_s32(inAddr[0], vdupq_n_s32(0), 0);
     }
 
     /// @brief Store 4 elements of type`<int>` to memory specified by `outAddr`.
@@ -249,7 +313,11 @@ struct Simd128<int> :
     }
 };
 
-// float
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<float> NEON specialization
+
 template<>
 struct Simd128<float> :
     public Simd128Traits<float>
@@ -283,7 +351,7 @@ struct Simd128<float> :
     /// @return Vector type`<float>` of loaded elements
     static SimdType Load1(const float* inAddr)
     {
-        return vset_lane_f32(inAddr[0], vdup_n_f32(0.0f), 0);
+        return vsetq_lane_f32(inAddr[0], vdupq_n_f32(0.0f), 0);
     }
 
     /// @brief Store 4 elements of type`<float>` to memory specified by `outAddr`.
@@ -525,7 +593,11 @@ struct Simd128<float> :
     }
 };
 
-// double
+#pragma endregion {}
+
+// ------------------------------------------------------------------
+#pragma region Simd128<double> NEON specialization
+
 template<>
 struct Simd128<double> :
     public Simd128Traits<double>
@@ -550,7 +622,7 @@ struct Simd128<double> :
     /// @return Vector type`<double>` of loaded elements
     static SimdType Load1(const double* inAddr)
     {
-        return vset_lane_f64(inAddr[0], vdup_n_f64(0.0), 0);
+        return vsetq_lane_f64(inAddr[0], vdupq_n_f64(0.0), 0);
     }
 
     /// @brief Store 2 elements of type`<double>` to memory specified by `outAddr`.
@@ -778,6 +850,8 @@ struct Simd128<double> :
         return mask;
     }
 };
+
+#pragma endregion {}
 
 } // namespace saber::geometry::detail
 

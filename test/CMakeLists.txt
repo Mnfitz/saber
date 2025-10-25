@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 3.6)
 
 message(STATUS "Building saber/test/...")
 
-include(FetchContent)
+#include(FetchContent)
 
 # Both saber_unittest and saber_benchmark depend on `Catch2` test framework
 # See: https://github.com/catchorg/Catch2/blob/v2.x/docs/cmake-integration.md#cmake-target
-FetchContent_Declare(
-	Catch2
-	GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
-	GIT_TAG			v3.6.0)
+# FetchContent_Declare(
+# 	Catch2
+# 	GIT_REPOSITORY	https://github.com/catchorg/Catch2.git
+# 	GIT_TAG			v3.6.0)
 
 #
 # Saber "unit test" app (saber_unittest) defined here
@@ -18,7 +18,7 @@ if(SABER_BUILD_UNITTESTS)
 
 	# Clone Catch2 (if needed)...
 	# FetchContent typically places this clone at: ./build/_deps/.
-	FetchContent_MakeAvailable(Catch2)
+	# FetchContent_MakeAvailable(Catch2)
 
 	# saber_unittest source files...
 	set(SOURCE_FILES_UNITTEST
@@ -33,19 +33,32 @@ if(SABER_BUILD_UNITTESTS)
 		${SOURCE_FILES_UNITTEST}
 		${PROJECT_SOURCE_DIR}/CMakeLists.txt)
 
-	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
+	# Add include paths for: "saber" and "catch2"
+	target_include_directories(saber_unittest PRIVATE
+		${CMAKE_BINARY_DIR}/include
+		#${catch2_INCLUDE_DIR}
+		${wil_INCLUDE_DIR}
+		CatchOrg.Catch2)
+		# Microsoft.Graphics.Win2D
+		# Microsoft.WindowsAppSDK)
 
 	# find_package(Catch2 CONFIG REQUIRED)
-	link_libraries(Catch2::Catch2WithMain)
+	# link_libraries(Catch2::Catch2WithMain)
+	#find_package(CatchOrg.Catch2 REQUIRED)
+	#find_package(Microsoft.WindowsAppSDK REQUIRED)
 
 	# Catch2 provides a main function as executable entry point.
-	# Private since there is no need to surface these libraries in the binary.
-	target_link_libraries(saber_unittest PRIVATE Catch2 Catch2WithMain)
+	# Private since there is no need to export these libraries in the binary.
+	target_link_libraries(saber_unittest PRIVATE
+		CatchOrg.Catch2)
+		# Microsoft.Graphics.Win2D
+		# Microsoft.WindowsAppSDK)
+
 	add_test(NAME saber_unittest COMMAND test)
 
 	# Make the Visual Studio .vcxproj files look prettier...
-	if(MSVC)
-		# TRICKY jfitz 12may2024: Making `source_groups` appear in the VS IDE
+	if(WIN32)
+		# TRICKY j3fitz 12may2024: Making `source_groups` appear in the VS IDE
 		# A `source_group` directive will only take effect if the FILES
 		# specified are also dependencies of the `add_executable`
 
@@ -64,7 +77,10 @@ if(SABER_BUILD_UNITTESTS)
 		# Turn off warnings caused by ReferenceHandler<std::FILE>/std::fopen() usage
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
 
-	endif() # MSVC
+		# Set saber_unittest target as the `startup project` for the generated .sln file
+		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT saber_unittest)
+
+		endif() # WIN32
 endif() # SABER_BUILD_UNITTESTS
 
 if(SABER_BUILD_BENCHMARKS)
@@ -82,7 +98,7 @@ if(SABER_BUILD_BENCHMARKS)
 #	FetchContent_MakeAvailable(googlebenchmark googletest)
 #
 
-	FetchContent_MakeAvailable(Catch2)
+#	FetchContent_MakeAvailable(Catch2)
 
 	# saber_benchmark source files...
 	set(SOURCE_FILES_BENCHMARK
@@ -96,19 +112,28 @@ if(SABER_BUILD_BENCHMARKS)
 		${SOURCE_FILES_BENCHMARK}
 		${PROJECT_SOURCE_DIR}/CMakeLists.txt)
 
-	include_directories(BEFORE SYSTEM ${CMAKE_BINARY_DIR}/include)
+	# Add include paths for: "saber" and "catch2"
+	target_include_directories(saber_unittest PRIVATE
+		${CMAKE_BINARY_DIR}/include
+		${catch2_INCLUDE_DIR})
 
 	# find_package(Catch2 CONFIG REQUIRED)
-	link_libraries(Catch2::Catch2WithMain)
+	# link_libraries(Catch2::Catch2WithMain)
+	#find_package(CatchOrg.Catch2 REQUIRED)
+	#find_package(Microsoft.WindowsAppSDK REQUIRED)
 
 	# Catch2 provides a main function as executable entry point.
 	# Private since there is no need to surface these libraries in the binary.
-	target_link_libraries(saber_benchmark PRIVATE Catch2 Catch2WithMain)
+	target_link_libraries(saber_benchmark PRIVATE
+		CatchOrg.Catch2)
+		# Microsoft.Graphics.Win2D
+		# Microsoft.WindowsAppSDK)
+
 	add_test(NAME saber_benchmark COMMAND test)
 
 	# Make the Visual Studio .vcxproj files look prettier...
-	if(MSVC)
-		# TRICKY jfitz 12may2024: Making `source_groups` appear in the VS IDE
+	if(WIN32)
+		# TRICKY j3fitz 12may2024: Making `source_groups` appear in the VS IDE
 		# A `source_group` directive will only take effect if the FILES
 		# specified are also dependencies of the `add_executable`
 
@@ -124,7 +149,7 @@ if(SABER_BUILD_BENCHMARKS)
 			PREFIX "include/${PROJECT_NAME}"
 			FILES ${HEADER_FILES})
 
-	endif() # MSVC
+	endif() # WIN32
 #
 #	add_executable(saber_baseline benchmark_baseline.cpp benchmark_common.h)
 #	add_test(NAME saber_baseline COMMAND test)
@@ -140,7 +165,7 @@ endif() # SABER_BUILD_BENCHMARKS
 
 # The build pipelines have limitations that local development environments do not, so turn a few knobs
 #if(${FAST_BUILD})
-#	if (MSVC)
+#	if (WIN32)
 #		replace_cxx_flag("/GR" "/GR-") # Disables RTTI
 #	else()
 #		add_compile_options(-fno-rtti)

@@ -1,97 +1,132 @@
 // Invoke me via Command Palette: Run Tasks
 
 {
-	"version": "2.0.0",
-		"options": {
-				// WARNING: Make sure that your ~/.bashrc doesn't manually set
-				// a current working directory for you; eg. 'cd' command.
-				// Otherwise, it will undo this "cwd" tuple and you 
-				// will get the error "make failed with code 2."
-				"cwd": "${workspaceFolder}",
-		},
+  "version": "2.0.0",
+  "options": {
+    // WARNING: Make sure that your ~/.bashrc doesn't manually set
+    // a current working directory for you; eg. 'cd' command.
+    // Otherwise, it will undo this "cwd" tuple and you
+    // will get the error "make failed with code 2."
+    "cwd": "${workspaceFolder}"
+  },
 
-	"tasks": [
-		{
-			"label": "build",
-			"type": "shell",
-			"windows": {
-				"command": "cmake --build --preset win"
-			},
-			"osx": {
-				"command": "cmake --build --preset mac"
-			},
-			"linux": {
-				"command": "cmake --build --preset linux-debug"
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"problemMatcher": []
-		},
+  "tasks": [
+    {
+      "label": "generate",
+      "type": "shell",
+      "windows": {
+        "command": "cmake --preset config-win-${input:buildPlatform}"
+      },
+      "osx": {
+        "command": "cmake --preset config-mac"
+      },
+      "linux": {
+        "command": "cmake --preset config-linux-${input:buildPlatform}-${input:buildConfig}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
 
-		{
-			"label": "regenerate/build",
-			"type": "shell",
-			"windows": {
-				"command": "cmake --preset win && cmake --build --preset win"
-			},
-			"osx": {
-				"command": "cmake --preset mac && cmake --build --preset mac"
-			},
-			"linux": {
-				"command": "cmake --preset linux-debug && cmake --build --preset linux-debug"
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			}
-		},
+    {
+      "label": "build",
+      "type": "shell",
+      "windows": {
+        "command": "cmake --build --preset build-win-${input:buildPlatform}-${input:buildConfig}"
+      },
+      "osx": {
+        "command": "cmake --build --preset build-mac-${input:buildConfig}"
+      },
+      "linux": {
+        "command": "cmake --build --preset build-linux--${input:buildPlatform}-${input:buildConfig}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
 
-		{
-			"label": "regenerate/build iOS",
-			"type": "shell",
-			"windows": {
-				"command": "echo \"iOS builds not supported on Windows!\""
-			},
-			"osx": {
-				"command": "cmake --preset ios && cmake --build --preset ios"
-			},
-			"linux": {
-				"command": "echo \"iOS builds not supported on Linux!\""
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			}
-		},
+    {
+      "label": "generate iOS",
+      "type": "shell",
+      "windows": {
+        "command": "echo \"iOS builds not supported on Windows!\""
+      },
+      "osx": {
+        "command": "cmake --preset config-ios"
+      },
+      "linux": {
+        "command": "echo \"iOS builds not supported on Linux!\""
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
 
-		{
-			"label": "clean",
-			"type": "shell",
-			"windows": {
-				"command": "cmake --build --preset win --target clean"
-			},
-			"osx": {
-				"command": "cmake --build --preset mac --target clean && cmake --build --preset ios --target clean"
-			},
-			"linux": {
-				"command": "cmake --build --preset linux-debug --target clean"
-			},
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			}
-		},
+    {
+      "label": "build iOS",
+      "type": "shell",
+      "windows": {
+        "command": "echo \"iOS builds not supported on Windows!\""
+      },
+      "osx": {
+        "command": "cmake --build --preset build-ios-${input:buildConfig}"
+      },
+      "linux": {
+        "command": "echo \"iOS builds not supported on Linux!\""
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
 
-		{
-			"label": "test",
-			"type": "shell",
-			"command": "(cd ${workspaceFolder}/build && ctest -C Debug --verbose)",
-			"group": {
-				"kind": "test",
-				"isDefault": true
-			}
-		}
-	]
+    {
+      "label": "clean",
+      "type": "shell",
+      "windows": {
+        "command": "cmake --build --preset build-win-default --target clean"
+      },
+      "osx": {
+        "command": "cmake --build --preset build-mac-default --target clean && cmake --build --preset build-ios-default --target clean"
+      },
+      "linux": {
+        "command": "cmake --build --preset build-linux-default --target clean"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "(cd ${workspaceFolder}/build && ctest -C Debug --verbose)",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ],
+
+  "inputs": [
+    {
+      "id": "buildPlatform",
+      "type": "pickString",
+      "description": "Choose build platform [x64]",
+      "options": [ "x64", "arm64" ],
+      "default": "x64"
+    },
+    {
+      "id": "buildConfig",
+      "type": "pickString",
+      "description": "Choose build configuration [debug]",
+      "options": [ "debug", "release", "relwithdebinfo", "minsizerel" ],
+      "default": "debug"
+    }
+  ]
 }
