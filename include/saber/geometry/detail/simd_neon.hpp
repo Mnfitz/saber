@@ -298,22 +298,28 @@ struct Simd128<int> :
     static int GeMask(SimdType inLHS, SimdType inRHS)
     {
         const uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1,2,4,8};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int geMask = static_cast<int>(vaddvq_u32(mask));
+        return geMask;
     }
 
     /// @brief Return LE mask (bit per lane) for integer vectors.
     static int LeMask(SimdType inLHS, SimdType inRHS)
     {
         const uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1,2,4,8};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int leMask = static_cast<int>(vaddvq_u32(mask));
+        return leMask;
     }
 };
 
