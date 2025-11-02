@@ -26,6 +26,7 @@
 #include <assert.h>
 #include <functional>
 #include <string_view>
+#include <type_traits>
 #if SABER_DEBUG
 #include <variant>
 #endif // SABER_DEBUG
@@ -172,7 +173,7 @@ public:
 	constexpr ValueType operator()(const T* inBuffer, std::size_t inSize) const noexcept
 	{
 		static_assert(std::is_integral_v<T>, "Only hashing of integral types are supported");
-		static_assert(sizeof(T) <= 4, "Only hashing of integral types of: 8, 16, and 32 bit sizes are supported");
+		static_assert(sizeof(T) <= 8, "Only hashing of integral types of: 8, 16, 32, and 64 bit sizes are supported");
 
 		auto fnv1a = [](ValueType inBasis, unsigned char inByte)
 		{
@@ -181,33 +182,25 @@ public:
 			return hash;
 		};
 
+		constexpr auto kForEachByte = 8*sizeof(T);
 		ValueType basis = Fnv1aTraits<BitLength>::kOffset;
-		for (std::size_t i = 0; i < inSize; i++)
+		for (std::size_t count = 0; count < inSize; count++)
 		{
-			const auto bytes = inBuffer[i];
-			if constexpr (4 == sizeof(T))
+			const auto bytes = inBuffer[count];
+
+			// sizeof(T) might be >1 byte, so we must hash each of
+			// the value's component bytes. Note that this is sensitive
+			// to the endieness of the underlying system. (since hash
+			// is computed from series of bytes ordered sequentially
+			// in memory)
+			for (auto bits = 0U; bits < kForEachByte; bits += 8)
 			{
-				basis = fnv1a(basis, (bytes >> 24) & 0xff);
-				basis = fnv1a(basis, (bytes >> 16) & 0xff);
-				basis = fnv1a(basis, (bytes >> 8) & 0xff);
-				basis = fnv1a(basis, (bytes >> 0) & 0xff);
-			}
-			else if constexpr (3 == sizeof(T)) // ???
-			{
-				basis = fnv1a(basis, (bytes >> 16) & 0xff);
-				basis = fnv1a(basis, (bytes >> 8) & 0xff);
-				basis = fnv1a(basis, (bytes >> 0) & 0xff);
-			}
-			else if constexpr (2 == sizeof(T))
-			{
-				basis = fnv1a(basis, (bytes >> 8) & 0xff);
-				basis = fnv1a(basis, (bytes >> 0) & 0xff);
-			}
-			else if constexpr (1 == sizeof(T))
-			{
-				basis = fnv1a(basis, (bytes >> 0) & 0xff);
-			}
-		} // for (std::size_t i; ...)
+				// TODO fix bitshift to accomodate SABER_ENDIEN_BYTEORDER
+				// const bitShift = kEachByte-8 - bits; // BIGENDIEN
+				const auto bitShift = bits; // LITTLEENDIEN
+				basis = fnv1a(basis, (bytes >> bitShift) & 0xff);
+			} // for (auto bits...)
+		} // for (std::size_t count...)
 		return basis;
 	}
 }; // struct Fnv1a<>
@@ -270,14 +263,31 @@ public:
 
 	/// @brief Construct a `HashValue` from a buffer and element count
 	/// @tparam T: value type of the buffer
+	/// @tparam SFINAE: Enable `constexpr` hashing for integral types
 	/// @param inBuffer: Pointer* to buffer to hash
 	/// @param inSize: Count of elements in buffer to hash
-	template<typename T>
+	template<typename T, typename SFINAE = std::enable_if_t<std::is_integral_v<T>>>
 	constexpr HashValue(const T* inBuffer, std::size_t inSize) noexcept :
 		mValue{Hash(inBuffer, inSize)}
 	{
 		// This space intentionally blank
 	}
+
+#if __cpp_lib_bit_cast
+#if 1
+	/// @brief Construct a `HashValue` from a buffer and element count
+	/// @tparam T: value type of the buffer
+	/// @tparam SFINAE: `reinterpet_cast<>` of non-integral types prevents `constexpr` hashing
+	/// @param inBuffer: Pointer* to buffer to hash
+	/// @param inSize: Count of elements in buffer to hash
+	template<typename T, typename SFINAE = std::enable_if_t<!std::is_integral_v<T>>>
+	/*constexpr*/ HashValue(const T* inBuffer, std::size_t inSize) noexcept :
+		mValue{Hash(reinterpret_cast<const char*>(inBuffer), sizeof(T)*inSize)} // TRICKY: reinterpet_cast<> prevents: constexpr
+	{
+		// This space intentionally blank
+	}
+#endif
+#endif // __cpp_lib_bit_cast
 
 	/// @brief Return underlying `HashValue::ValueType`
 	/// @return Result hashed value
@@ -303,7 +313,7 @@ private:
 		return value;
 	}
 
-	/// @brief Compare two `HashValues<>`s for equality
+	/// @brief Compare two `HashValue<>`s for equality
 	/// @param inLhs: Lefthand-side term
 	/// @param inRhs: Righthand-side term
 	/// @return true, if terms are equal; false otherwise
