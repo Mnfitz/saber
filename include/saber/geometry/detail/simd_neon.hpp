@@ -282,34 +282,44 @@ struct Simd128<int> :
     /// @return 4-bit mask: bit i set if lane i comparison is true.
     static int EqMask(SimdType inLHS, SimdType inRHS)
     {
+        // Comare LHS and RHS for equality
         const uint32x4_t cmp = vceqq_s32(inLHS, inRHS);
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int eqMask = static_cast<int>(vaddvq_u32(mask));
+        return eqMask;
     }
 
     /// @brief Return GE mask (bit per lane) for integer vectors.
     static int GeMask(SimdType inLHS, SimdType inRHS)
     {
         const uint32x4_t cmp = vcgeq_s32(inLHS, inRHS);
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int geMask = static_cast<int>(vaddvq_u32(mask));
+        return geMask;
     }
 
     /// @brief Return LE mask (bit per lane) for integer vectors.
     static int LeMask(SimdType inLHS, SimdType inRHS)
     {
         const uint32x4_t cmp = vcleq_s32(inLHS, inRHS);
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int leMask = static_cast<int>(vaddvq_u32(mask));
+        return leMask;
     }
 };
 
@@ -558,38 +568,56 @@ struct Simd128<float> :
         const float32x4_t diff = vabsq_f32(vsubq_f32(inLHS, inRHS));
         const uint32x4_t cmp = vcleq_f32(diff, epsilon);
 
-        const int b0 = vgetq_lane_u32(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u32(cmp, 1) ? 1 : 0;
-        const int b2 = vgetq_lane_u32(cmp, 2) ? 1 : 0;
-        const int b3 = vgetq_lane_u32(cmp, 3) ? 1 : 0;
-        return (b0) | (b1 << 1) | (b2 << 2) | (b3 << 3);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        const int eqMask = static_cast<int>(vaddvq_u32(mask));
+        return eqMask;
     }
 
     /// @brief Return GE mask (bit per lane) for float vectors using inexact-equality fallback.
     static int GeMask(SimdType inLHS, SimdType inRHS)
     {
         uint32x4_t cmp = vcgeq_f32(inLHS, inRHS);
-        int mask = (vgetq_lane_u32(cmp,0)?1:0) | (vgetq_lane_u32(cmp,1)?2:0) | (vgetq_lane_u32(cmp,2)?4:0) | (vgetq_lane_u32(cmp,3)?8:0);
-        if (mask != 0xF)
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        int geMask = static_cast<int>(vaddvq_u32(mask));
+
+        if (geMask != 0xF)
         {
             // blendv: where cmp is true keep inLHS else take inRHS
             const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
-            mask &= EqMask(lhs_blend, inRHS);
+            geMask &= EqMask(lhs_blend, inRHS);
         }
-        return mask;
+        return geMask;
     }
 
     /// @brief Return LE mask (bit per lane) for float vectors using inexact-equality fallback.
     static int LeMask(SimdType inLHS, SimdType inRHS)
     {
         const uint32x4_t cmp = vcleq_f32(inLHS, inRHS);
-        int mask = (vgetq_lane_u32(cmp,0)?1:0) | (vgetq_lane_u32(cmp,1)?2:0) | (vgetq_lane_u32(cmp,2)?4:0) | (vgetq_lane_u32(cmp,3)?8:0);
-        if (mask != 0xF)
+        // Create a unique and individual bit for each simd lane
+        constexpr uint32_t kMask[4] = {1u,2u,4u,8u};
+        uint32x4_t mask = vld1q_u32(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u32(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        int leMask = static_cast<int>(vaddvq_u32(mask));
+
+        if (leMask != 0xF)
         {
-            const const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
-            mask &= EqMask(lhs_blend, inRHS);
+            // blendv: where cmp is true keep inLHS else take inRHS
+            const float32x4_t lhs_blend = vbslq_f32(cmp, inLHS, inRHS);
+            leMask &= EqMask(lhs_blend, inRHS);
         }
-        return mask;
+        return leMask;
     }
 };
 
@@ -818,36 +846,53 @@ struct Simd128<double> :
         const float64x2_t diff = vabsq_f64(vsubq_f64(inLHS, inRHS));
         const uint64x2_t cmp = vcleq_f64(diff, epsilon);
 
-        const int b0 = vgetq_lane_u64(cmp, 0) ? 1 : 0;
-        const int b1 = vgetq_lane_u64(cmp, 1) ? 1 : 0;
-        return (b0) | (b1 << 1);
+        // Create a unique and individual bit for each simd lane
+        constexpr uint64_t kMask[2] = {1ull,2ull};
+        uint64x2_t mask = vld1q_u64(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u64(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        int eqMask = static_cast<int>(vaddvq_u64(mask));
+        return eqMask;
     }
 
     /// @brief Return GE mask (bit per lane) for double vectors using inexact-equality fallback.
     static int GeMask(SimdType inLHS, SimdType inRHS)
     {
         uint64x2_t cmp = vcgeq_f64(inLHS, inRHS);
-        int mask = (vgetq_lane_u64(cmp,0)?1:0) | (vgetq_lane_u64(cmp,1)?2:0);
-        if (mask != 0x3)
+        // Create a unique and individual bit for each simd lane
+        constexpr uint64_t kMask[2] = {1ull,2ull};
+        uint64x2_t mask = vld1q_u64(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u64(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        int geMask = static_cast<int>(vaddvq_u64(mask));
+        if (geMask != 0x3)
         {
             // blend: use vbslq_f64 where cmp true keep LHS else RHS
             const float64x2_t lhs_blend = vreinterpretq_f64_u64(vbslq_u64(vreinterpretq_u64_f64(cmp), vreinterpretq_u64_f64(inLHS), vreinterpretq_u64_f64(inRHS)));
-            mask &= EqMask(lhs_blend, inRHS);
+            geMask &= EqMask(lhs_blend, inRHS);
         }
-        return mask;
+        return geMask;
     }
 
     /// @brief Return LE mask (bit per lane) for double vectors using inexact-equality fallback.
     static int LeMask(SimdType inLHS, SimdType inRHS)
     {
         uint64x2_t cmp = vcleq_f64(inLHS, inRHS);
-        int mask = (vgetq_lane_u64(cmp,0)?1:0) | (vgetq_lane_u64(cmp,1)?2:0);
-        if (mask != 0x3)
+        // Create a unique and individual bit for each simd lane
+        constexpr uint64_t kMask[2] = {1ull,2ull};
+        uint64x2_t mask = vld1q_u64(kMask);
+        // For each lane: set corresponding bit to 1 if simd lane is true
+        mask = vandq_u64(cmp, mask);
+        // Horizontal add to combine the unique bit of each lane into an integer result
+        int leMask = static_cast<int>(vaddvq_u64(mask));
+        if (leMask != 0x3)
         {
             const float64x2_t lhs_blend = vreinterpretq_f64_u64(vbslq_u64(vreinterpretq_u64_f64(cmp), vreinterpretq_u64_f64(inLHS), vreinterpretq_u64_f64(inRHS)));
-            mask &= EqMask(lhs_blend, inRHS);
+            leMask &= EqMask(lhs_blend, inRHS);
         }
-        return mask;
+        return leMask;
     }
 };
 
