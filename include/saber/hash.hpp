@@ -195,7 +195,10 @@ public:
 			// in memory)
 			for (auto bits = 0U; bits < kForEachByte; bits += 8)
 			{
-				// TODO fix bitshift to accomodate SABER_ENDIEN_BYTEORDER
+#if SABER_ENDIANORDER(LITTLE)
+
+#endif // SABER_ENDIANORDER(LITTLE)
+				// TODO fix bitshift to accomodate SABER_ENDIANORDER
 				// const bitShift = kEachByte-8 - bits; // BIGENDIEN
 				const auto bitShift = bits; // LITTLEENDIEN
 				basis = fnv1a(basis, (bytes >> bitShift) & 0xff);

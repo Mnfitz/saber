@@ -100,6 +100,10 @@
 // (compiler) := (CLANG|GCC|MSVC)
 #define SABER_COMPILER(compiler) (SABER_PRIVATE_COMPILER_##compiler(compiler))
 
+// The current endian byte ordering for this platform
+// (endian) := (BIG|LITTLE)
+#define SABER_ENDIANORDER(endian) (SABER_PRIVATE_ENDIANORDER_##endian(endian)) 
+
 #pragma endregion ()
 
 // ------------------------------------------------------------------
@@ -147,6 +151,9 @@
 #undef SABER_PRIVATE_COMPILER_GCC
 #undef SABER_PRIVATE_COMPILER_MSVC
 
+#undef SABER_PRIVATE_ENDIANORDER_BIG
+#undef SABER_PRIVATE_ENDIANORDER_LITTLE
+
 #pragma endregion ()
 
 #if defined(_MSC_VER) // MSVC-specific preprocessor symbol announcing "Microsoft" toolset
@@ -174,24 +181,32 @@
 		#define SABER_PRIVATE_ARCH_64(unused)	0
 		#define SABER_PRIVATE_CPU_ARM(unused)	0
 		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(_M_X64) // x86 64bit
 		#define SABER_PRIVATE_ARCH_32(unused)	0
 		#define SABER_PRIVATE_ARCH_64(unused)	1
 		#define SABER_PRIVATE_CPU_ARM(unused)	0
 		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(_M_ARM) // arm 32bit
 		#define SABER_PRIVATE_ARCH_32(unused)	1
 		#define SABER_PRIVATE_ARCH_64(unused)	0
 		#define SABER_PRIVATE_CPU_ARM(unused)	1
 		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(_M_ARM64) // arm 64bit
 		#define SABER_PRIVATE_ARCH_32(unused)	0
 		#define SABER_PRIVATE_ARCH_64(unused)	1
 		#define SABER_PRIVATE_CPU_ARM(unused)	1
 		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 		
 	#else
 		#error "Unsupported architecture (msvc)"
@@ -227,6 +242,8 @@
 		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
 		#define SABER_PRIVATE_CPU_ARM(unused)	(defined(__aarch64__))
 		#define SABER_PRIVATE_CPU_X86(unused)	(defined(__x86_64__))
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif TARGET_OS_IPHONE // IOS
 		#define SABER_PRIVATE_PLATFORM_IOS(unused)	1
@@ -236,6 +253,8 @@
 		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
 		#define SABER_PRIVATE_CPU_ARM(unused)	1 // Always ARM
 		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif TARGET_IPHONE_SIMULATOR // IOS (when building for simulator)
 		#define PLATFORM_NAME "ios" // Apple iOS
@@ -246,6 +265,8 @@
 		#define SABER_PRIVATE_ARCH_64(unused)	1 // Always 64bit
 		#define SABER_PRIVATE_CPU_ARM(unused)	(defined(__aarch64__))
 		#define SABER_PRIVATE_CPU_X86(unused)	(defined(__x86_64__))
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 	#endif
 
 	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
@@ -284,24 +305,32 @@
 		#define SABER_PRIVATE_ARCH_64(unused)	1
 		#define SABER_PRIVATE_CPU_ARM(unused)	0
 		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(__i386__)
 		#define SABER_PRIVATE_ARCH_32(unused)	1
 		#define SABER_PRIVATE_ARCH_64(unused)	0
 		#define SABER_PRIVATE_CPU_ARM(unused)	0
 		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(__arm__)
 		#define SABER_PRIVATE_ARCH_32(unused)	1
 		#define SABER_PRIVATE_ARCH_64(unused)	0
 		#define SABER_PRIVATE_CPU_ARM(unused)	1
 		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#elif defined(__aarch64__)
 		#define SABER_PRIVATE_ARCH_32(unused)	0
 		#define SABER_PRIVATE_ARCH_64(unused)	1
 		#define SABER_PRIVATE_CPU_ARM(unused)	1
 		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
 
 	#else
 		#error "Unsupported architecture"
