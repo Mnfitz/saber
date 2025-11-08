@@ -138,7 +138,6 @@ inline ToType ConvertTo(const FromType& inValue)
 /// 	PrintDays(kPoint.x); // what the?!?! this compiles! "int" as type: "not strong enuf"!
 /// }
 ///
-///
 /// // --- Good: "Days" ---
 /// // TRICKY: "struct DaysTag"...
 /// // A "forward decl" we never define! It just needs to be a unique typename
@@ -165,7 +164,8 @@ inline ToType ConvertTo(const FromType& inValue)
 ///
 /// Use with intrinsic/generic types to provide better type-checking across interfaces.
 /// @tparam T: Underlying intrinsic/generic type
-/// @tparam Tag: Unique-ifying "tag type" (typically a dummy forward-declared class/struct)
+/// @tparam Tag: Unique-ifying "tag type" (typically: a dummy inline
+/// forward-declared class/struct)
 template<typename T, typename Tag>
 class TaggedType final // Don't allow subclassing
 {
@@ -179,12 +179,6 @@ public:
 		mValue{inValue}
 	{
 		// This space intentionally blank
-	}
-
-	/// @brief Return the boolean sense of this `TaggedType<>`
-	constexpr explicit operator bool() const noexcept
-	{
-		return mValue.operator bool();
 	}
 
 	/// @brief Get the underlying value of this `TaggedType<>`
@@ -208,13 +202,19 @@ public:
 		mValue = inValue;
 	}
 
+	/// @brief Return boolean sense of this `TaggedType<>`
+	constexpr explicit operator bool() const noexcept
+	{
+		return mValue.operator bool();
+	}
+
 	// --- friend functions
 
 	/// @brief Compare two `TaggedType<>` instances for equality
 	/// @param inLhs: Lefthand side operand
 	/// @param inRhs: Righthand side operand
 	/// @return true, if operands are equal; otherwise false
-	friend bool operator==(const TaggedType& inLhs, const TaggedType& inRhs)
+	friend bool operator==(const TaggedType& inLhs, const TaggedType& inRhs) noexcept
 	{
 		return inLhs.Value() == inRhs.Value();
 	}
@@ -223,11 +223,12 @@ public:
 	/// @param inLhs: Lefthand side operand
 	/// @param inRhs: Righthand side operand
 	/// @return true, if operands are unequal; otherwise false
-	friend bool operator!=(const TaggedType& inLhs, const TaggedType& inRhs)
+	friend bool operator!=(const TaggedType& inLhs, const TaggedType& inRhs) noexcept
 	{
 		return inLhs.Value() != inRhs.Value();
 	}
 
+	// Simple wrapper...
 private:
 	T mValue{}; // has-a: T
 }; // class TaggedType<>

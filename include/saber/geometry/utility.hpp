@@ -31,10 +31,10 @@ namespace saber {
 template<typename T>
 struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
 {
-    geometry::Size<T> operator()(const geometry::Point<T>& inValue) const
+    geometry::Size<T> operator()(const geometry::Point<T>& inPoint) const
     {
         // C++17 is smart enough to convert assignment to in-place constructor
-        geometry::Size<T> size{inValue.X(), inValue.Y()};
+        geometry::Size<T> size{inPoint.X(), inPoint.Y()};
         return size;
     }
 };
@@ -43,10 +43,10 @@ struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
 template<typename T>
 struct ConvertTraits<geometry::Point<T>, geometry::Size<T>>
 {
-    geometry::Point<T> operator()(const geometry::Size<T>& inValue) const
+    geometry::Point<T> operator()(const geometry::Size<T>& inSize) const
     {
         // C++17 is smart enough to convert assignment to in-place constructor
-        geometry::Point<T> point{inValue.Width(), inValue.Height()};
+        geometry::Point<T> point{inSize.Width(), inSize.Height()};
         return point;
     }
 };
