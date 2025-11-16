@@ -487,7 +487,7 @@ struct Simd128<float> :
     /// @return Return rounded SimdType values
     static SimdType RoundNearest(SimdType inRound)
     {
-        return vrndnq_f32(inRound);
+        return vrndaq_f32(inRound);
     }
 
     /// @brief Round all <float> values toward positive infinity
@@ -765,7 +765,7 @@ struct Simd128<double> :
     /// @return Return rounded SimdType values
     static SimdType RoundNearest(SimdType inRound)
     {
-        return vrndnq_f64(inRound);
+        return vrndaq_f64(inRound);
     }
 
     /// @brief Round all <double> values toward positive infinity
