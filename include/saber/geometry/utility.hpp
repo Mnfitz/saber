@@ -27,6 +27,7 @@
 
 namespace saber {
 
+// REVISIT: Point<T, typename T::ImplKind>
 // Converts from Point to Size
 template<typename T>
 struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
