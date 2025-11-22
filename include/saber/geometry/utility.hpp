@@ -27,31 +27,77 @@
 
 namespace saber {
 
-// REVISIT: Point<T, typename T::ImplKind>
+#pragma region ConvertTraits for Geometry Types
+
+// ConvertTo expects all its ConvertTraits to reside in saber namespace level
+
+// ImplKind Simd
 // Converts from Point to Size
 template<typename T>
-struct ConvertTraits<geometry::Size<T>, geometry::Point<T>>
+struct ConvertTraits<geometry::Size<T, geometry::ImplKind::kSimd>, geometry::Point<T, geometry::ImplKind::kSimd>>
 {
-    geometry::Size<T> operator()(const geometry::Point<T>& inPoint) const
+    using Point = geometry::Point<T, geometry::ImplKind::kSimd>;
+    using Size = geometry::Size<T, geometry::ImplKind::kSimd>;
+
+    Size operator()(const Point& inPoint) const
     {
         // C++17 is smart enough to convert assignment to in-place constructor
-        geometry::Size<T> size{inPoint.X(), inPoint.Y()};
+        Size size{inPoint.X(), inPoint.Y()};
         return size;
     }
 };
 
 // Converts from Size to Point
 template<typename T>
-struct ConvertTraits<geometry::Point<T>, geometry::Size<T>>
+struct ConvertTraits<geometry::Point<T, geometry::ImplKind::kSimd>, geometry::Size<T, geometry::ImplKind::kSimd>>
 {
-    geometry::Point<T> operator()(const geometry::Size<T>& inSize) const
+    using Point = geometry::Point<T, geometry::ImplKind::kSimd>;
+    using Size = geometry::Size<T, geometry::ImplKind::kSimd>;
+
+    Point operator()(const Size& inSize) const
     {
         // C++17 is smart enough to convert assignment to in-place constructor
-        geometry::Point<T> point{inSize.Width(), inSize.Height()};
+        Point point{inSize.Width(), inSize.Height()};
         return point;
     }
 };
 
+// ImplKind Scalar
+// Converts from Point to Size
+template<typename T>
+struct ConvertTraits<geometry::Size<T, geometry::ImplKind::kScalar>, geometry::Point<T, geometry::ImplKind::kScalar>>
+{
+    using Point = geometry::Point<T, geometry::ImplKind::kScalar>;
+    using Size = geometry::Size<T, geometry::ImplKind::kScalar>;
+
+    Size operator()(const Point& inPoint) const
+    {
+        // C++17 is smart enough to convert assignment to in-place constructor
+        Size size{inPoint.X(), inPoint.Y()};
+        return size;
+    }
+};
+
+// Converts from Size to Point
+template<typename T>
+struct ConvertTraits<geometry::Point<T, geometry::ImplKind::kScalar>, geometry::Size<T, geometry::ImplKind::kScalar>>
+{
+    using Point = geometry::Point<T, geometry::ImplKind::kScalar>;
+    using Size = geometry::Size<T, geometry::ImplKind::kScalar>;
+
+    Point operator()(const Size& inSize) const
+    {
+        // C++17 is smart enough to convert assignment to in-place constructor
+        Point point{inSize.Width(), inSize.Height()};
+        return point;
+    }
+};
+
+#pragma endregion
+
+namespace geometry {
+// geometry specific utilities go here
+} // namespace geometry
 } // namespace saber
 
 #endif // SABER_GEOMETRY_UTILITY_HPP
