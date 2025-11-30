@@ -182,6 +182,117 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
     }
 }
 
+TEMPLATE_TEST_CASE( "saber::geometry::Point move and free functions - impl variants",
+                    "[saber][template]",
+                    int, float, double)
+{
+    SECTION("ImplKind::kScalar")
+    {
+        using P = Point<TestType, ImplKind::kScalar>;
+
+        SECTION("Move Construct")
+        {
+            P pm1 = P{6,5};
+            REQUIRE(pm1.X() == 6);
+            REQUIRE(pm1.Y() == 5);
+
+            P pm2 = std::move(P{8,7});
+            REQUIRE(pm2.X() == 8);
+            REQUIRE(pm2.Y() == 7);
+        }
+
+        SECTION("Move Assign")
+        {
+            P pm{};
+            pm = P{8,7};
+            REQUIRE(pm.X() == 8);
+            REQUIRE(pm.Y() == 7);
+
+            P pm2{};
+            pm2 = std::move(P{10,9});
+            REQUIRE(pm2.X() == 10);
+            REQUIRE(pm2.Y() == 9);
+        }
+
+        SECTION("Translate(Point) free functions")
+        {
+            auto result1 = Translate(P{2,1}, P{4,3});
+            REQUIRE(result1 == P{6,4});
+
+            auto result2 = Translate(P{3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == P{8,6});
+
+            auto result3 = Translate(P{4,6}, TestType{3});
+            REQUIRE(result3 == P{7,9});
+        }
+
+        SECTION("Scale(Point) free functions")
+        {
+            auto result1 = Scale(P{2,3}, P{4,3});
+            REQUIRE(result1 == P{8,9});
+
+            auto result2 = Scale(P{5,3}, TestType{2}, TestType{4});
+            REQUIRE(result2 == P{10,12});
+
+            auto result3 = Scale(P{6,7}, TestType{2});
+            REQUIRE(result3 == P{12,14});
+        }
+    }
+
+    SECTION("ImplKind::kSimd")
+    {
+        using P = Point<TestType, ImplKind::kSimd>;
+
+        SECTION("Move Construct")
+        {
+            P pm1 = P{6,5};
+            REQUIRE(pm1.X() == 6);
+            REQUIRE(pm1.Y() == 5);
+
+            P pm2 = std::move(P{8,7});
+            REQUIRE(pm2.X() == 8);
+            REQUIRE(pm2.Y() == 7);
+        }
+
+        SECTION("Move Assign")
+        {
+            P pm{};
+            pm = P{8,7};
+            REQUIRE(pm.X() == 8);
+            REQUIRE(pm.Y() == 7);
+
+            P pm2{};
+            pm2 = std::move(P{10,9});
+            REQUIRE(pm2.X() == 10);
+            REQUIRE(pm2.Y() == 9);
+        }
+
+        SECTION("Translate(Point) free functions")
+        {
+            auto result1 = Translate(P{2,1}, P{4,3});
+            REQUIRE(result1 == P{6,4});
+
+            auto result2 = Translate(P{3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == P{8,6});
+
+            auto result3 = Translate(P{4,6}, TestType{3});
+            REQUIRE(result3 == P{7,9});
+        }
+
+        SECTION("Scale(Point) free functions")
+        {
+            auto result1 = Scale(P{2,3}, P{4,3});
+            REQUIRE(result1 == P{8,9});
+
+            auto result2 = Scale(P{5,3}, TestType{2}, TestType{4});
+            REQUIRE(result2 == P{10,12});
+
+            auto result3 = Scale(P{6,7}, TestType{2});
+            REQUIRE(result3 == P{12,14});
+        }
+    }
+}
+
 TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl variants",
                     "[saber][template]",
                     int, float, double)
@@ -259,6 +370,117 @@ TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl varian
             REQUIRE(set == S{3,3});
             set.Height(2);
             REQUIRE(set == S{3,2});
+        }
+    }
+}
+
+TEMPLATE_TEST_CASE( "saber::geometry::Size move and free functions - impl variants",
+                    "[saber][template]",
+                    int, float, double)
+{
+    SECTION("ImplKind::kScalar")
+    {
+        using S = Size<TestType, ImplKind::kScalar>;
+
+        SECTION("Move Construct")
+        {
+            S sm1 = S{6,5};
+            REQUIRE(sm1.Width() == 6);
+            REQUIRE(sm1.Height() == 5);
+
+            S sm2 = std::move(S{8,7});
+            REQUIRE(sm2.Width() == 8);
+            REQUIRE(sm2.Height() == 7);
+        }
+
+        SECTION("Move Assign")
+        {
+            S sm{};
+            sm = S{8,7};
+            REQUIRE(sm.Width() == 8);
+            REQUIRE(sm.Height() == 7);
+
+            S sm2{};
+            sm2 = std::move(S{10,9});
+            REQUIRE(sm2.Width() == 10);
+            REQUIRE(sm2.Height() == 9);
+        }
+
+        SECTION("Enlarge(Size) free functions")
+        {
+            auto result1 = Enlarge(S{2,1}, S{4,3});
+            REQUIRE(result1 == S{6,4});
+
+            auto result2 = Enlarge(S{3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == S{8,6});
+
+            auto result3 = Enlarge(S{4,6}, TestType{3});
+            REQUIRE(result3 == S{7,9});
+        }
+
+        SECTION("Scale(Size) free functions")
+        {
+            auto result1 = Scale(S{2,3}, S{4,3});
+            REQUIRE(result1 == S{8,9});
+
+            auto result2 = Scale(S{5,3}, TestType{2}, TestType{4});
+            REQUIRE(result2 == S{10,12});
+
+            auto result3 = Scale(S{6,7}, TestType{2});
+            REQUIRE(result3 == S{12,14});
+        }
+    }
+
+    SECTION("ImplKind::kSimd")
+    {
+        using S = Size<TestType, ImplKind::kSimd>;
+
+        SECTION("Move Construct")
+        {
+            S sm1 = S{6,5};
+            REQUIRE(sm1.Width() == 6);
+            REQUIRE(sm1.Height() == 5);
+
+            S sm2 = std::move(S{8,7});
+            REQUIRE(sm2.Width() == 8);
+            REQUIRE(sm2.Height() == 7);
+        }
+
+        SECTION("Move Assign")
+        {
+            S sm{};
+            sm = S{8,7};
+            REQUIRE(sm.Width() == 8);
+            REQUIRE(sm.Height() == 7);
+
+            S sm2{};
+            sm2 = std::move(S{10,9});
+            REQUIRE(sm2.Width() == 10);
+            REQUIRE(sm2.Height() == 9);
+        }
+
+        SECTION("Enlarge(Size) free functions")
+        {
+            auto result1 = Enlarge(S{2,1}, S{4,3});
+            REQUIRE(result1 == S{6,4});
+
+            auto result2 = Enlarge(S{3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == S{8,6});
+
+            auto result3 = Enlarge(S{4,6}, TestType{3});
+            REQUIRE(result3 == S{7,9});
+        }
+
+        SECTION("Scale(Size) free functions")
+        {
+            auto result1 = Scale(S{2,3}, S{4,3});
+            REQUIRE(result1 == S{8,9});
+
+            auto result2 = Scale(S{5,3}, TestType{2}, TestType{4});
+            REQUIRE(result2 == S{10,12});
+
+            auto result3 = Scale(S{6,7}, TestType{2});
+            REQUIRE(result3 == S{12,14});
         }
     }
 }
@@ -644,6 +866,308 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundTrunc() == R{1,2,3,4});
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundCeil() == R{2,3,4,5});
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundFloor() == R{1,2,3,4});
+    }
+}
+
+TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl variants",
+                    "[saber][template]",
+                    int, float, double)
+{
+    SECTION("ImplKind::kScalar")
+    {
+        using R = Rectangle<TestType, ImplKind::kScalar>;
+
+        SECTION("Move Construct")
+        {
+            R rm1 = R{1,2,3,4};
+            REQUIRE(rm1.X() == 1);
+            REQUIRE(rm1.Y() == 2);
+            REQUIRE(rm1.Width() == 3);
+            REQUIRE(rm1.Height() == 4);
+
+            R rm2 = std::move(R{5,6,7,8});
+            REQUIRE(rm2.X() == 5);
+            REQUIRE(rm2.Y() == 6);
+            REQUIRE(rm2.Width() == 7);
+            REQUIRE(rm2.Height() == 8);
+        }
+
+        SECTION("Move Assign")
+        {
+            R rm{};
+            rm = R{1,2,3,4};
+            REQUIRE(rm.X() == 1);
+            REQUIRE(rm.Y() == 2);
+
+            R rm2{};
+            rm2 = std::move(R{5,6,7,8});
+            REQUIRE(rm2.X() == 5);
+            REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Union - edge cases")
+        {
+            // No overlap (should span both)
+            R rect1{0,0,5,5};
+            R rect4{10,10,2,2};
+            auto union3 = Union(rect1, rect4);
+            REQUIRE(union3 == R{0,0,12,12});
+
+            // Touching at edge (should span both)
+            R rect5{5,0,2,2};
+            auto union4 = Union(rect1, rect5);
+            REQUIRE(union4 == R{0,0,7,5});
+
+            // One inside another
+            R rect3{1,1,2,2};
+            auto union2 = Union(rect1, rect3);
+            REQUIRE(union2 == rect1);
+        }
+
+        SECTION("Intersect - edge cases")
+        {
+            R rect1{0,0,5,5};
+            
+            // No overlap
+            R rect4{10,10,2,2};
+            auto intersect3 = Intersect(rect1, rect4);
+            REQUIRE(IsEmpty(intersect3));
+
+            // Touching at edge (should be empty)
+            R rect5{5,0,2,2};
+            auto intersect4 = Intersect(rect1, rect5);
+            REQUIRE(IsEmpty(intersect4));
+        }
+
+        SECTION("IsOverlapping - edge cases")
+        {
+            R rect1{0,0,5,5};
+            
+            // No overlap
+            R rect4{10,10,2,2};
+            auto noOverlap = IsOverlapping(rect1, rect4);
+            REQUIRE_FALSE(noOverlap);
+
+            // Touching at edge (should not overlap)
+            R rect5{5,0,2,2};
+            auto touchOverlap = IsOverlapping(rect1, rect5);
+            REQUIRE_FALSE(touchOverlap);
+
+            // Point outside rectangle
+            auto pt3 = Point<TestType, ImplKind::kScalar>{10,10};
+            auto ptOutside = IsOverlapping(rect1, pt3);
+            REQUIRE_FALSE(ptOutside);
+        }
+
+        SECTION("IsEmpty(Rectangle)")
+        {
+            R empty{0,0,0,0};
+            REQUIRE(IsEmpty(empty));
+
+            R notEmpty{0,0,1,1};
+            REQUIRE_FALSE(IsEmpty(notEmpty));
+
+            R zeroWidth{0,0,0,5};
+            REQUIRE(IsEmpty(zeroWidth));
+
+            R zeroHeight{0,0,5,0};
+            REQUIRE(IsEmpty(zeroHeight));
+        }
+    }
+
+    SECTION("ImplKind::kSimd")
+    {
+        using R = Rectangle<TestType, ImplKind::kSimd>;
+
+        SECTION("Move Construct")
+        {
+            R rm1 = R{1,2,3,4};
+            REQUIRE(rm1.X() == 1);
+            REQUIRE(rm1.Y() == 2);
+            REQUIRE(rm1.Width() == 3);
+            REQUIRE(rm1.Height() == 4);
+
+            R rm2 = std::move(R{5,6,7,8});
+            REQUIRE(rm2.X() == 5);
+            REQUIRE(rm2.Y() == 6);
+            REQUIRE(rm2.Width() == 7);
+            REQUIRE(rm2.Height() == 8);
+        }
+
+        SECTION("Move Assign")
+        {
+            R rm{};
+            rm = R{1,2,3,4};
+            REQUIRE(rm.X() == 1);
+            REQUIRE(rm.Y() == 2);
+
+            R rm2{};
+            rm2 = std::move(R{5,6,7,8});
+            REQUIRE(rm2.X() == 5);
+            REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Union - edge cases")
+        {
+            // No overlap (should span both)
+            R rect1{0,0,5,5};
+            R rect4{10,10,2,2};
+            auto union3 = Union(rect1, rect4);
+            REQUIRE(union3 == R{0,0,12,12});
+
+            // Touching at edge (should span both)
+            R rect5{5,0,2,2};
+            auto union4 = Union(rect1, rect5);
+            REQUIRE(union4 == R{0,0,7,5});
+
+            // One inside another
+            R rect3{1,1,2,2};
+            auto union2 = Union(rect1, rect3);
+            REQUIRE(union2 == rect1);
+        }
+
+        SECTION("Intersect - edge cases")
+        {
+            R rect1{0,0,5,5};
+            
+            // No overlap
+            R rect4{10,10,2,2};
+            auto intersect3 = Intersect(rect1, rect4);
+            REQUIRE(IsEmpty(intersect3));
+
+            // Touching at edge (should be empty)
+            R rect5{5,0,2,2};
+            auto intersect4 = Intersect(rect1, rect5);
+            REQUIRE(IsEmpty(intersect4));
+        }
+
+        SECTION("IsOverlapping - edge cases")
+        {
+            R rect1{0,0,5,5};
+            
+            // No overlap
+            R rect4{10,10,2,2};
+            auto noOverlap = IsOverlapping(rect1, rect4);
+            REQUIRE_FALSE(noOverlap);
+
+            // Touching at edge (should not overlap)
+            R rect5{5,0,2,2};
+            auto touchOverlap = IsOverlapping(rect1, rect5);
+            REQUIRE_FALSE(touchOverlap);
+
+            // Point outside rectangle
+            auto pt3 = Point<TestType, ImplKind::kSimd>{10,10};
+            auto ptOutside = IsOverlapping(rect1, pt3);
+            REQUIRE_FALSE(ptOutside);
+        }
+
+        SECTION("IsEmpty(Rectangle)")
+        {
+            R empty{0,0,0,0};
+            REQUIRE(IsEmpty(empty));
+
+            R notEmpty{0,0,1,1};
+            REQUIRE_FALSE(IsEmpty(notEmpty));
+
+            R zeroWidth{0,0,0,5};
+            REQUIRE(IsEmpty(zeroWidth));
+
+            R zeroHeight{0,0,5,0};
+            REQUIRE(IsEmpty(zeroHeight));
+        }
+    }
+}
+
+TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding free functions - impl variants",
+                    "[saber][template]",
+                    float, double)
+{
+    SECTION("ImplKind::kScalar")
+    {
+        using R = Rectangle<TestType, ImplKind::kScalar>;
+
+        SECTION("RoundNearest(Rectangle) - free function")
+        {
+            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{2,3,4,5});
+
+            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
+            REQUIRE(result2 == R{1,2,3,4});
+
+            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result3 == R{-2,-3,-4,-5});
+        }
+
+        SECTION("RoundTrunc(Rectangle) - free function")
+        {
+            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{1,2,3,4});
+
+            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-1,-2,-3,-4});
+        }
+
+        SECTION("RoundCeil(Rectangle) - free function")
+        {
+            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{2,3,4,5});
+
+            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-1,-2,-3,-4});
+        }
+
+        SECTION("RoundFloor(Rectangle) - free function")
+        {
+            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{1,2,3,4});
+
+            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-2,-3,-4,-5});
+        }
+    }
+
+    SECTION("ImplKind::kSimd")
+    {
+        using R = Rectangle<TestType, ImplKind::kSimd>;
+
+        SECTION("RoundNearest(Rectangle) - free function")
+        {
+            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{2,3,4,5});
+
+            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
+            REQUIRE(result2 == R{1,2,3,4});
+
+            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result3 == R{-2,-3,-4,-5});
+        }
+
+        SECTION("RoundTrunc(Rectangle) - free function")
+        {
+            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{1,2,3,4});
+
+            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-1,-2,-3,-4});
+        }
+
+        SECTION("RoundCeil(Rectangle) - free function")
+        {
+            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{2,3,4,5});
+
+            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-1,-2,-3,-4});
+        }
+
+        SECTION("RoundFloor(Rectangle) - free function")
+        {
+            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
+            REQUIRE(result1 == R{1,2,3,4});
+
+            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
+            REQUIRE(result2 == R{-2,-3,-4,-5});
+        }
     }
 }
 
