@@ -6,24 +6,24 @@
     "configurations": [
         
         {
-            "name": "Launch/Debug (Windows)", 
+            "name": "Launch/Debug/x64 (Windows)", 
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
+            "program": "${workspaceFolder}/build/x64/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
-            "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
+            "cwd": "${workspaceFolder}/build/x64/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false // Set to true to stop program execution at the first line of code
         },
 
         {
-            "name": "Build/Launch/Debug (Windows)", 
+            "name": "Build/Launch/Debug/x64 (Windows)", 
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/test/Debug/saber_unittest.exe",  
+            "program": "${workspaceFolder}/build/x64/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
-            "cwd": "${workspaceFolder}/build/test/Debug", // Change this to the directory of your executable
+            "cwd": "${workspaceFolder}/build/x64/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false, // Set to true to stop program execution at the first line of code
             "preLaunchTask": "build", // tasks.json: {"label": "build"}
         },

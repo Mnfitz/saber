@@ -52,7 +52,7 @@ struct Impl4 final
 		}
 
 		constexpr Scalar(const typename Impl2<T>::Scalar& inFirst, const typename Impl2<T>::Scalar& inSecond) :
-			mTuple(Get<0>(inFirst), Get<1>(inFirst), Get<0>(inSecond), Get<1>(inSecond))
+			mTuple(inFirst.Get<0>(), inFirst.Get<1>(), inSecond.Get<0>(), inSecond.Get<1>())
 		{
 			// Do nothing
 		}
@@ -85,37 +85,37 @@ struct Impl4 final
 
 		constexpr Scalar& operator+=(const Scalar& inRHS)
 		{
-			Get<0>(mTuple) += Get<0>(inRHS.mTuple);
-			Get<1>(mTuple) += Get<1>(inRHS.mTuple);
-			Get<2>(mTuple) += Get<2>(inRHS.mTuple);
-			Get<3>(mTuple) += Get<3>(inRHS.mTuple);
+			Get<0>() += inRHS.Get<0>();
+			Get<1>() += inRHS.Get<1>();
+			Get<2>() += inRHS.Get<2>();
+			Get<3>() += inRHS.Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator-=(const Scalar& inRHS)
 		{
-			Get<0>(mTuple) -= Get<0>(inRHS.mTuple);
-			Get<1>(mTuple) -= Get<1>(inRHS.mTuple);
-			Get<2>(mTuple) -= Get<2>(inRHS.mTuple);
-			Get<3>(mTuple) -= Get<3>(inRHS.mTuple);
+			Get<0>() -= inRHS.Get<0>();
+			Get<1>() -= inRHS.Get<1>();
+			Get<2>() -= inRHS.Get<2>();
+			Get<3>() -= inRHS.Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator*=(const Scalar& inRHS)
 		{
-			Get<0>(mTuple) *= Get<0>(inRHS.mTuple);
-			Get<1>(mTuple) *= Get<1>(inRHS.mTuple);
-			Get<2>(mTuple) *= Get<2>(inRHS.mTuple);
-			Get<3>(mTuple) *= Get<3>(inRHS.mTuple);
+			Get<0>() *= inRHS.Get<0>();
+			Get<1>() *= inRHS.Get<1>();
+			Get<2>() *= inRHS.Get<2>();
+			Get<3>() *= inRHS.Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator/=(const Scalar& inRHS)
 		{
-			Get<0>(mTuple) /= Get<0>(inRHS.mTuple);
-			Get<1>(mTuple) /= Get<1>(inRHS.mTuple);
-			Get<2>(mTuple) /= Get<2>(inRHS.mTuple);
-			Get<3>(mTuple) /= Get<3>(inRHS.mTuple);
+			Get<0>() /= inRHS.Get<0>();
+			Get<1>() /= inRHS.Get<1>();
+			Get<2>() /= inRHS.Get<2>();
+			Get<3>() /= inRHS.Get<3>();
 			return *this;
 		}
 
@@ -126,18 +126,18 @@ struct Impl4 final
 			if constexpr (std::is_floating_point_v<T>)
 			{   
 				// Floating point comparisons are always inexact within an epsilon
-				result = Inexact::IsEq(Get<0>(mTuple), Get<0>(inRHS.mTuple)) 
-							&& Inexact::IsEq(Get<1>(mTuple), Get<1>(inRHS.mTuple))
-							&& Inexact::IsEq(Get<2>(mTuple), Get<2>(inRHS.mTuple))
-							&& Inexact::IsEq(Get<3>(mTuple), Get<3>(inRHS.mTuple));
+				result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) 
+							&& Inexact::IsEq(Get<1>(), inRHS.Get<1>())
+							&& Inexact::IsEq(Get<2>(), inRHS.Get<2>())
+							&& Inexact::IsEq(Get<3>(), inRHS.Get<3>());
 			}
 			else
 			{
 				// Integer comparisons are always exact
-				result = (Get<0>(mTuple) == Get<0>(inRHS.mTuple)) 
-							&& (Get<1>(mTuple) == Get<1>(inRHS.mTuple))
-							&& (Get<2>(mTuple) == Get<2>(inRHS.mTuple))
-							&& (Get<3>(mTuple) == Get<3>(inRHS.mTuple));
+				result = (Get<0>() == inRHS.Get<0>()) 
+							&& (Get<1>() == inRHS.Get<1>())
+							&& (Get<2>() == inRHS.Get<2>())
+							&& (Get<3>() == inRHS.Get<3>());
 			}
 			return result;
 		}
@@ -147,10 +147,10 @@ struct Impl4 final
 			constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
 			static_assert(isFloatingPoint, "RoundNearest() only supports floating point types");
 			
-			Get<0>(mTuple) = std::round(Get<0>(mTuple));
-			Get<1>(mTuple) = std::round(Get<1>(mTuple));
-			Get<2>(mTuple) = std::round(Get<2>(mTuple));
-			Get<3>(mTuple) = std::round(Get<3>(mTuple));
+			Get<0>() = std::round(Get<0>());
+			Get<1>() = std::round(Get<1>());
+			Get<2>() = std::round(Get<2>());
+			Get<3>() = std::round(Get<3>());
 		}
 
 		constexpr void RoundCeil()
@@ -158,10 +158,10 @@ struct Impl4 final
 			constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
 			static_assert(isFloatingPoint, "RoundCeil() only supports floating point types");
 			
-			Get<0>(mTuple) = std::ceil(Get<0>(mTuple));
-			Get<1>(mTuple) = std::ceil(Get<1>(mTuple));
-			Get<2>(mTuple) = std::ceil(Get<2>(mTuple));
-			Get<3>(mTuple) = std::ceil(Get<3>(mTuple));
+			Get<0>() = std::ceil(Get<0>());
+			Get<1>() = std::ceil(Get<1>());
+			Get<2>() = std::ceil(Get<2>());
+			Get<3>() = std::ceil(Get<3>());
 		}
 
 		constexpr void RoundFloor()
@@ -169,10 +169,10 @@ struct Impl4 final
 			constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
 			static_assert(isFloatingPoint, "RoundFloor() only supports floating point types");
 			
-			Get<0>(mTuple) = std::floor(Get<0>(mTuple));
-			Get<1>(mTuple) = std::floor(Get<1>(mTuple));
-			Get<2>(mTuple) = std::floor(Get<2>(mTuple));
-			Get<3>(mTuple) = std::floor(Get<3>(mTuple));
+			Get<0>() = std::floor(Get<0>());
+			Get<1>() = std::floor(Get<1>());
+			Get<2>() = std::floor(Get<2>());
+			Get<3>() = std::floor(Get<3>());
 		}
 
 		constexpr void RoundTrunc()
@@ -180,10 +180,10 @@ struct Impl4 final
 			constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
 			static_assert(isFloatingPoint, "RoundTrunc() only supports floating point types");
 			
-			Get<0>(mTuple) = std::trunc(Get<0>(mTuple)); // 0 = Origin.X
-			Get<1>(mTuple) = std::trunc(Get<1>(mTuple)); // 1 = Origin.Y
-			Get<2>(mTuple) = std::trunc(Get<2>(mTuple)); // 2 = Size.Width
-			Get<3>(mTuple) = std::trunc(Get<3>(mTuple)); // 3 = Size.Height
+			Get<0>() = std::trunc(Get<0>()); // 0 = Origin.X
+			Get<1>() = std::trunc(Get<1>()); // 1 = Origin.Y
+			Get<2>() = std::trunc(Get<2>()); // 2 = Size.Width
+			Get<3>() = std::trunc(Get<3>()); // 3 = Size.Height
 		}
 
 		constexpr Scalar& Union(const Scalar& inImpl4)
@@ -191,7 +191,7 @@ struct Impl4 final
 			// By default Scalar is in X,Y,Width,Height format
 			// Convert to L,T,R,B format
 			ToLTRB(*this);
-			Simd ltrb = inImpl4;
+			Scalar ltrb = inImpl4;
 			ToLTRB(ltrb);
 
 			// Figure out the top left of the union rectangle
@@ -214,29 +214,31 @@ struct Impl4 final
 
 			// By default Scalar is in X,Y,Width,Height format
 			// Convert to L,T,R,B format
-			auto lhs = ToLTRB(*this);
-			auto rhs = ToLTRB(inImpl4);
+			auto rhs = inImpl4;
+			ToLTRB(*this);
+			ToLTRB(rhs);
 
 			// Figure out the bottom right of the intersect rectangle
-			Get<0>(lhs.mTuple) = std::max(Get<0>(lhs.mTuple), Get<0>(rhs.mTuple));
-			Get<1>(lhs.mTuple) = std::max(Get<1>(lhs.mTuple), Get<1>(rhs.mTuple));
+			Get<0>() = std::max(Get<0>(), rhs.Get<0>());
+			Get<1>() = std::max(Get<1>(), rhs.Get<1>());
 
 			// Figure out the top left of the intersect rectangle
-			Get<2>(lhs.mTuple) = std::min(Get<2>(lhs.mTuple), Get<2>(rhs.mTuple));
-			Get<3>(lhs.mTuple) = std::min(Get<3>(lhs.mTuple), Get<2>(rhs.mTuple));
+			Get<2>() = std::min(Get<2>(), rhs.Get<2>());
+			Get<3>() = std::min(Get<3>(), rhs.Get<2>());
 
 			// Remember to revert back to XYWH format
-			*this = FromLTRB(lhs);
+			FromLTRB(*this);
 
 			// Convert the bottom right to width and height, ensuring we do not end up with negative values
-			Get<2>(mTuple) = max(Get<2>(mTuple), 0);
-			Get<3>(mTuple) = max(Get<3>(mTuple), 0);
+			Get<2>() = std::max<T>(Get<2>(), 0);
+			Get<3>() = std::max<T>(Get<3>(), 0);
 			return *this;
 		}
 
 		constexpr bool IsOverlapping(const typename Impl2<T>::Scalar& inImpl2) const
 		{
-			Scalar ltrb = ToLTRB(mTuple);
+			Scalar ltrb = *this;
+			ToLTRB(ltrb);
 			bool isOverlapping = false;
 			do 
 			{
@@ -248,7 +250,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. x = 2.99999..., left = 3.0
-						if (!Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<0>()))
+						if (!Inexact::IsEq(inImpl2.Get<0>(), ltrb.Get<0>()))
 						{
 							break;
 						}
@@ -269,7 +271,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. y = 2.99999..., top = 3.0
-						if (!Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<1>()))
+						if (!Inexact::IsEq(inImpl2.Get<1>(), ltrb.Get<1>()))
 						{
 							break;
 						}
@@ -294,7 +296,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., right = 3.0
-						if (Inexact::Eq(inImpl2.Get<0>(), ltrb.Get<2>()))
+						if (Inexact::IsEq(inImpl2.Get<0>(), ltrb.Get<2>()))
 						{
 							break;
 						}
@@ -313,7 +315,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., bottom = 3.0
-						if (Inexact::Eq(inImpl2.Get<1>(), ltrb.Get<3>()))
+						if (Inexact::IsEq(inImpl2.Get<1>(), ltrb.Get<3>()))
 						{
 							break;
 						}
@@ -338,16 +340,16 @@ struct Impl4 final
 
 	private:
 		// TRICKY: There is no way to discern whether a Scalar is in LTRB or XYWH format, therefore methods are kept private
-		static constexpr void ToLTRB(Scalar inXYWH)
+		static constexpr void ToLTRB(Scalar& inXYWH)
 		{
-			Get<2>(inXYWH.mTuple) += Get<0>(inXYWH.mTuple);
-			Get<3>(inXYWH.mTuple) += Get<1>(inXYWH.mTuple);
+			inXYWH.Get<2>() += inXYWH.Get<0>();
+			inXYWH.Get<3>() += inXYWH.Get<1>();
 		}
 
-		static constexpr void FromLTRB(Scalar inLTRB)
+		static constexpr void FromLTRB(Scalar& inLTRB)
 		{
-			Get<2>(inLTRB.mTuple) -= Get<0>(inLTRB.mTuple);
-			Get<3>(inLTRB.mTuple) -= Get<1>(inLTRB.mTuple);
+			inLTRB.Get<2>() -= inLTRB.Get<0>();
+			inLTRB.Get<3>() -= inLTRB.Get<1>();
 		}
 
 		// Friend meaning free function (and always public)
@@ -366,7 +368,8 @@ struct Impl4 final
 				if constexpr(std::is_floating_point_v<T>)
 				{
 					// check for "inexact" width and height being zero
-					isEmpty = (Inexact::Eq(inScalar.Get<2>(), 0) || Inexact::Eq(inScalar.Get<3>(), 0));
+					isEmpty = (Inexact::IsEq(inScalar.Get<2>(), static_cast<T>(0)) 
+								|| Inexact::IsEq(inScalar.Get<3>(), static_cast<T>(0)));
 				}
 
 			} while (false);
