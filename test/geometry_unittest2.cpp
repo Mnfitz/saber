@@ -314,28 +314,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::utility works correctly - impl variants",
     }
 }
 
+
 TEMPLATE_TEST_CASE( "saber::geometry inexact comparison works correctly - impl variants",
                     "[saber][template]",
-                    Point<float>, Point<double>,
-                    Size<float>, Size<double>)
+                    float, double)
 {
-    // For inexact tests we only vary ImplKind when applicable for underlying types.
     SECTION("ImplKind::kScalar")
     {
+        using namespace saber::geometry;
         using T = TestType;
-        const T a{3.6f,3.6f};
-        const T b{3.0f,3.0f};
-        const T c{1.2f,1.2f};
+        using S = Size<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+
+        const S a{static_cast<T>(3.6),static_cast<T>(3.6)};
+        const S b{static_cast<T>(3.0),static_cast<T>(3.0)};
+        const S c{static_cast<T>(1.2),static_cast<T>(1.2)};
         REQUIRE(a == (b * c));
+
+        const P d{static_cast<T>(3.6),static_cast<T>(3.6)};
+        const P e{static_cast<T>(3.0),static_cast<T>(3.0)};
+        const P f{static_cast<T>(1.2),static_cast<T>(1.2)};
+        REQUIRE(d == (e * f));
     }
 
     SECTION("ImplKind::kSimd")
     {
+        using namespace saber::geometry;
         using T = TestType;
-        const T a{3.6f,3.6f};
-        const T b{3.0f,3.0f};
-        const T c{1.2f,1.2f};
+        using S = Size<TestType, ImplKind::kSimd>;
+        using P = Point<TestType, ImplKind::kSimd>;
+
+        const S a{static_cast<T>(3.6),static_cast<T>(3.6)};
+        const S b{static_cast<T>(3.0),static_cast<T>(3.0)};
+        const S c{static_cast<T>(1.2),static_cast<T>(1.2)};
         REQUIRE(a == (b * c));
+
+        const P d{static_cast<T>(3.6),static_cast<T>(3.6)};
+        const P e{static_cast<T>(3.0),static_cast<T>(3.0)};
+        const P f{static_cast<T>(1.2),static_cast<T>(1.2)};
+        REQUIRE(d == (e * f));
     }
 }
 
