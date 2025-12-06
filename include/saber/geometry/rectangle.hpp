@@ -488,6 +488,7 @@ inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::RoundTrunc()
 
 #pragma endregion
 
+#pragma region Free Functions
 /// @brief Round to nearest even integer value; both origin and scale. Halfway cases round away from zero.
 /// @tparam T: Underlying `Rectangle<>` type
 /// @tparam ImplType: Optional underlying implementation type
@@ -548,6 +549,111 @@ inline constexpr Rectangle<T, Impl> RoundFloor(const Rectangle<T, Impl>& inRecta
 	return result.RoundFloor(); // RVO should apply here
 }
 
+// Mutators
+
+/// @brief Translates the rectangle by a point offset.
+/// @param inPoint The point by which to translate.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Translate(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
+{
+	auto result{inRectangle};
+	return result.Translate(inPoint); // RVO should apply here
+}
+
+/// @brief Translates the rectangle by x and y offsets.
+/// @param inX The x offset.
+/// @param inY The y offset.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Translate(const Rectangle<T, Impl>& inRectangle, T inX, T inY)
+{
+	auto result{inRectangle};
+	return result.Translate(inX, inY);
+}
+
+/// @brief Translates the rectangle by the same offset in both x and y.
+/// @param inXY The offset for both axes.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Translate(const Rectangle<T, Impl>& inRectangle, T inXY)
+{
+	auto result{inRectangle};
+	return result.Translate(inXY);
+}
+
+/// @brief Enlarges the rectangle by a size.
+/// @param inSize The size to add.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Enlarge(const Rectangle<T, Impl>& inRectangle, const geometry::Size<T, Impl>& inSize)
+{
+	auto result{inRectangle};
+	return result.Enlarge(inSize);
+}
+
+/// @brief Enlarges the rectangle by x and y amounts.
+/// @param inX Amount to enlarge width.
+/// @param inY Amount to enlarge height.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Enlarge(const Rectangle<T, Impl>& inRectangle, T inX, T inY)
+{
+	auto result{inRectangle};
+	return result.Enlarge(inX, inY);
+}
+
+/// @brief Enlarges the rectangle by the same amount in both width and height.
+/// @param inXY Amount to enlarge both width and height.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Enlarge(const Rectangle<T, Impl>& inRectangle, T inXY)
+{
+	auto result{inRectangle};
+	return result.Enlarge(inXY);
+}
+
+/// @brief Scales the rectangle's origin and size by a point.
+/// @param inPoint The point to scale by.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Scale(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
+{
+	auto result{inRectangle};
+	return result.Scale(inPoint);
+}
+
+/// @brief Scales the rectangle's origin and size by a size.
+/// @param inSize The size to scale by.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Scale(const Rectangle<T, Impl>& inRectangle, const geometry::Size<T, Impl>& inSize)
+{
+	auto result{inRectangle};
+	return result.Scale(inSize);
+}
+
+/// @brief Scales the rectangle's origin and size by x and y factors.
+/// @param inX The x scale factor.
+/// @param inY The y scale factor.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Scale(const Rectangle<T, Impl>& inRectangle, T inX, T inY)
+{
+	auto result{inRectangle};
+	return result.Scale(inX, inY);
+}
+
+/// @brief Scales the rectangle's origin and size by the same factor.
+/// @param inXY The scale factor for both axes.
+/// @return Reference to this rectangle.
+template<typename T, ImplKind Impl>
+inline constexpr Rectangle<T, Impl> Scale(const Rectangle<T, Impl>& inRectangle, T inXY)
+{
+	auto result{inRectangle};
+	return result.Scale(inXY);
+}
+
 template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl> Union(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
@@ -584,6 +690,7 @@ inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Recta
 	return isOverlapping;
 }
 
+#pragma endregion
 #pragma endregion
 
 #if 0

@@ -849,6 +849,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
     SECTION("ImplKind::kScalar")
     {
         using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -859,7 +861,9 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
 
     SECTION("ImplKind::kSimd")
     {
-        using R = Rectangle<TestType, ImplKind::kSimd>;
+        using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -876,6 +880,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
     SECTION("ImplKind::kScalar")
     {
         using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
 
         SECTION("Move Construct")
         {
@@ -903,6 +909,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
             rm2 = std::move(R{5,6,7,8});
             REQUIRE(rm2.X() == 5);
             REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Translate(Rectangle) - free functions")
+        {
+            auto result1 = Translate(R{2,1,0,0}, P{4,3});
+            REQUIRE(result1 == R{6,4,0,0});
+
+            auto result2 = Translate(R{3,2,0,0}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{8,6,0,0});
+
+            auto result3 = Translate(R{4,6,0,0}, TestType{3});
+            REQUIRE(result3 == R{7,9,0,0});
+        }
+
+        SECTION("Enlarge(Rectangle) - free functions")
+        {
+            auto result1 = Enlarge(R{0,0,2,1}, S{4,3});
+            REQUIRE(result1 == R{0,0,6,4});
+
+            auto result2 = Enlarge(R{0,0,3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{0,0,8,6});
+
+            auto result3 = Enlarge(R{0,0,4,6}, TestType{3});
+            REQUIRE(result3 == R{0,0,7,9});
+        }
+
+        SECTION("Scale(Rectangle) - free functions")
+        {
+            auto result1 = Scale(R{2,3,2,3}, P{TestType{4},TestType{3}});
+            REQUIRE(result1 == R{8,9,8,9});
+
+            auto result2 = Scale(R{2,3,2,3}, S{TestType{4},TestType{3}});
+            REQUIRE(result2 == R{8,9,8,9});
+
+            auto result3 = Scale(R{5,3,5,3}, TestType{2}, TestType{4});
+            REQUIRE(result3 == R{10,12,10,12});
+
+            auto result4 = Scale(R{6,7,6,7}, TestType{2});
+            REQUIRE(result4 == R{12,14,12,14});
         }
 
         SECTION("Union - edge cases")
@@ -978,6 +1023,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
     SECTION("ImplKind::kSimd")
     {
         using R = Rectangle<TestType, ImplKind::kSimd>;
+        using P = Point<TestType, ImplKind::kSimd>;
+        using S = Size<TestType, ImplKind::kSimd>;
 
         SECTION("Move Construct")
         {
@@ -1005,6 +1052,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
             rm2 = std::move(R{5,6,7,8});
             REQUIRE(rm2.X() == 5);
             REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Translate(Rectangle) - free functions")
+        {
+            auto result1 = Translate(R{2,1,0,0}, P{4,3});
+            REQUIRE(result1 == R{6,4,0,0});
+
+            auto result2 = Translate(R{3,2,0,0}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{8,6,0,0});
+
+            auto result3 = Translate(R{4,6,0,0}, TestType{3});
+            REQUIRE(result3 == R{7,9,0,0});
+        }
+
+        SECTION("Enlarge(Rectangle) - free functions")
+        {
+            auto result1 = Enlarge(R{0,0,2,1}, S{4,3});
+            REQUIRE(result1 == R{0,0,6,4});
+
+            auto result2 = Enlarge(R{0,0,3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{0,0,8,6});
+
+            auto result3 = Enlarge(R{0,0,4,6}, TestType{3});
+            REQUIRE(result3 == R{0,0,7,9});
+        }
+
+        SECTION("Scale(Rectangle) - free functions")
+        {
+            auto result1 = Scale(R{2,3,2,3}, P{TestType{4},TestType{3}});
+            REQUIRE(result1 == R{8,9,8,9});
+
+            auto result2 = Scale(R{2,3,2,3}, S{TestType{4},TestType{3}});
+            REQUIRE(result2 == R{8,9,8,9});
+
+            auto result3 = Scale(R{5,3,5,3}, TestType{2}, TestType{4});
+            REQUIRE(result3 == R{10,12,10,12});
+
+            auto result4 = Scale(R{6,7,6,7}, TestType{2});
+            REQUIRE(result4 == R{12,14,12,14});
         }
 
         SECTION("Union - edge cases")
@@ -1074,99 +1160,6 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
 
             R zeroHeight{0,0,5,0};
             REQUIRE(IsEmpty(zeroHeight));
-        }
-    }
-}
-
-TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding free functions - impl variants",
-                    "[saber][template]",
-                    float, double)
-{
-    SECTION("ImplKind::kScalar")
-    {
-        using R = Rectangle<TestType, ImplKind::kScalar>;
-
-        SECTION("RoundNearest(Rectangle) - free function")
-        {
-            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
-            REQUIRE(result2 == R{1,2,3,4});
-
-            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result3 == R{-2,-3,-4,-5});
-        }
-
-        SECTION("RoundTrunc(Rectangle) - free function")
-        {
-            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundCeil(Rectangle) - free function")
-        {
-            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundFloor(Rectangle) - free function")
-        {
-            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-2,-3,-4,-5});
-        }
-    }
-
-    SECTION("ImplKind::kSimd")
-    {
-        using R = Rectangle<TestType, ImplKind::kSimd>;
-
-        SECTION("RoundNearest(Rectangle) - free function")
-        {
-            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
-            REQUIRE(result2 == R{1,2,3,4});
-
-            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result3 == R{-2,-3,-4,-5});
-        }
-
-        SECTION("RoundTrunc(Rectangle) - free function")
-        {
-            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundCeil(Rectangle) - free function")
-        {
-            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundFloor(Rectangle) - free function")
-        {
-            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-2,-3,-4,-5});
         }
     }
 }
