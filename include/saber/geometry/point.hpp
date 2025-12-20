@@ -57,7 +57,7 @@ public:
     // TRICKY mnfitz 22feb2025: SFINAE-enable rounding methods only for floating point types.
 	// C++ Black magic: SFINAE (template substitution failure) will disallow
 	// template `T` types that do not satisfy `enable_if` condition. This prevents rounding
-	// methods from "being enabled" for non floating point types, like: `Size<int>`
+	// methods from "being enabled" for non floating point types, like: `Point<int>`
 
     /// @brief Round this `Point<>` to nearest integer value. Halfway cases round away from zero. Compatible with `std::round()`
 	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
@@ -86,6 +86,14 @@ public:
 	/// @return Ref& to this `Point<>`
 	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
 	constexpr Point& RoundTrunc();
+
+    constexpr Point& Translate(const Point& inTranslate);
+	constexpr Point& Translate(T inX, T inY);
+	constexpr Point& Translate(T inXY);
+
+	constexpr Point& Scale(const Point& inScale);
+	constexpr Point& Scale(T inX, T inY);
+	constexpr Point& Scale(T inXY);
 
 private:
 	// Private APIs
@@ -210,6 +218,47 @@ inline constexpr Point<T, Impl>& Point<T, Impl>::RoundTrunc()
 	return *this;
 }
 
+// Mutators
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(const Point<T, Impl>& inTranslate)
+{
+	*this += inTranslate;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(T inX, T inY)
+{
+	const Point<T, Impl> translate{inX, inY};
+	return Translate(translate);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(T inXY)
+{
+	return Translate(inXY, inXY);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(const Point<T, Impl>& inScale)
+{
+	*this *= inScale;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(T inX, T inY)
+{
+	const Point<T, Impl> scale{inX, inY};
+	return Scale(scale);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(T inXY)
+{
+	return Scale(inXY, inXY);
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------
@@ -219,8 +268,8 @@ template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, const Point<T, Impl>& inTranslate)
 {
     Point<T, Impl> result{inPoint};
-    result += inTranslate;
-    return result;
+	result.Translate(inTranslate);
+	return result;
 }
 
 template<typename T, ImplKind Impl>
@@ -231,30 +280,30 @@ inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inX, 
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inTranslate)
+inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inXY)
 {
-    return Translate(inPoint, inTranslate, inTranslate);
+    return Translate(inPoint, inXY, inXY);
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, const Point<T, Impl>& inScale)
 {
     Point<T, Impl> result{inPoint};
-    result *= inScale;
-    return result;
+	result.Scale(inScale);
+	return result;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScaleX, T inScaleY)
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inX, T inY)
 {
-    const Point<T, Impl> scale{inScaleX, inScaleY};
+    const Point<T, Impl> scale{inX, inY};
     return Scale(inPoint, scale);
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScale)
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inXY)
 {
-    return Scale(inPoint, inScale, inScale);
+    return Scale(inPoint, inXY, inXY);
 }
 
 /// @brief Round to nearest even integer value. Halfway cases round away from zero.
