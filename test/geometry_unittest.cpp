@@ -90,7 +90,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
 	
         SECTION("Translate/Scale/Setters")
         {
-            // Translate
+            // Translate (free functions)
             P a{2,1};
             P delta{4,3};
             auto resultT = Translate(a, delta);
@@ -99,7 +99,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             auto resultT2 = Translate(a, TestType{3});
             REQUIRE(resultT2 == P{5,4});
 
-            // Scale
+            // Scale (free functions)
             P s{2,3};
             auto resultS = Scale(s, P{4,3});
             REQUIRE(resultS == P{8,9});
@@ -110,6 +110,38 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             REQUIRE(st == P{3,3});
             st.Y(2);
             REQUIRE(st == P{3,2});
+        }
+
+        SECTION("Translate/Scale member methods (lvalues)")
+        {
+            // Translate (member)
+            P a{2,1};
+            P delta{4,3};
+            auto &ret1 = a.Translate(delta);
+            REQUIRE(&ret1 == &a);
+            REQUIRE(a == P{6,4});
+            REQUIRE(ret1 == P{6,4});
+
+            // Translate scalar
+            P b{2,1};
+            TestType t{3};
+            auto &ret2 = b.Translate(t);
+            REQUIRE(&ret2 == &b);
+            REQUIRE(b == P{5,4});
+
+            // Scale (member)
+            P s{2,3};
+            P factor{4,3};
+            auto &ret3 = s.Scale(factor);
+            REQUIRE(&ret3 == &s);
+            REQUIRE(s == P{8,9});
+
+            // Scale scalar
+            P s2{2,3};
+            TestType t2{2};
+            auto &ret4 = s2.Scale(t2);
+            REQUIRE(&ret4 == &s2);
+            REQUIRE(s2 == P{4,6});
         }
     }
 
@@ -158,7 +190,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
 
         SECTION("Translate/Scale/Setters")
         {
-            // Translate
+            // Translate (free functions)
             P a{2,1};
             P delta{4,3};
             auto resultT = Translate(a, delta);
@@ -167,7 +199,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             auto resultT2 = Translate(a, TestType{3});
             REQUIRE(resultT2 == P{5,4});
 
-            // Scale
+            // Scale (free functions)
             P s{2,3};
             auto resultS = Scale(s, P{4,3});
             REQUIRE(resultS == P{8,9});
@@ -178,6 +210,38 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             REQUIRE(st == P{3,3});
             st.Y(2);
             REQUIRE(st == P{3,2});
+        }
+
+        SECTION("Translate/Scale member methods (lvalues)")
+        {
+            // Translate (member)
+            P a{2,1};
+            P delta{4,3};
+            auto &ret1 = a.Translate(delta);
+            REQUIRE(&ret1 == &a);
+            REQUIRE(a == P{6,4});
+            REQUIRE(ret1 == P{6,4});
+
+            // Translate scalar
+            P b{2,1};
+            TestType t{3};
+            auto &ret2 = b.Translate(t);
+            REQUIRE(&ret2 == &b);
+            REQUIRE(b == P{5,4});
+
+            // Scale (member)
+            P s{2,3};
+            P factor{4,3};
+            auto &ret3 = s.Scale(factor);
+            REQUIRE(&ret3 == &s);
+            REQUIRE(s == P{8,9});
+
+            // Scale scalar
+            P s2{2,3};
+            TestType t2{2};
+            auto &ret4 = s2.Scale(t2);
+            REQUIRE(&ret4 == &s2);
+            REQUIRE(s2 == P{4,6});
         }
     }
 }
@@ -333,6 +397,36 @@ TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl varian
             set.Height(2);
             REQUIRE(set == S{3,2});
         }
+
+        SECTION("Enlarge/Scale member methods (lvalues)")
+        {
+            // Enlarge member with lvalues
+            S s{2,1};
+            S en{4,3};
+            auto &r1 = s.Enlarge(en);
+            REQUIRE(&r1 == &s);
+            REQUIRE(s == S{6,4});
+            REQUIRE(r1 == S{6,4});
+
+            S s2{2,1};
+            TestType t{3};
+            auto &r2 = s2.Enlarge(t);
+            REQUIRE(&r2 == &s2);
+            REQUIRE(s2 == S{5,4});
+
+            // Scale member with lvalues
+            S sc{2,1};
+            S factor{4,3};
+            auto &r3 = sc.Scale(factor);
+            REQUIRE(&r3 == &sc);
+            REQUIRE(sc == S{8,3});
+
+            S sc2{2,3};
+            TestType t2{2};
+            auto &r4 = sc2.Scale(t2);
+            REQUIRE(&r4 == &sc2);
+            REQUIRE(sc2 == S{4,6});
+        }
     }
 
     SECTION("ImplKind::kSimd")
@@ -370,6 +464,36 @@ TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl varian
             REQUIRE(set == S{3,3});
             set.Height(2);
             REQUIRE(set == S{3,2});
+        }
+
+        SECTION("Enlarge/Scale member methods (lvalues)")
+        {
+            // Enlarge member with lvalues
+            S s{2,1};
+            S en{4,3};
+            auto &r1 = s.Enlarge(en);
+            REQUIRE(&r1 == &s);
+            REQUIRE(s == S{6,4});
+            REQUIRE(r1 == S{6,4});
+
+            S s2{2,1};
+            TestType t{3};
+            auto &r2 = s2.Enlarge(t);
+            REQUIRE(&r2 == &s2);
+            REQUIRE(s2 == S{5,4});
+
+            // Scale member with lvalues
+            S sc{2,1};
+            S factor{4,3};
+            auto &r3 = sc.Scale(factor);
+            REQUIRE(&r3 == &sc);
+            REQUIRE(sc == S{8,3});
+
+            S sc2{2,3};
+            TestType t2{2};
+            auto &r4 = sc2.Scale(t2);
+            REQUIRE(&r4 == &sc2);
+            REQUIRE(sc2 == S{4,6});
         }
     }
 }
