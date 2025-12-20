@@ -26,6 +26,9 @@ public:
     using ValueType = T;
 
 public: 
+	/// @brief Construct a Size with the given width and height
+	/// @param inWidth Width value
+	/// @param inHeight Height value
 	constexpr Size(T inWidth, T inHeight);
 
 	constexpr Size() = default;
@@ -39,15 +42,35 @@ public:
 	constexpr Size& operator=(const Size& inCopy) = default;
 
 	// Accessors
+	/// @brief Get the width
+	/// @return Width value
 	constexpr T Width() const;
+	/// @brief Get the height
+	/// @return Height value
 	constexpr T Height() const;
+	/// @brief Set the width
+	/// @param inWidth Width value to set
 	constexpr void Width(T inWidth);
+	/// @brief Set the height
+	/// @param inHeight Height value to set
 	constexpr void Height(T inHeight);
 
 	// Mutators
+	/// @brief Component-wise add another size
+	/// @param inSize Size to add
+	/// @return Reference to this size
 	constexpr Size& operator+=(const Size& inSize);
+	/// @brief Component-wise subtract another size
+	/// @param inSize Size to subtract
+	/// @return Reference to this size
 	constexpr Size& operator-=(const Size& inSize);
+	/// @brief Component-wise multiply by another size
+	/// @param inSize Size to multiply by
+	/// @return Reference to this size
 	constexpr Size& operator*=(const Size& inSize);
+	/// @brief Component-wise divide by another size
+	/// @param inSize Size to divide by
+	/// @return Reference to this size
 	constexpr Size& operator/=(const Size& inSize);
 
 	// TRICKY mnfitz 22feb2025: SFINAE-enable rounding methods only for floating point types.
@@ -83,12 +106,32 @@ public:
 	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
 	constexpr Size& RoundTrunc();
 
+	/// @brief Enlarge (add) the provided size to this size
+	/// @param inEnlarge Size to add
+	/// @return Reference to this size
 	constexpr Size& Enlarge(const Size& inEnlarge);
+	/// @brief Enlarge (add) using explicit width and height
+	/// @param inW Width to add
+	/// @param inH Height to add
+	/// @return Reference to this size
 	constexpr Size& Enlarge(T inW, T inH);
+	/// @brief Enlarge (add) uniformly to both axes
+	/// @param inWH Amount to add to both width and height
+	/// @return Reference to this size
 	constexpr Size& Enlarge(T inWH);
 
+	/// @brief Scale this size component-wise by another size
+	/// @param inScale Scale factors
+	/// @return Reference to this size
 	constexpr Size& Scale(const Size& inScale);
+	/// @brief Scale this size by explicit width and height factors
+	/// @param inW Width scale factor
+	/// @param inH Height scale factor
+	/// @return Reference to this size
 	constexpr Size& Scale(T inW, T inH);
+	/// @brief Uniformly scale both axes by the same factor
+	/// @param inWH Scale factor for both axes
+	/// @return Reference to this size
 	constexpr Size& Scale(T inWH);
 
 private:

@@ -654,6 +654,12 @@ inline constexpr Rectangle<T, Impl> Scale(const Rectangle<T, Impl>& inRectangle,
 	return result.Scale(inXY);
 }
 
+/// @brief Compute the union of two rectangles and return the resulting rectangle.
+/// @tparam T Underlying coordinate type
+/// @tparam Impl Optional implementation kind (scalar or simd)
+/// @param inLHS Left-hand rectangle
+/// @param inRHS Right-hand rectangle
+/// @return Rectangle representing the minimal bounding rectangle that contains both inputs
 template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl> Union(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
@@ -661,6 +667,12 @@ inline constexpr Rectangle<T, Impl> Union(const Rectangle<T, Impl>& inLHS, const
 	return result.Union(inRHS);
 }
 
+/// @brief Compute the intersection of two rectangles and return the overlapping rectangle.
+/// @tparam T Underlying coordinate type
+/// @tparam Impl Optional implementation kind (scalar or simd)
+/// @param inLHS Left-hand rectangle
+/// @param inRHS Right-hand rectangle
+/// @return Rectangle representing the overlapping area; may be empty
 template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl> Intersect(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
@@ -668,6 +680,11 @@ inline constexpr Rectangle<T, Impl> Intersect(const Rectangle<T, Impl>& inLHS, c
 	return intersect.Intersect(inRHS);
 }
 
+/// @brief Test whether a rectangle is empty (zero area) using its underlying impl.
+/// @tparam T Underlying coordinate type
+/// @tparam Impl Optional implementation kind (scalar or simd)
+/// @param inRectangle Rectangle to test
+/// @return true when the rectangle area is empty (no overlap), false otherwise
 template<typename T, ImplKind Impl>
 inline constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle)
 {
@@ -676,6 +693,12 @@ inline constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle)
 	return isEmpty;
 }
 
+/// @brief Test whether a point lies within a rectangle.
+/// @tparam T Underlying coordinate type
+/// @tparam Impl Optional implementation kind (scalar or simd)
+/// @param inRectangle Rectangle to test against
+/// @param inPoint Point to check
+/// @return true when the point is inside the rectangle, false otherwise
 template<typename T, ImplKind Impl>
 inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
 {
@@ -683,6 +706,12 @@ inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inRectangle, const
 	return isOverlapping;
 }
 
+/// @brief Test whether two rectangles overlap (have a non-empty intersection).
+/// @tparam T Underlying coordinate type
+/// @tparam Impl Optional implementation kind (scalar or simd)
+/// @param inLHS First rectangle
+/// @param inRHS Second rectangle
+/// @return true when rectangles overlap, false otherwise
 template<typename T, ImplKind Impl>
 inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Rectangle<T, Impl>& inRHS)
 {
