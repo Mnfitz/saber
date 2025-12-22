@@ -558,7 +558,7 @@ template<typename T, ImplKind Impl>
 inline constexpr Rectangle<T, Impl> Translate(const Rectangle<T, Impl>& inRectangle, const Point<T, Impl>& inPoint)
 {
 	auto result{inRectangle};
-	return result.Translate(inPoint); // RVO should apply here
+	return result.Translate(inPoint); // RVO does NOT apply here :sad:
 }
 
 /// @brief Translates the rectangle by x and y offsets.

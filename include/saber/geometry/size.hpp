@@ -328,8 +328,8 @@ inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, const Size<T
 template<typename T, ImplKind Impl>
 inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inW, T inH)
 {
-	const Size<T, Impl> enlarge{inW, inH};
-	return Enlarge(inSize, enlarge);
+	const Size<T, Impl> enlarge{inW, inH}; 
+	return Enlarge(inSize, enlarge); // RVO does NOT apply here :sad:
 }
 
 /// @brief Enlarge a `Size<>` using scalar inMagnitude
