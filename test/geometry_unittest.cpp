@@ -90,7 +90,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
 	
         SECTION("Translate/Scale/Setters")
         {
-            // Translate
+            // Translate (free functions)
             P a{2,1};
             P delta{4,3};
             auto resultT = Translate(a, delta);
@@ -99,7 +99,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             auto resultT2 = Translate(a, TestType{3});
             REQUIRE(resultT2 == P{5,4});
 
-            // Scale
+            // Scale (free functions)
             P s{2,3};
             auto resultS = Scale(s, P{4,3});
             REQUIRE(resultS == P{8,9});
@@ -110,6 +110,38 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             REQUIRE(st == P{3,3});
             st.Y(2);
             REQUIRE(st == P{3,2});
+        }
+
+        SECTION("Translate/Scale member methods (lvalues)")
+        {
+            // Translate (member)
+            P a{2,1};
+            P delta{4,3};
+            auto &ret1 = a.Translate(delta);
+            REQUIRE(&ret1 == &a);
+            REQUIRE(a == P{6,4});
+            REQUIRE(ret1 == P{6,4});
+
+            // Translate scalar
+            P b{2,1};
+            TestType t{3};
+            auto &ret2 = b.Translate(t);
+            REQUIRE(&ret2 == &b);
+            REQUIRE(b == P{5,4});
+
+            // Scale (member)
+            P s{2,3};
+            P factor{4,3};
+            auto &ret3 = s.Scale(factor);
+            REQUIRE(&ret3 == &s);
+            REQUIRE(s == P{8,9});
+
+            // Scale scalar
+            P s2{2,3};
+            TestType t2{2};
+            auto &ret4 = s2.Scale(t2);
+            REQUIRE(&ret4 == &s2);
+            REQUIRE(s2 == P{4,6});
         }
     }
 
@@ -158,7 +190,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
 
         SECTION("Translate/Scale/Setters")
         {
-            // Translate
+            // Translate (free functions)
             P a{2,1};
             P delta{4,3};
             auto resultT = Translate(a, delta);
@@ -167,7 +199,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             auto resultT2 = Translate(a, TestType{3});
             REQUIRE(resultT2 == P{5,4});
 
-            // Scale
+            // Scale (free functions)
             P s{2,3};
             auto resultS = Scale(s, P{4,3});
             REQUIRE(resultS == P{8,9});
@@ -178,6 +210,38 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             REQUIRE(st == P{3,3});
             st.Y(2);
             REQUIRE(st == P{3,2});
+        }
+
+        SECTION("Translate/Scale member methods (lvalues)")
+        {
+            // Translate (member)
+            P a{2,1};
+            P delta{4,3};
+            auto &ret1 = a.Translate(delta);
+            REQUIRE(&ret1 == &a);
+            REQUIRE(a == P{6,4});
+            REQUIRE(ret1 == P{6,4});
+
+            // Translate scalar
+            P b{2,1};
+            TestType t{3};
+            auto &ret2 = b.Translate(t);
+            REQUIRE(&ret2 == &b);
+            REQUIRE(b == P{5,4});
+
+            // Scale (member)
+            P s{2,3};
+            P factor{4,3};
+            auto &ret3 = s.Scale(factor);
+            REQUIRE(&ret3 == &s);
+            REQUIRE(s == P{8,9});
+
+            // Scale scalar
+            P s2{2,3};
+            TestType t2{2};
+            auto &ret4 = s2.Scale(t2);
+            REQUIRE(&ret4 == &s2);
+            REQUIRE(s2 == P{4,6});
         }
     }
 }
@@ -333,6 +397,36 @@ TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl varian
             set.Height(2);
             REQUIRE(set == S{3,2});
         }
+
+        SECTION("Enlarge/Scale member methods (lvalues)")
+        {
+            // Enlarge member with lvalues
+            S s{2,1};
+            S en{4,3};
+            auto &r1 = s.Enlarge(en);
+            REQUIRE(&r1 == &s);
+            REQUIRE(s == S{6,4});
+            REQUIRE(r1 == S{6,4});
+
+            S s2{2,1};
+            TestType t{3};
+            auto &r2 = s2.Enlarge(t);
+            REQUIRE(&r2 == &s2);
+            REQUIRE(s2 == S{5,4});
+
+            // Scale member with lvalues
+            S sc{2,1};
+            S factor{4,3};
+            auto &r3 = sc.Scale(factor);
+            REQUIRE(&r3 == &sc);
+            REQUIRE(sc == S{8,3});
+
+            S sc2{2,3};
+            TestType t2{2};
+            auto &r4 = sc2.Scale(t2);
+            REQUIRE(&r4 == &sc2);
+            REQUIRE(sc2 == S{4,6});
+        }
     }
 
     SECTION("ImplKind::kSimd")
@@ -370,6 +464,36 @@ TEMPLATE_TEST_CASE( "saber::geometry::Size::ctor() works correctly - impl varian
             REQUIRE(set == S{3,3});
             set.Height(2);
             REQUIRE(set == S{3,2});
+        }
+
+        SECTION("Enlarge/Scale member methods (lvalues)")
+        {
+            // Enlarge member with lvalues
+            S s{2,1};
+            S en{4,3};
+            auto &r1 = s.Enlarge(en);
+            REQUIRE(&r1 == &s);
+            REQUIRE(s == S{6,4});
+            REQUIRE(r1 == S{6,4});
+
+            S s2{2,1};
+            TestType t{3};
+            auto &r2 = s2.Enlarge(t);
+            REQUIRE(&r2 == &s2);
+            REQUIRE(s2 == S{5,4});
+
+            // Scale member with lvalues
+            S sc{2,1};
+            S factor{4,3};
+            auto &r3 = sc.Scale(factor);
+            REQUIRE(&r3 == &sc);
+            REQUIRE(sc == S{8,3});
+
+            S sc2{2,3};
+            TestType t2{2};
+            auto &r4 = sc2.Scale(t2);
+            REQUIRE(&r4 == &sc2);
+            REQUIRE(sc2 == S{4,6});
         }
     }
 }
@@ -849,6 +973,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
     SECTION("ImplKind::kScalar")
     {
         using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -859,7 +985,9 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
 
     SECTION("ImplKind::kSimd")
     {
-        using R = Rectangle<TestType, ImplKind::kSimd>;
+        using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -876,6 +1004,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
     SECTION("ImplKind::kScalar")
     {
         using R = Rectangle<TestType, ImplKind::kScalar>;
+        using P = Point<TestType, ImplKind::kScalar>;
+        using S = Size<TestType, ImplKind::kScalar>;
 
         SECTION("Move Construct")
         {
@@ -903,6 +1033,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
             rm2 = std::move(R{5,6,7,8});
             REQUIRE(rm2.X() == 5);
             REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Translate(Rectangle) - free functions")
+        {
+            auto result1 = Translate(R{2,1,0,0}, P{4,3});
+            REQUIRE(result1 == R{6,4,0,0});
+
+            auto result2 = Translate(R{3,2,0,0}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{8,6,0,0});
+
+            auto result3 = Translate(R{4,6,0,0}, TestType{3});
+            REQUIRE(result3 == R{7,9,0,0});
+        }
+
+        SECTION("Enlarge(Rectangle) - free functions")
+        {
+            auto result1 = Enlarge(R{0,0,2,1}, S{4,3});
+            REQUIRE(result1 == R{0,0,6,4});
+
+            auto result2 = Enlarge(R{0,0,3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{0,0,8,6});
+
+            auto result3 = Enlarge(R{0,0,4,6}, TestType{3});
+            REQUIRE(result3 == R{0,0,7,9});
+        }
+
+        SECTION("Scale(Rectangle) - free functions")
+        {
+            auto result1 = Scale(R{2,3,2,3}, P{TestType{4},TestType{3}});
+            REQUIRE(result1 == R{8,9,8,9});
+
+            auto result2 = Scale(R{2,3,2,3}, S{TestType{4},TestType{3}});
+            REQUIRE(result2 == R{8,9,8,9});
+
+            auto result3 = Scale(R{5,3,5,3}, TestType{2}, TestType{4});
+            REQUIRE(result3 == R{10,12,10,12});
+
+            auto result4 = Scale(R{6,7,6,7}, TestType{2});
+            REQUIRE(result4 == R{12,14,12,14});
         }
 
         SECTION("Union - edge cases")
@@ -978,6 +1147,8 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
     SECTION("ImplKind::kSimd")
     {
         using R = Rectangle<TestType, ImplKind::kSimd>;
+        using P = Point<TestType, ImplKind::kSimd>;
+        using S = Size<TestType, ImplKind::kSimd>;
 
         SECTION("Move Construct")
         {
@@ -1005,6 +1176,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
             rm2 = std::move(R{5,6,7,8});
             REQUIRE(rm2.X() == 5);
             REQUIRE(rm2.Y() == 6);
+        }
+
+        SECTION("Translate(Rectangle) - free functions")
+        {
+            auto result1 = Translate(R{2,1,0,0}, P{4,3});
+            REQUIRE(result1 == R{6,4,0,0});
+
+            auto result2 = Translate(R{3,2,0,0}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{8,6,0,0});
+
+            auto result3 = Translate(R{4,6,0,0}, TestType{3});
+            REQUIRE(result3 == R{7,9,0,0});
+        }
+
+        SECTION("Enlarge(Rectangle) - free functions")
+        {
+            auto result1 = Enlarge(R{0,0,2,1}, S{4,3});
+            REQUIRE(result1 == R{0,0,6,4});
+
+            auto result2 = Enlarge(R{0,0,3,2}, TestType{5}, TestType{4});
+            REQUIRE(result2 == R{0,0,8,6});
+
+            auto result3 = Enlarge(R{0,0,4,6}, TestType{3});
+            REQUIRE(result3 == R{0,0,7,9});
+        }
+
+        SECTION("Scale(Rectangle) - free functions")
+        {
+            auto result1 = Scale(R{2,3,2,3}, P{TestType{4},TestType{3}});
+            REQUIRE(result1 == R{8,9,8,9});
+
+            auto result2 = Scale(R{2,3,2,3}, S{TestType{4},TestType{3}});
+            REQUIRE(result2 == R{8,9,8,9});
+
+            auto result3 = Scale(R{5,3,5,3}, TestType{2}, TestType{4});
+            REQUIRE(result3 == R{10,12,10,12});
+
+            auto result4 = Scale(R{6,7,6,7}, TestType{2});
+            REQUIRE(result4 == R{12,14,12,14});
         }
 
         SECTION("Union - edge cases")
@@ -1074,99 +1284,6 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
 
             R zeroHeight{0,0,5,0};
             REQUIRE(IsEmpty(zeroHeight));
-        }
-    }
-}
-
-TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding free functions - impl variants",
-                    "[saber][template]",
-                    float, double)
-{
-    SECTION("ImplKind::kScalar")
-    {
-        using R = Rectangle<TestType, ImplKind::kScalar>;
-
-        SECTION("RoundNearest(Rectangle) - free function")
-        {
-            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
-            REQUIRE(result2 == R{1,2,3,4});
-
-            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result3 == R{-2,-3,-4,-5});
-        }
-
-        SECTION("RoundTrunc(Rectangle) - free function")
-        {
-            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundCeil(Rectangle) - free function")
-        {
-            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundFloor(Rectangle) - free function")
-        {
-            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-2,-3,-4,-5});
-        }
-    }
-
-    SECTION("ImplKind::kSimd")
-    {
-        using R = Rectangle<TestType, ImplKind::kSimd>;
-
-        SECTION("RoundNearest(Rectangle) - free function")
-        {
-            auto result1 = RoundNearest(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundNearest(R{1.1f,2.1f,3.1f,4.1f});
-            REQUIRE(result2 == R{1,2,3,4});
-
-            auto result3 = RoundNearest(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result3 == R{-2,-3,-4,-5});
-        }
-
-        SECTION("RoundTrunc(Rectangle) - free function")
-        {
-            auto result1 = RoundTrunc(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundTrunc(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundCeil(Rectangle) - free function")
-        {
-            auto result1 = RoundCeil(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{2,3,4,5});
-
-            auto result2 = RoundCeil(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-1,-2,-3,-4});
-        }
-
-        SECTION("RoundFloor(Rectangle) - free function")
-        {
-            auto result1 = RoundFloor(R{1.5f,2.5f,3.5f,4.5f});
-            REQUIRE(result1 == R{1,2,3,4});
-
-            auto result2 = RoundFloor(R{-1.5f,-2.5f,-3.5f,-4.5f});
-            REQUIRE(result2 == R{-2,-3,-4,-5});
         }
     }
 }

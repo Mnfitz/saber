@@ -26,6 +26,9 @@ public:
     using ValueType = T;
 
 public: 
+    /// @brief Constructs a 2D point with the given coordinates.
+    /// @param inX X coordinate
+    /// @param inY Y coordinate
     constexpr Point(T inX, T inY);
 
     constexpr Point() = default;
@@ -39,17 +42,37 @@ public:
     constexpr Point& operator=(const Point& inCopy) = default;
 
     // Getters
+    /// @brief Get the X coordinate
+    /// @return X value
     constexpr T X() const;
+    /// @brief Get the Y coordinate
+    /// @return Y value
     constexpr T Y() const;
 
     // Setters
+    /// @brief Set the X coordinate
+    /// @param inX Value to set
     constexpr void X(T inX);
+	/// @brief Set the Y coordinate
+	/// @param inY Value to set
 	constexpr void Y(T inY);
 
     // Mathematical operations
+    /// @brief Component-wise add another point to this point
+    /// @param inPoint Point to add
+    /// @return Reference to this point
     constexpr Point& operator+=(const Point& inPoint);
+    /// @brief Component-wise subtract another point from this point
+    /// @param inPoint Point to subtract
+    /// @return Reference to this point
     constexpr Point& operator-=(const Point& inPoint);
+    /// @brief Component-wise multiply by another point
+    /// @param inPoint Point to multiply by
+    /// @return Reference to this point
     constexpr Point& operator*=(const Point& inPoint);
+    /// @brief Component-wise divide by another point
+    /// @param inPoint Point to divide by
+    /// @return Reference to this point
     constexpr Point& operator/=(const Point& inPoint);
 
     // --- Rounding ---
@@ -57,7 +80,7 @@ public:
     // TRICKY mnfitz 22feb2025: SFINAE-enable rounding methods only for floating point types.
 	// C++ Black magic: SFINAE (template substitution failure) will disallow
 	// template `T` types that do not satisfy `enable_if` condition. This prevents rounding
-	// methods from "being enabled" for non floating point types, like: `Size<int>`
+	// methods from "being enabled" for non floating point types, like: `Point<int>`
 
     /// @brief Round this `Point<>` to nearest integer value. Halfway cases round away from zero. Compatible with `std::round()`
 	/// @tparam U: Underlying `Point<T>` type (U: cuz T already in-use by Point<T>)
@@ -86,6 +109,34 @@ public:
 	/// @return Ref& to this `Point<>`
 	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
 	constexpr Point& RoundTrunc();
+
+    /// @brief Translate this point by another point (component-wise)
+    /// @param inTranslate Point to translate by
+    /// @return Reference to this point
+    constexpr Point& Translate(const Point& inTranslate);
+	/// @brief Translate this point by explicit x and y offsets
+	/// @param inX X offset
+	/// @param inY Y offset
+	/// @return Reference to this point
+	constexpr Point& Translate(T inX, T inY);
+	/// @brief Translate this point by the same offset in both axes
+	/// @param inXY Offset for both X and Y
+	/// @return Reference to this point
+	constexpr Point& Translate(T inXY);
+
+	/// @brief Scale this point (component-wise) by another point
+	/// @param inScale Scale factors
+	/// @return Reference to this point
+	constexpr Point& Scale(const Point& inScale);
+	/// @brief Scale this point by explicit x and y factors
+	/// @param inX X scale factor
+	/// @param inY Y scale factor
+	/// @return Reference to this point
+	constexpr Point& Scale(T inX, T inY);
+	/// @brief Scale this point uniformly by the same factor
+	/// @param inXY Scale factor for both axes
+	/// @return Reference to this point
+	constexpr Point& Scale(T inXY);
 
 private:
 	// Private APIs
@@ -210,6 +261,47 @@ inline constexpr Point<T, Impl>& Point<T, Impl>::RoundTrunc()
 	return *this;
 }
 
+// Mutators
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(const Point<T, Impl>& inTranslate)
+{
+	*this += inTranslate;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(T inX, T inY)
+{
+	const Point<T, Impl> translate{inX, inY};
+	return Translate(translate);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Translate(T inXY)
+{
+	return Translate(inXY, inXY);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(const Point<T, Impl>& inScale)
+{
+	*this *= inScale;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(T inX, T inY)
+{
+	const Point<T, Impl> scale{inX, inY};
+	return Scale(scale);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(T inXY)
+{
+	return Scale(inXY, inXY);
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------
@@ -219,8 +311,8 @@ template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, const Point<T, Impl>& inTranslate)
 {
     Point<T, Impl> result{inPoint};
-    result += inTranslate;
-    return result;
+	result.Translate(inTranslate);
+	return result;
 }
 
 template<typename T, ImplKind Impl>
@@ -231,30 +323,30 @@ inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inX, 
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inTranslate)
+inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, T inXY)
 {
-    return Translate(inPoint, inTranslate, inTranslate);
+    return Translate(inPoint, inXY, inXY);
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, const Point<T, Impl>& inScale)
 {
     Point<T, Impl> result{inPoint};
-    result *= inScale;
-    return result;
+	result.Scale(inScale);
+	return result;
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScaleX, T inScaleY)
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inX, T inY)
 {
-    const Point<T, Impl> scale{inScaleX, inScaleY};
+    const Point<T, Impl> scale{inX, inY};
     return Scale(inPoint, scale);
 }
 
 template<typename T, ImplKind Impl>
-inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inScale)
+inline constexpr Point<T, Impl> Scale(const Point<T, Impl>& inPoint, T inXY)
 {
-    return Scale(inPoint, inScale, inScale);
+    return Scale(inPoint, inXY, inXY);
 }
 
 /// @brief Round to nearest even integer value. Halfway cases round away from zero.

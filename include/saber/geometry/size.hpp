@@ -26,6 +26,9 @@ public:
     using ValueType = T;
 
 public: 
+	/// @brief Construct a Size with the given width and height
+	/// @param inWidth Width value
+	/// @param inHeight Height value
 	constexpr Size(T inWidth, T inHeight);
 
 	constexpr Size() = default;
@@ -38,21 +41,37 @@ public:
 	constexpr Size(const Size& inCopy) = default;
 	constexpr Size& operator=(const Size& inCopy) = default;
 
-	// Getters
+	// Accessors
+	/// @brief Get the width
+	/// @return Width value
 	constexpr T Width() const;
+	/// @brief Get the height
+	/// @return Height value
 	constexpr T Height() const;
-
-	// Setters
+	/// @brief Set the width
+	/// @param inWidth Width value to set
 	constexpr void Width(T inWidth);
+	/// @brief Set the height
+	/// @param inHeight Height value to set
 	constexpr void Height(T inHeight);
 
-	// Mathematical operations
+	// Mutators
+	/// @brief Component-wise add another size
+	/// @param inSize Size to add
+	/// @return Reference to this size
 	constexpr Size& operator+=(const Size& inSize);
+	/// @brief Component-wise subtract another size
+	/// @param inSize Size to subtract
+	/// @return Reference to this size
 	constexpr Size& operator-=(const Size& inSize);
+	/// @brief Component-wise multiply by another size
+	/// @param inSize Size to multiply by
+	/// @return Reference to this size
 	constexpr Size& operator*=(const Size& inSize);
+	/// @brief Component-wise divide by another size
+	/// @param inSize Size to divide by
+	/// @return Reference to this size
 	constexpr Size& operator/=(const Size& inSize);
-
-	// --- Rounding ---
 
 	// TRICKY mnfitz 22feb2025: SFINAE-enable rounding methods only for floating point types.
 	// C++ Black magic: SFINAE (template substitution failure) will disallow
@@ -86,6 +105,34 @@ public:
 	/// @return Ref& to this `Size<>`
 	template<typename U=T, typename SFINAE = std::enable_if_t<std::is_floating_point_v<U>>>
 	constexpr Size& RoundTrunc();
+
+	/// @brief Enlarge (add) the provided size to this size
+	/// @param inEnlarge Size to add
+	/// @return Reference to this size
+	constexpr Size& Enlarge(const Size& inEnlarge);
+	/// @brief Enlarge (add) using explicit width and height
+	/// @param inW Width to add
+	/// @param inH Height to add
+	/// @return Reference to this size
+	constexpr Size& Enlarge(T inW, T inH);
+	/// @brief Enlarge (add) uniformly to both axes
+	/// @param inWH Amount to add to both width and height
+	/// @return Reference to this size
+	constexpr Size& Enlarge(T inWH);
+
+	/// @brief Scale this size component-wise by another size
+	/// @param inScale Scale factors
+	/// @return Reference to this size
+	constexpr Size& Scale(const Size& inScale);
+	/// @brief Scale this size by explicit width and height factors
+	/// @param inW Width scale factor
+	/// @param inH Height scale factor
+	/// @return Reference to this size
+	constexpr Size& Scale(T inW, T inH);
+	/// @brief Uniformly scale both axes by the same factor
+	/// @param inWH Scale factor for both axes
+	/// @return Reference to this size
+	constexpr Size& Scale(T inWH);
 
 private:
 	// Private APIs
@@ -210,6 +257,48 @@ inline constexpr Size<T, Impl>& Size<T, Impl>::RoundTrunc()
 	return *this;
 }
 
+
+// Mutators
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Enlarge(const Size<T, Impl>& inEnlarge)
+{
+	*this += inEnlarge;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Enlarge(T inW, T inH)
+{
+	const Size<T, Impl> enlarge{inW, inH};
+	return Enlarge(enlarge);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Enlarge(T inWH)
+{
+	return Enlarge(inWH, inWH);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Scale(const Size<T, Impl>& inScale)
+{
+	*this *= inScale;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Scale(T inW, T inH)
+{
+	const Size<T, Impl> scale{inW, inH};
+	return Scale(scale);
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Size<T, Impl>& Size<T, Impl>::Scale(T inWH)
+{
+	return Scale(inWH, inWH);
+}
+
 #pragma endregion
 
 // ------------------------------------------------------------------
@@ -222,10 +311,10 @@ inline constexpr Size<T, Impl>& Size<T, Impl>::RoundTrunc()
 /// @param inMagnitude: Width/Height to be added to `inSize`
 /// @return Resized `Size<>` result
 template<typename T, ImplKind Impl>
-inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, const Size<T, Impl>& inMagnitude)
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, const Size<T, Impl>& inEnlarge)
 {
 	Size<T, Impl> result{inSize};
-	result += inMagnitude;
+	result.Enlarge(inEnlarge);
 	return result;
 }
 
@@ -237,10 +326,10 @@ inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, const Size<T
 /// @param inY: Height to be added to `inSize`
 /// @return Resized `Size<>` result
 template<typename T, ImplKind Impl>
-inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inX, T inY)
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inW, T inH)
 {
-	const Size<T, Impl> magnitude{inX, inY};
-	return Enlarge(inSize, magnitude);
+	const Size<T, Impl> enlarge{inW, inH}; 
+	return Enlarge(inSize, enlarge); // RVO does NOT apply here :sad:
 }
 
 /// @brief Enlarge a `Size<>` using scalar inMagnitude
@@ -250,9 +339,9 @@ inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inX, T inY
 /// @param inMagnitude: Amount to add to `inSize` Width/Height
 /// @return Resized `Size<>` result
 template<typename T, ImplKind Impl>
-inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inMagnitude)
+inline constexpr Size<T, Impl> Enlarge(const Size<T, Impl>& inSize, T inWH)
 {
-	return Enlarge(inSize, inMagnitude, inMagnitude);
+	return Enlarge(inSize, inWH, inWH);
 }
 
 /// @brief Scale a `Size<>` using another `Size<>`
@@ -265,7 +354,7 @@ template<typename T, ImplKind Impl>
 inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, const Size<T, Impl>& inScale)
 {
 	Size<T, Impl> result{inSize};
-	result *= inScale;
+	result.Scale(inScale);
 	return result;
 }
 
@@ -277,9 +366,9 @@ inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, const Size<T, 
 /// @param inScaleY: Height scale factor to apply
 /// @return Scaled `Size<>` result
 template<typename T, ImplKind Impl>
-inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inScaleX, T inScaleY)
+inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inW, T inH)
 {
-	const Size<T, Impl> scale{inScaleX, inScaleY};
+	const Size<T, Impl> scale{inW, inH};
 	return Scale(inSize, scale);
 }
 
@@ -290,9 +379,9 @@ inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inScaleX, T 
 /// @param inScaleXY: Scale factor to apply
 /// @return Scaled `Size<>` result
 template<typename T, ImplKind Impl>
-inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inScaleXY)
+inline constexpr Size<T, Impl> Scale(const Size<T, Impl>& inSize, T inWH)
 {
-	return Scale(inSize, inScaleXY, inScaleXY);
+	return Scale(inSize, inWH, inWH);
 }
 
 /// @brief Round to nearest even integer value. Halfway cases round away from zero.
