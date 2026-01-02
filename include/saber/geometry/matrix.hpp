@@ -1,6 +1,5 @@
 #ifndef SABER_GEOMETRY_MATRIX_HPP
 #define SABER_GEOMETRY_MATRIX_HPP
-#pragma once
 
 // saber
 #include "saber/geometry/config.hpp"

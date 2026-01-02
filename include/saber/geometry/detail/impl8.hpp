@@ -9,33 +9,14 @@
 // saber
 #include "saber/inexact.hpp"
 #include "saber/geometry/detail/impl2.hpp"
-#include "saber/geometry/detail/Impl8.hpp"
+#include "saber/geometry/detail/impl4.hpp"
 #include "saber/geometry/detail/simd.hpp"
 
 namespace saber::geometry::detail {
 
-// Helpers
-#pragma region
-
-template<typename T>
-constexpr bool Is32BitDataType() 
-{
-	constexpr bool kIs32Bit = (sizeof(T)*8 <= 32);
-	return kIs32Bit;
-}
-
-template<typename T>
-constexpr bool Is64BitDataType() 
-{
-	constexpr bool kIs64Bit = (sizeof(T)*8 == 64);
-	return kIs64Bit;
-}
-
-#pragma endregion
-
 template<typename T>
 struct Impl8 final
-{
+{	
 	class Simd;
 
 	class Scalar
@@ -47,19 +28,19 @@ struct Impl8 final
 
 		// alt ctor
 		constexpr Scalar(T inFirst, T inSecond, T inThird, T inFourth, T inFifth, T inSixth, T inSeventh, T inEigth) :
-			mArray(inFirst, inSecond, inThird, inFourth, T inFifth, T inSixth, T inSeventh, T inEigth)
+			mArray{inFirst, inSecond, inThird, inFourth, inFifth, inSixth, inSeventh, inEigth}
 		{
 			// Do nothing
 		}
 
 		constexpr Scalar(const typename Impl2<T>::Scalar& inFirst, const typename Impl2<T>::Scalar& inSecond, const typename Impl2<T>::Scalar& inThird, const typename Impl2<T>::Scalar& inFourth) :
-			mArray(inFirst.Get<0>(), inFirst.Get<1>(), inSecond.Get<0>(), inSecond.Get<1>(), inThird.Get<0>(), inThird.Get<1>(), inFourth.Get<0>(), inFourth.Get<1>())
+			mArray{inFirst.Get<0>(), inFirst.Get<1>(), inSecond.Get<0>(), inSecond.Get<1>(), inThird.Get<0>(), inThird.Get<1>(), inFourth.Get<0>(), inFourth.Get<1>()}
 		{
 			// Do nothing
 		}
 
 		constexpr Scalar(const typename Impl4<T>::Scalar& inFirst, const typename Impl4<T>::Scalar& inSecond) :
-			mArray(inFirst.Get<0>(), inFirst.Get<1>(), inFirst.Get<2>(), inFirst.Get<3>(), inSecond.Get<0>(), inSecond.Get<1>(), inSecond.Get<2>(), inSecond.Get<3>())
+			mArray{inFirst.Get<0>(), inFirst.Get<1>(), inFirst.Get<2>(), inFirst.Get<3>(), inSecond.Get<0>(), inSecond.Get<1>(), inSecond.Get<2>(), inSecond.Get<3>()}
 		{
 			// Do nothing
 		}
@@ -67,14 +48,14 @@ struct Impl8 final
 		template<std::size_t Index>
 		constexpr const T& Get() const
 		{
-			static_assert(Index < std::size(mArray)>, "Provided index out of bounds.");
+			static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
 			return mArray.at(Index);
 		}
 
 		template<std::size_t Index>
 		constexpr T& Get()
 		{
-			static_assert(Index < std::size(mArray)>, "Provided index out of bounds.");
+			static_assert(Index < std::tuple_size_v<decltype(mArray)>, "Provided index out of bounds.");
 			return mArray.at(Index);
 		}
 
@@ -108,12 +89,6 @@ struct Impl8 final
 		constexpr Scalar& operator*=(const Scalar& inRHS)
 		{
 			// TODO: Proper matrix multiplication (DOT vs CROSS product?)
-			return *this;
-		}
-
-		constexpr Scalar& operator/=(const Scalar& inRHS)
-		{
-			// TODO: Proper matrix division
 			return *this;
 		}
 
@@ -156,6 +131,7 @@ struct Impl8 final
 	}; // struct Scalar
 
 	// TODO mnfitz 22dec2025: Add SIMD implementation
+}; // struct Impl8<>
 
 #pragma region struct Impl8Traits
 template<typename T, ImplKind Impl> // Primary template declaration
@@ -170,7 +146,8 @@ struct Impl8Traits<T, ImplKind::kScalar>
 template<typename T> // Partial template specialization
 struct Impl8Traits<T, ImplKind::kSimd>
 {
-	using ImplType = typename Impl8<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
+	//using ImplType = typename Impl8<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
+	using ImplType = typename Impl8<T>::Scalar; // VOODOO: Nested template type requires `typename` prefix
 };
 
 #pragma endregion
