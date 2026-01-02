@@ -18,6 +18,7 @@
 
 // saber
 #include "saber/inexact.hpp"
+#include "saber/geometry/matrix.hpp"
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/rectangle.hpp"
@@ -25,6 +26,7 @@
 
 // std
 #include <type_traits>
+#include <limits>
 
 using namespace saber;
 using saber::ConvertTo;
@@ -1285,6 +1287,89 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle move and free functions - impl v
             R zeroHeight{0,0,5,0};
             REQUIRE(IsEmpty(zeroHeight));
         }
+    }
+}
+
+TEMPLATE_TEST_CASE( "saber::geometry::Matrix basic behaviors - impl variants",
+                    "[saber][template]",
+                    int, float, double)
+{
+    SECTION("ImplKind::kScalar")
+    {
+        using M = saber::geometry::Matrix<TestType, ImplKind::kScalar>;
+
+        SECTION("Alt ctor and equality")
+        {
+            M m1{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+            M m2{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+            REQUIRE(m1 == m2);
+            M m3{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{7}};
+            REQUIRE(m1 != m3);
+        }
+
+        SECTION("Copy/Move/Assign")
+        {
+            const M cm{TestType{3},TestType{4},TestType{5},TestType{6},TestType{7},TestType{8}};
+            M cpy{cm};
+            REQUIRE(cpy == cm);
+
+            M assigned{};
+            assigned = cm;
+            REQUIRE(assigned == cm);
+
+            M moved = std::move(M{TestType{9},TestType{8},TestType{7},TestType{6},TestType{5},TestType{4}});
+            REQUIRE(moved == M{TestType{9},TestType{8},TestType{7},TestType{6},TestType{5},TestType{4}});
+        }
+
+        SECTION("Floating inexact equality")
+        {
+            if constexpr (std::is_floating_point_v<TestType>)
+            {
+                const TestType eps = std::numeric_limits<TestType>::epsilon();
+                M m1{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+                M m2{TestType{1} + eps/2,TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+                REQUIRE(m1 == m2);
+            }
+        }
+    }
+
+    SECTION("ImplKind::kSimd")
+    {
+		using M = saber::geometry::Matrix<TestType, ImplKind::kSimd>;
+
+		SECTION("Alt ctor and equality")
+		{
+			M m1{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+			M m2{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+			REQUIRE(m1 == m2);
+			M m3{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{7}};
+			REQUIRE(m1 != m3);
+		}
+
+		SECTION("Copy/Move/Assign")
+		{
+			const M cm{TestType{3},TestType{4},TestType{5},TestType{6},TestType{7},TestType{8}};
+			M cpy{cm};
+			REQUIRE(cpy == cm);
+
+			M assigned{};
+			assigned = cm;
+			REQUIRE(assigned == cm);
+
+			M moved = std::move(M{TestType{9},TestType{8},TestType{7},TestType{6},TestType{5},TestType{4}});
+			REQUIRE(moved == M{TestType{9},TestType{8},TestType{7},TestType{6},TestType{5},TestType{4}});
+		}
+
+		SECTION("Floating inexact equality")
+		{
+			if constexpr (std::is_floating_point_v<TestType>)
+			{
+				const TestType eps = std::numeric_limits<TestType>::epsilon();
+				M m1{TestType{1},TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+				M m2{TestType{1} + eps/2,TestType{2},TestType{3},TestType{4},TestType{5},TestType{6}};
+				REQUIRE(m1 == m2);
+			}
+		}
     }
 }
 
