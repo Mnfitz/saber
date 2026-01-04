@@ -83,12 +83,18 @@ struct Impl8 final
 			Get<6>() -= inRHS.Get<6>();
 			Get<7>() -= inRHS.Get<7>();
 			return *this;
-			return *this;
 		}
 
 		constexpr Scalar& operator*=(const Scalar& inRHS)
 		{
-			// TODO: Proper matrix multiplication (DOT vs CROSS product?)
+			Get<0>() *= inRHS.Get<0>();
+			Get<1>() *= inRHS.Get<1>();
+			Get<2>() *= inRHS.Get<2>();
+			Get<3>() *= inRHS.Get<3>();
+			Get<4>() *= inRHS.Get<4>();
+			Get<5>() *= inRHS.Get<5>();
+			Get<6>() *= inRHS.Get<6>();
+			Get<7>() *= inRHS.Get<7>();
 			return *this;
 		}
 
@@ -125,6 +131,57 @@ struct Impl8 final
 		
 	private:
 		//friend class Simd; // Permit Simd class to provide constexpr api
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar& MulMatrix(Scalar& ioLHS, const Scalar& inRHS)
+		{
+			// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
+			T m11 = (ioLHS.Get<0>() * inRHS.Get<0>()) + (ioLHS.Get<1>() * inRHS.Get<3>());
+			T m12 = (ioLHS.Get<0>() * inRHS.Get<1>()) + (ioLHS.Get<1>() * inRHS.Get<4>());
+			T m21 = (ioLHS.Get<3>() * inRHS.Get<0>()) + (ioLHS.Get<4>() * inRHS.Get<3>());
+			T m22 = (ioLHS.Get<3>() * inRHS.Get<1>()) + (ioLHS.Get<4>() * inRHS.Get<4>());
+			
+			T m13 = ((ioLHS.Get<0>() * inRHS.Get<2>()) + (ioLHS.Get<1>() * inRHS.Get<5>()) + (ioLHS.Get<2>()));
+			T m23 = ((ioLHS.Get<3>() * inRHS.Get<2>()) + (ioLHS.Get<4>() * inRHS.Get<5>()) + (ioLHS.Get<5>()));
+
+			ioLHS.Get<0>() = m11;
+			ioLHS.Get<1>() = m12;
+			ioLHS.Get<2>() = m13;
+			ioLHS.Get<3>() = m21;
+			ioLHS.Get<4>() = m22;
+			ioLHS.Get<5>() = m23;
+
+			return ioLHS;
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar& InvMatrix(Scalar& ioLHS)
+		{
+			const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
+			const bool isNotInvertible = Inexact<T>::IsEq(det, 0);
+			if (isNotInvertible)
+			{
+				throw std::runtime_error("Saber: Matrix is not invertible");
+			}
+			const T invDet = (1/det);
+
+			T m11 = (ioLHS.Get<4>() * invDet);
+			T m12 = -(ioLHS.Get<1>() * invDet);
+			T m21 = -(ioLHS.Get<3>() * invDet);
+			T m22 = (ioLHS.Get<0>() * invDet);
+			
+			T m13 = -((m11 * ioLHS.Get<2>()) + (m12 * ioLHS.Get<5>()));
+			T m23 = -((m21 * ioLHS.Get<2>()) + (m22 * ioLHS.Get<5>()));
+
+			ioLHS.Get<0>() = m11;
+			ioLHS.Get<1>() = m12;
+			ioLHS.Get<2>() = m13;
+			ioLHS.Get<3>() = m21;
+			ioLHS.Get<4>() = m22;
+			ioLHS.Get<5>() = m23;
+
+			return ioLHS;
+		}
 
 	private:
 		std::array<T, 8> mArray; // Impl8: so 8 elements are assumed
