@@ -3,6 +3,7 @@
 
 // std
 #include <array>
+#include <cmath>
 #include <tuple>
 #include <type_traits>
 
@@ -128,12 +129,71 @@ struct Impl8 final
 			}
 			return result;
 		}
-		
+
 	private:
 		//friend class Simd; // Permit Simd class to provide constexpr api
 
+		friend constexpr Scalar& MatrixZero()
+		{
+			static const Scalar sZero = {0, 0, 0,
+										 0, 0, 0, 
+										 0, 0};
+			return sZero;
+		}
+
+		template<typename U = T, ImplKind Kind = Impl>
+		friend constexpr Scalar& MatrixIdentity()
+		{
+			static const Scalar sIdent = {1, 0, 0, 
+										  0, 1, 0, 
+										  0, 0};
+			return sIdent;
+		}
+
 		template<typename T, ImplKind Impl>
-		friend constexpr Scalar& MulMatrix(Scalar& ioLHS, const Scalar& inRHS)
+		friend constexpr Scalar MatrixScale(T inX, T inY)
+		{
+			return {inX, 0, 0, 
+					0, inY, 0, 
+					0, 0};
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
+		{
+			return {inImpl2.Get<0>(), 0, 0, 
+				    0, inImpl2.Get<1>(), 0, 
+					0, 0};
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar MatrixTranslation(T inX, T inY)
+		{
+			return {1, 0, inX, 
+					0, 1, inY, 
+					0, 0};
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
+		{
+			return {1, 0, inImpl2.Get<0>(), 
+					0, 1, inImpl2.Get<1>(), 
+					0, 0};
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar MatrixRotation(T inRads)
+		{
+			const T sin = std::sin(inRads);
+			const T cos = std::cos(inRads);
+			return {cos, -sin, 0, 
+					sin, cos, 0, 
+					0, 0};
+		}
+
+		template<typename T, ImplKind Impl>
+		friend constexpr Scalar& MatrixMul(Scalar& ioLHS, const Scalar& inRHS)
 		{
 			// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
 			T m11 = (ioLHS.Get<0>() * inRHS.Get<0>()) + (ioLHS.Get<1>() * inRHS.Get<3>());
@@ -151,11 +211,14 @@ struct Impl8 final
 			ioLHS.Get<4>() = m22;
 			ioLHS.Get<5>() = m23;
 
+			ioLHS.Get<6>() = 0;
+			ioLHS.Get<7>() = 0;
+
 			return ioLHS;
 		}
 
 		template<typename T, ImplKind Impl>
-		friend constexpr Scalar& InvMatrix(Scalar& ioLHS)
+		friend constexpr Scalar& MatrixInv(Scalar& ioLHS)
 		{
 			const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
 			const bool isNotInvertible = Inexact<T>::IsEq(det, 0);
@@ -179,6 +242,9 @@ struct Impl8 final
 			ioLHS.Get<3>() = m21;
 			ioLHS.Get<4>() = m22;
 			ioLHS.Get<5>() = m23;
+
+			ioLHS.Get<6>() = 0;
+			ioLHS.Get<7>() = 0;
 
 			return ioLHS;
 		}

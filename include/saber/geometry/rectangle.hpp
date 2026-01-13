@@ -230,8 +230,8 @@ private:
 
 	// Friend functions
 private:
-	friend constexpr bool operator== <Rectangle>(const Rectangle& inLHS, const Rectangle& inRHS);
-	friend constexpr bool operator!= <Rectangle>(const Rectangle& inLHS, const Rectangle& inRHS);
+	friend constexpr bool operator==<>(const Rectangle& inLHS, const Rectangle& inRHS);
+	friend constexpr bool operator!=<>(const Rectangle& inLHS, const Rectangle& inRHS);
 
 	template<typename T, ImplKind Impl>
 	friend constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle);

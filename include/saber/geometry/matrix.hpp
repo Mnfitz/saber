@@ -89,8 +89,8 @@ private:
 
 // Ctors
 template<typename T, ImplKind Impl>
-inline constexpr Matrix<T, Impl>::Matrix(T inM11, T inM12, T inM21, T inM22, T inM31, T inM32) :
-	mImpl(inM11, inM12, inM21, inM22, inM31, inM32, 0, 0)
+inline constexpr Matrix<T, Impl>::Matrix(T inM11, T inM12, T inM13, T inM21, T inM22, T inM23) :
+	mImpl(inM11, inM12, inM13, inM21, inM22, inM23, 0, 0)
 {
 	// Do nothing
 }
@@ -121,7 +121,8 @@ inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator-=(const Matrix& inRH
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRHS)
 {
-	detail::MulMatrix(mImpl, inRHS.mImpl);
+	auto test = detail::MatrixIdentity<T, Impl>();
+	detail::MatrixMul(mImpl, inRHS.mImpl);
 	return *this;
 }
 

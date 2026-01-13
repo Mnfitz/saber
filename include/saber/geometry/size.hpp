@@ -140,8 +140,8 @@ private:
 
 private:
 	// Friend Functions
-	friend constexpr bool operator==<Size>(const Size& inLHS, const Size& inRHS);
-	friend constexpr bool operator!=<Size>(const Size& inLHS, const Size& inRHS);
+	friend constexpr bool operator==<>(const Size& inLHS, const Size& inRHS);
+	friend constexpr bool operator!=<>(const Size& inLHS, const Size& inRHS);
 	friend class Rectangle<T, Impl>;
 
 private:
