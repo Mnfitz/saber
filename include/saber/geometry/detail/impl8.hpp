@@ -1,17 +1,15 @@
 #ifndef SABER_GEOMETRY_DETAIL_IMPL8_HPP
 #define SABER_GEOMETRY_DETAIL_IMPL8_HPP
 
-// std
-#include <array>
-#include <cmath>
-#include <tuple>
-#include <type_traits>
-
 // saber
 #include "saber/inexact.hpp"
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/detail/impl2.hpp"
 #include "saber/geometry/detail/impl4.hpp"
-#include "saber/geometry/detail/simd.hpp"
+
+// std
+#include <array>
+#include <type_traits>
 
 namespace saber::geometry::detail {
 
@@ -133,21 +131,13 @@ struct Impl8 final
 	private:
 		//friend class Simd; // Permit Simd class to provide constexpr api
 
+		template<ImplKind Impl>
 		friend constexpr Scalar& MatrixZero()
 		{
 			static const Scalar sZero = {0, 0, 0,
 										 0, 0, 0, 
 										 0, 0};
 			return sZero;
-		}
-
-		template<typename U = T, ImplKind Kind = Impl>
-		friend constexpr Scalar& MatrixIdentity()
-		{
-			static const Scalar sIdent = {1, 0, 0, 
-										  0, 1, 0, 
-										  0, 0};
-			return sIdent;
 		}
 
 		template<typename T, ImplKind Impl>
@@ -255,6 +245,58 @@ struct Impl8 final
 
 	// TODO mnfitz 22dec2025: Add SIMD implementation
 }; // struct Impl8<>
+
+// TODO mnfitz 19jan2026: Bogus! Template functions cannot be partially specialized.
+// Fully specialized function templates causes lots of redundant copy/paste code,
+// which is a problem for maintainability.
+// Investigate a helper class (which can be partially specialized) that
+// provides methods equivalent to the functions below.
+
+// Primary MatrixIdentity template declaration
+template<typename T, ImplKind Impl>
+constexpr typename Impl8<T>::Scalar MatrixIdentity();
+
+// MatrixIdentity template full specialization
+template<>
+constexpr typename Impl8<float>::Scalar MatrixIdentity<float, ImplKind::kScalar>()
+{
+	constexpr Impl8<float>::Scalar sIdent = { 1, 0, 0,
+											 0, 1, 0,
+											 0, 0 };
+	return sIdent;
+}
+
+// MatrixIdentity template full specialization
+template<>
+constexpr typename Impl8<int>::Scalar MatrixIdentity<int, ImplKind::kScalar>()
+{
+	constexpr Impl8<int>::Scalar sIdent = { 1, 0, 0,
+											 0, 1, 0,
+											 0, 0 };
+	return sIdent;
+}
+
+// MatrixIdentity template full specialization
+template<>
+constexpr typename Impl8<double>::Scalar MatrixIdentity<double, ImplKind::kScalar>()
+{
+	constexpr Impl8<double>::Scalar sIdent = { 1, 0, 0,
+											 0, 1, 0,
+											 0, 0 };
+	return sIdent;
+}
+
+// MatrixIdentity template full specialization because c++ does not allow partial specialization of functions
+/*
+template<typename T>
+constexpr typename Impl8<T>::Simd& MatrixIdentity<T, ImplKind::kSimd>()
+{
+	static const Scalar sIdent = { 1, 0, 0,
+								  0, 1, 0,
+								  0, 0 };
+	return sIdent;
+}
+*/
 
 #pragma region struct Impl8Traits
 template<typename T, ImplKind Impl> // Primary template declaration
