@@ -15,7 +15,7 @@ namespace saber::geometry::detail {
 
 template<typename T>
 struct Impl8 final
-{	
+{
 	class Simd;
 
 	class Scalar
@@ -131,172 +131,176 @@ struct Impl8 final
 	private:
 		//friend class Simd; // Permit Simd class to provide constexpr api
 
-		template<ImplKind Impl>
-		friend constexpr Scalar& MatrixZero()
-		{
-			static const Scalar sZero = {0, 0, 0,
-										 0, 0, 0, 
-										 0, 0};
-			return sZero;
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar MatrixScale(T inX, T inY)
-		{
-			return {inX, 0, 0, 
-					0, inY, 0, 
-					0, 0};
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
-		{
-			return {inImpl2.Get<0>(), 0, 0, 
-				    0, inImpl2.Get<1>(), 0, 
-					0, 0};
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar MatrixTranslation(T inX, T inY)
-		{
-			return {1, 0, inX, 
-					0, 1, inY, 
-					0, 0};
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
-		{
-			return {1, 0, inImpl2.Get<0>(), 
-					0, 1, inImpl2.Get<1>(), 
-					0, 0};
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar MatrixRotation(T inRads)
-		{
-			const T sin = std::sin(inRads);
-			const T cos = std::cos(inRads);
-			return {cos, -sin, 0, 
-					sin, cos, 0, 
-					0, 0};
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar& MatrixMul(Scalar& ioLHS, const Scalar& inRHS)
-		{
-			// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
-			T m11 = (ioLHS.Get<0>() * inRHS.Get<0>()) + (ioLHS.Get<1>() * inRHS.Get<3>());
-			T m12 = (ioLHS.Get<0>() * inRHS.Get<1>()) + (ioLHS.Get<1>() * inRHS.Get<4>());
-			T m21 = (ioLHS.Get<3>() * inRHS.Get<0>()) + (ioLHS.Get<4>() * inRHS.Get<3>());
-			T m22 = (ioLHS.Get<3>() * inRHS.Get<1>()) + (ioLHS.Get<4>() * inRHS.Get<4>());
-			
-			T m13 = ((ioLHS.Get<0>() * inRHS.Get<2>()) + (ioLHS.Get<1>() * inRHS.Get<5>()) + (ioLHS.Get<2>()));
-			T m23 = ((ioLHS.Get<3>() * inRHS.Get<2>()) + (ioLHS.Get<4>() * inRHS.Get<5>()) + (ioLHS.Get<5>()));
-
-			ioLHS.Get<0>() = m11;
-			ioLHS.Get<1>() = m12;
-			ioLHS.Get<2>() = m13;
-			ioLHS.Get<3>() = m21;
-			ioLHS.Get<4>() = m22;
-			ioLHS.Get<5>() = m23;
-
-			ioLHS.Get<6>() = 0;
-			ioLHS.Get<7>() = 0;
-
-			return ioLHS;
-		}
-
-		template<typename T, ImplKind Impl>
-		friend constexpr Scalar& MatrixInv(Scalar& ioLHS)
-		{
-			const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
-			const bool isNotInvertible = Inexact<T>::IsEq(det, 0);
-			if (isNotInvertible)
-			{
-				throw std::runtime_error("Saber: Matrix is not invertible");
-			}
-			const T invDet = (1/det);
-
-			T m11 = (ioLHS.Get<4>() * invDet);
-			T m12 = -(ioLHS.Get<1>() * invDet);
-			T m21 = -(ioLHS.Get<3>() * invDet);
-			T m22 = (ioLHS.Get<0>() * invDet);
-			
-			T m13 = -((m11 * ioLHS.Get<2>()) + (m12 * ioLHS.Get<5>()));
-			T m23 = -((m21 * ioLHS.Get<2>()) + (m22 * ioLHS.Get<5>()));
-
-			ioLHS.Get<0>() = m11;
-			ioLHS.Get<1>() = m12;
-			ioLHS.Get<2>() = m13;
-			ioLHS.Get<3>() = m21;
-			ioLHS.Get<4>() = m22;
-			ioLHS.Get<5>() = m23;
-
-			ioLHS.Get<6>() = 0;
-			ioLHS.Get<7>() = 0;
-
-			return ioLHS;
-		}
-
 	private:
 		std::array<T, 8> mArray; // Impl8: so 8 elements are assumed
 	}; // struct Scalar
 
 	// TODO mnfitz 22dec2025: Add SIMD implementation
+
 }; // struct Impl8<>
 
-// TODO mnfitz 19jan2026: Bogus! Template functions cannot be partially specialized.
-// Fully specialized function templates causes lots of redundant copy/paste code,
-// which is a problem for maintainability.
-// Investigate a helper class (which can be partially specialized) that
-// provides methods equivalent to the functions below.
+template <typename T, ImplKind Impl>
+class Helper; // primary template class Helper<T>
+
+template <typename T>
+class Helper<T, ImplKind::kScalar>
+{
+	constexpr typename Impl8<T>::Scalar MatrixIdentity()
+	{
+		return { 1, 0, 0,
+				 0, 1, 0,
+				 0, 0 };
+	}
+
+	constexpr typename Impl8<T>::Scalar MatrixZero()
+	{
+		return { 0, 0, 0,
+				 0, 0, 0,
+				 0, 0 };
+	}
+
+	constexpr typename Impl8<T>::Scalar MatrixScale(T inX, T inY)
+	{
+		return { inX, 0, 0,
+				0, inY, 0,
+				0, 0 };
+	}
+
+	constexpr typename Impl8<T>::Scalar MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
+	{
+		return { inImpl2.Get<0>(), 0, 0,
+				0, inImpl2.Get<1>(), 0,
+				0, 0 };
+	}
+
+	constexpr typename Impl8<T>::Scalar MatrixTranslation(T inX, T inY)
+	{
+		return { 1, 0, inX,
+				0, 1, inY,
+				0, 0 };
+	}
+
+	constexpr typename Impl8<T>::Scalar MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
+	{
+		return { 1, 0, inImpl2.Get<0>(),
+				0, 1, inImpl2.Get<1>(),
+				0, 0 };
+	}
+
+	typename Impl8<T>::Scalar MatrixRotation(T inRads)
+	{
+		const T sin = std::sin(inRads);
+		const T cos = std::cos(inRads);
+		return { cos, -sin, 0,
+				sin, cos, 0,
+				0, 0 };
+	}
+
+	typename Impl8<T>::Scalar MatrixMul(typename Impl8<T>::Scalar& ioLHS, const typename Impl8<T>::Scalar& inRHS)
+	{
+		// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
+		T m11 = (ioLHS.Get<0>() * inRHS.Get<0>()) + (ioLHS.Get<1>() * inRHS.Get<3>());
+		T m12 = (ioLHS.Get<0>() * inRHS.Get<1>()) + (ioLHS.Get<1>() * inRHS.Get<4>());
+		T m21 = (ioLHS.Get<3>() * inRHS.Get<0>()) + (ioLHS.Get<4>() * inRHS.Get<3>());
+		T m22 = (ioLHS.Get<3>() * inRHS.Get<1>()) + (ioLHS.Get<4>() * inRHS.Get<4>());
+
+		T m13 = ((ioLHS.Get<0>() * inRHS.Get<2>()) + (ioLHS.Get<1>() * inRHS.Get<5>()) + (ioLHS.Get<2>()));
+		T m23 = ((ioLHS.Get<3>() * inRHS.Get<2>()) + (ioLHS.Get<4>() * inRHS.Get<5>()) + (ioLHS.Get<5>()));
+
+		ioLHS.Get<0>() = m11;
+		ioLHS.Get<1>() = m12;
+		ioLHS.Get<2>() = m13;
+		ioLHS.Get<3>() = m21;
+		ioLHS.Get<4>() = m22;
+		ioLHS.Get<5>() = m23;
+
+		ioLHS.Get<6>() = 0;
+		ioLHS.Get<7>() = 0;
+
+		return ioLHS;
+	}
+
+	typename Impl8<T>::Scalar MatrixInv(typename Impl8<T>::Scalar& ioLHS)
+	{
+		const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
+		const bool isNotInvertible = Inexact<T>::IsEq(det, 0);
+		if (isNotInvertible)
+		{
+			throw std::runtime_error("Saber: Matrix is not invertible");
+		}
+		const T invDet = (1 / det);
+
+		T m11 = (ioLHS.Get<4>() * invDet);
+		T m12 = -(ioLHS.Get<1>() * invDet);
+		T m21 = -(ioLHS.Get<3>() * invDet);
+		T m22 = (ioLHS.Get<0>() * invDet);
+
+		T m13 = -((m11 * ioLHS.Get<2>()) + (m12 * ioLHS.Get<5>()));
+		T m23 = -((m21 * ioLHS.Get<2>()) + (m22 * ioLHS.Get<5>()));
+
+		ioLHS.Get<0>() = m11;
+		ioLHS.Get<1>() = m12;
+		ioLHS.Get<2>() = m13;
+		ioLHS.Get<3>() = m21;
+		ioLHS.Get<4>() = m22;
+		ioLHS.Get<5>() = m23;
+
+		ioLHS.Get<6>() = 0;
+		ioLHS.Get<7>() = 0;
+
+		return ioLHS;
+	}
+
+}; // specialized template class Helper<T>
 
 // Primary MatrixIdentity template declaration
 template<typename T, ImplKind Impl>
-constexpr typename Impl8<T>::Scalar MatrixIdentity();
-
-// MatrixIdentity template full specialization
-template<>
-constexpr typename Impl8<float>::Scalar MatrixIdentity<float, ImplKind::kScalar>()
+constexpr auto MatrixIdentity()
 {
-	constexpr Impl8<float>::Scalar sIdent = { 1, 0, 0,
-											 0, 1, 0,
-											 0, 0 };
-	return sIdent;
+	return Helper<T, Impl>::MatrixIdentity();
 }
 
-// MatrixIdentity template full specialization
-template<>
-constexpr typename Impl8<int>::Scalar MatrixIdentity<int, ImplKind::kScalar>()
+template<typename T, ImplKind Impl>
+constexpr auto MatrixZero()
 {
-	constexpr Impl8<int>::Scalar sIdent = { 1, 0, 0,
-											 0, 1, 0,
-											 0, 0 };
-	return sIdent;
+	return Helper<T, Impl>::MatrixZero();
 }
 
-// MatrixIdentity template full specialization
-template<>
-constexpr typename Impl8<double>::Scalar MatrixIdentity<double, ImplKind::kScalar>()
+template<typename T, ImplKind Impl>
+constexpr auto MatrixScale(T inX, T inY)
 {
-	constexpr Impl8<double>::Scalar sIdent = { 1, 0, 0,
-											 0, 1, 0,
-											 0, 0 };
-	return sIdent;
+	return Helper<T, Impl>::MatrixScale(inX, inY);
 }
 
-// MatrixIdentity template full specialization because c++ does not allow partial specialization of functions
-/*
 template<typename T>
-constexpr typename Impl8<T>::Simd& MatrixIdentity<T, ImplKind::kSimd>()
+constexpr auto MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
 {
-	static const Scalar sIdent = { 1, 0, 0,
-								  0, 1, 0,
-								  0, 0 };
-	return sIdent;
+	return Helper<T, ImplKind::kScalar>::MatrixScale(inImpl2);
 }
-*/
+
+template<typename T, ImplKind Impl>
+constexpr auto MatrixTranslation(T inX, T inY)
+{
+	return Helper<T, Impl>::MatrixTranslation(inX, inY);
+}
+
+template<typename T>
+constexpr auto MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
+{
+	return Helper<T, ImplKind::kScalar>::MatrixTranslation(inImpl2);
+}
+
+template<typename T>
+constexpr auto MatrixMul(typename Impl8<T>::Scalar& ioLHS, const typename Impl8<T>::Scalar& inRHS)
+{
+	return Helper<T, ImplKind::kScalar>::MatrixMul(ioLHS, inRHS);
+}
+
+template<typename T>
+typename auto MatrixInv(typename Impl8<T>::Scalar& ioLHS)
+{
+	return Helper<T, ImplKind::kScalar>::MatrixInv(ioLHS);
+}
 
 #pragma region struct Impl8Traits
 template<typename T, ImplKind Impl> // Primary template declaration
