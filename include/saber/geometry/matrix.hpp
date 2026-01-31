@@ -5,6 +5,7 @@
 #include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
 #include "saber/geometry/detail/impl8.hpp"
+#include "saber/geometry/detail/matrix_helper.hpp"
 #include "saber/utility.hpp"
 
 // std
@@ -121,7 +122,6 @@ inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator-=(const Matrix& inRH
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRHS)
 {
-	auto test = detail::MatrixIdentity<T, Impl>();
 	detail::MatrixMul(mImpl, inRHS.mImpl);
 	return *this;
 }
