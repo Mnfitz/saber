@@ -1541,22 +1541,24 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
                     "[saber][matrix][helper]",
                     int, float, double)
 {
+	using namespace saber::geometry;
 	using namespace saber::geometry::detail;
 
 	SECTION("ImplKind::kScalar - MatrixMul with identity matrices")
 	{
 		// Identity * Identity should equal Identity
-		auto identity1 = MatrixIdentity<TestType, ImplKind::kScalar>();
-		auto identity2 = MatrixIdentity<TestType, ImplKind::kScalar>();
+		auto identity1 = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
+		auto identity2 = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
 		
-		MatrixMul<TestType>(identity1, identity2);
+		//MatrixMul<TestType>(identity1, identity2);
+		identity1 *= identity2;
 		
-		REQUIRE(identity1.Get<0>() == TestType{1});	// M11
-		REQUIRE(identity1.Get<1>() == TestType{0});	// M12
-		REQUIRE(identity1.Get<2>() == TestType{0});	// M13
-		REQUIRE(identity1.Get<3>() == TestType{0});	// M21
-		REQUIRE(identity1.Get<4>() == TestType{1});	// M22
-		REQUIRE(identity1.Get<5>() == TestType{0});	// M23
+		REQUIRE(identity1.M11() == TestType{1});	// M11
+		REQUIRE(identity1.M12() == TestType{0});	// M12
+		REQUIRE(identity1.M13() == TestType{0});	// M13
+		REQUIRE(identity1.M21() == TestType{0});	// M21
+		REQUIRE(identity1.M22() == TestType{1});	// M22
+		REQUIRE(identity1.M23() == TestType{0});	// M23
 	}
 
 	SECTION("ImplKind::kScalar - MatrixMul with scale and translation")
