@@ -4,6 +4,8 @@
 // saber
 #include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
+#include "saber/geometry/point.hpp"
+#include "saber/geometry/size.hpp"
 #include "saber/geometry/detail/impl8.hpp"
 #include "saber/geometry/detail/matrix_helper.hpp"
 #include "saber/utility.hpp"
@@ -27,6 +29,16 @@ public:
 	constexpr Matrix() = default;
 
 	constexpr Matrix(T inM11, T inM12, T inM13, T inM21, T inM22, T inM23);
+
+	constexpr static Matrix MakeIdentity();
+	constexpr static Matrix MakeZero();
+	constexpr static Matrix MakeScale(T inX, T inY);
+	constexpr static Matrix MakeScale(const Point<T, Impl>& inPoint);
+	constexpr static Matrix MakeScale(const Size<T, Impl>& inSize);
+	constexpr static Matrix MakeTranslation(T inX, T inY);
+	constexpr static Matrix MakeTranslation(const Point<T, Impl>& inPoint);
+	constexpr static Matrix MakeTranslation(const Size<T, Impl>& inSize);
+	constexpr static Matrix MakeRotation(T inRads);
 
 	/// @brief Destructor.
 	~Matrix() = default;
@@ -65,7 +77,11 @@ public:
 	constexpr void M23(T inT);
 
 private:
+	using ImplType = typename detail::Impl8Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+
+private:
 	// Private APIs
+	constexpr Matrix(ImplType&& ioImpl8);
 
 	/// @brief Checks if this matrix is equal to another.
 	/// @param inMatrix The matrix to compare with.
@@ -80,8 +96,7 @@ private:
 	template<typename T, ImplKind Impl>
 	friend constexpr bool IsEmpty(const Matrix<T, Impl>& inMatrix);
 
-private:
-	using ImplType = typename detail::Impl8Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
+	// Data Members
 	ImplType mImpl{};
 }; // class Matrix<>
 
@@ -91,11 +106,71 @@ private:
 // Ctors
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl>::Matrix(T inM11, T inM12, T inM13, T inM21, T inM22, T inM23) :
-	mImpl(inM11, inM12, inM13, inM21, inM22, inM23, 0, 0)
+	mImpl{inM11, inM12, inM13, inM21, inM22, inM23, 0, 0}
 {
 	// Do nothing
 }
 
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl>::Matrix(ImplType&& ioImpl8) :
+	mImpl{std::move(ioImpl8)}
+{
+	// Do nothing
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeIdentity()
+{
+	return Matrix{detail::MatrixIdentity<T, Impl>()};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeZero()
+{
+	return Matrix{detail::MatrixZero<T, Impl>()};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(T inX, T inY)
+{
+	return Matrix{detail::MatrixScale(inX, inY)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Point<T, Impl>& inPoint)
+{
+	return Matrix{detail::MatrixScale(inPoint)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Size<T, Impl>& inSize)
+{
+	return Matrix{detail::MatrixScale(inSize)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(T inX, T inY)
+{
+	return Matrix{detail::MatrixTranslation(inX, inY)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Point<T, Impl>& inPoint)
+{
+	return Matrix{detail::MatrixTranslation(inPoint)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Size<T, Impl>& inSize)
+{
+	return Matrix{detail::MatrixTranslation(inSize)};
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeRotation(T inRads)
+{
+	return Matrix{detail::MatrixRotation(inRads)};
+}
 
 template<typename T, ImplKind Impl>
 inline constexpr bool Matrix<T, Impl>::IsEqual(const Matrix& inMatrix) const
@@ -122,7 +197,7 @@ inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator-=(const Matrix& inRH
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRHS)
 {
-	detail::MatrixMul(mImpl, inRHS.mImpl);
+	detail::MatrixMul<T>(mImpl, inRHS.mImpl);
 	return *this;
 }
 
