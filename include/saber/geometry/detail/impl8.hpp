@@ -1,22 +1,21 @@
 #ifndef SABER_GEOMETRY_DETAIL_IMPL8_HPP
 #define SABER_GEOMETRY_DETAIL_IMPL8_HPP
 
-// std
-#include <array>
-#include <tuple>
-#include <type_traits>
-
 // saber
 #include "saber/inexact.hpp"
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/detail/impl2.hpp"
 #include "saber/geometry/detail/impl4.hpp"
-#include "saber/geometry/detail/simd.hpp"
+
+// std
+#include <array>
+#include <type_traits>
 
 namespace saber::geometry::detail {
 
 template<typename T>
 struct Impl8 final
-{	
+{
 	class Simd;
 
 	class Scalar
@@ -83,12 +82,18 @@ struct Impl8 final
 			Get<6>() -= inRHS.Get<6>();
 			Get<7>() -= inRHS.Get<7>();
 			return *this;
-			return *this;
 		}
 
 		constexpr Scalar& operator*=(const Scalar& inRHS)
 		{
-			// TODO: Proper matrix multiplication (DOT vs CROSS product?)
+			Get<0>() *= inRHS.Get<0>();
+			Get<1>() *= inRHS.Get<1>();
+			Get<2>() *= inRHS.Get<2>();
+			Get<3>() *= inRHS.Get<3>();
+			Get<4>() *= inRHS.Get<4>();
+			Get<5>() *= inRHS.Get<5>();
+			Get<6>() *= inRHS.Get<6>();
+			Get<7>() *= inRHS.Get<7>();
 			return *this;
 		}
 
@@ -122,7 +127,7 @@ struct Impl8 final
 			}
 			return result;
 		}
-		
+
 	private:
 		//friend class Simd; // Permit Simd class to provide constexpr api
 
@@ -131,6 +136,7 @@ struct Impl8 final
 	}; // struct Scalar
 
 	// TODO mnfitz 22dec2025: Add SIMD implementation
+
 }; // struct Impl8<>
 
 #pragma region struct Impl8Traits

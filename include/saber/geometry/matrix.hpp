@@ -5,6 +5,7 @@
 #include "saber/geometry/config.hpp"
 #include "saber/geometry/operators.hpp"
 #include "saber/geometry/detail/impl8.hpp"
+#include "saber/geometry/detail/matrix_helper.hpp"
 #include "saber/utility.hpp"
 
 // std
@@ -42,6 +43,27 @@ public:
 	/// @brief Copy assignment operator.
 	constexpr Matrix& operator=(const Matrix& inCopy) = default;
 
+	// Math Operations
+	constexpr Matrix& operator+=(const Matrix& inRHS);
+	constexpr Matrix& operator-=(const Matrix& inRHS);
+	constexpr Matrix& operator*=(const Matrix& inRHS);
+
+	// Getters
+	constexpr T M11() const;
+	constexpr T M12() const;
+	constexpr T M13() const;
+	constexpr T M21() const;
+	constexpr T M22() const;
+	constexpr T M23() const;
+
+	// Setters
+	constexpr void M11(T inT);
+	constexpr void M12(T inT);
+	constexpr void M13(T inT);
+	constexpr void M21(T inT);
+	constexpr void M22(T inT);
+	constexpr void M23(T inT);
+
 private:
 	// Private APIs
 
@@ -68,8 +90,8 @@ private:
 
 // Ctors
 template<typename T, ImplKind Impl>
-inline constexpr Matrix<T, Impl>::Matrix(T inM11, T inM12, T inM21, T inM22, T inM31, T inM32) :
-	mImpl(inM11, inM12, inM21, inM22, inM31, inM32, 0, 0)
+inline constexpr Matrix<T, Impl>::Matrix(T inM11, T inM12, T inM13, T inM21, T inM22, T inM23) :
+	mImpl(inM11, inM12, inM13, inM21, inM22, inM23, 0, 0)
 {
 	// Do nothing
 }
@@ -80,6 +102,102 @@ inline constexpr bool Matrix<T, Impl>::IsEqual(const Matrix& inMatrix) const
 {
 	auto result = mImpl.IsEqual(inMatrix.mImpl);
 	return result;
+}
+
+// Math Operations
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator+=(const Matrix& inRHS)
+{
+	mImpl += inRHS.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator-=(const Matrix& inRHS)
+{
+	mImpl -= inRHS.mImpl;
+	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRHS)
+{
+	detail::MatrixMul(mImpl, inRHS.mImpl);
+	return *this;
+}
+
+// Getters
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M11() const
+{
+	return mImpl.Get<0>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M12() const
+{
+	return mImpl.Get<1>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M13() const
+{
+	return mImpl.Get<2>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M21() const
+{
+	return mImpl.Get<3>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M22() const
+{
+	return mImpl.Get<4>();
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr T Matrix<T, Impl>::M23() const
+{
+	return mImpl.Get<5>();
+}
+
+// Setters
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M11(T inT)
+{
+	mImpl.Get<0>() = inT;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M12(T inT)
+{
+	mImpl.Get<1>() = inT;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M13(T inT)
+{
+	mImpl.Get<2>() = inT;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M21(T inT)
+{
+	mImpl.Get<3>() = inT;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M22(T inT)
+{
+	mImpl.Get<4>() = inT;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::M23(T inT)
+{
+	mImpl.Get<5>() = inT;
 }
 
 // ------------------------------------------------------------------

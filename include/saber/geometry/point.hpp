@@ -144,8 +144,8 @@ private:
 
 // Friend functions
 private:
-    friend constexpr bool operator==<Point>(const Point& inLHS, const Point& inRHS);
-    friend constexpr bool operator!=<Point>(const Point& inLHS, const Point& inRHS);
+    friend constexpr bool operator==<>(const Point& inLHS, const Point& inRHS);
+    friend constexpr bool operator!=<>(const Point& inLHS, const Point& inRHS);
     friend class Rectangle<T, Impl>;
 
 private:
