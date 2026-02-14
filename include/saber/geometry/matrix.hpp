@@ -60,6 +60,8 @@ public:
 	constexpr Matrix& operator-=(const Matrix& inRHS);
 	constexpr Matrix& operator*=(const Matrix& inRHS);
 
+	constexpr void Invert();
+
 	// Getters
 	constexpr T M11() const;
 	constexpr T M12() const;
@@ -133,37 +135,37 @@ inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeZero()
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(T inX, T inY)
 {
-	return Matrix{detail::MatrixScale(inX, inY)};
+	return Matrix{detail::MatrixScale<T, Impl>(inX, inY)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Point<T, Impl>& inPoint)
 {
-	return Matrix{detail::MatrixScale(inPoint)};
+	return Matrix{detail::MatrixScale<T>(inPoint)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Size<T, Impl>& inSize)
 {
-	return Matrix{detail::MatrixScale(inSize)};
+	return Matrix{detail::MatrixScale<T>(inSize)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(T inX, T inY)
 {
-	return Matrix{detail::MatrixTranslation(inX, inY)};
+	return Matrix{detail::MatrixTranslation<T, Impl>(inX, inY)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Point<T, Impl>& inPoint)
 {
-	return Matrix{detail::MatrixTranslation(inPoint)};
+	return Matrix{detail::MatrixTranslation<T>(inPoint)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Size<T, Impl>& inSize)
 {
-	return Matrix{detail::MatrixTranslation(inSize)};
+	return Matrix{detail::MatrixTranslation<T>(inSize)};
 }
 
 template<typename T, ImplKind Impl>
@@ -171,6 +173,7 @@ inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeRotation(T inRads)
 {
 	return Matrix{detail::MatrixRotation(inRads)};
 }
+
 
 template<typename T, ImplKind Impl>
 inline constexpr bool Matrix<T, Impl>::IsEqual(const Matrix& inMatrix) const
@@ -199,6 +202,12 @@ inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRH
 {
 	detail::MatrixMul<T>(mImpl, inRHS.mImpl);
 	return *this;
+}
+
+template<typename T, ImplKind Impl>
+inline constexpr void Matrix<T, Impl>::Invert()
+{
+	detail::MatrixInv(mImpl);
 }
 
 // Getters

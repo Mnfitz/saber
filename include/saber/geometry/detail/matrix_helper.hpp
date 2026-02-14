@@ -151,6 +151,10 @@ constexpr auto MatrixScale(T inX, T inY)
 	return MatrixHelper<T, Impl>::MatrixScale(inX, inY);
 }
 
+
+// REVISIT: Declare Matrix friend to Point and Size, so that we can access the
+// Impl2 Scalar directly and avoid this extra copy into Impl8 Scalar.
+// Else, use the X Y accessors to construct then pass Impl 2 directly
 template<typename T>
 constexpr auto MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
 {

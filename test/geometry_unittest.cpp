@@ -24,9 +24,12 @@
 #include "saber/geometry/rectangle.hpp"
 #include "saber/geometry/utility.hpp"
 
+#define _USE_MATH_DEFINES 1
+
 // std
-#include <type_traits>
+#include <math.h>
 #include <limits>
+#include <type_traits>
 
 using namespace saber;
 using saber::ConvertTo;
@@ -1377,21 +1380,20 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixIdentity() works correctly -
                     "[saber][matrix][helper]",
                     int, float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixIdentity")
 	{
-		// Identity matrix should be: [1, 0, 0, 0, 1, 0, 0, 0]
-		auto identity = MatrixIdentity<TestType, ImplKind::kScalar>();
+		// Identity matrix should be: [1, 0, 0, 1, 0, 0]
+		auto identity = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
 		
-		REQUIRE(identity.Get<0>() == TestType{1});	// M11
-		REQUIRE(identity.Get<1>() == TestType{0});	// M12
-		REQUIRE(identity.Get<2>() == TestType{0});	// M13 (translation X)
-		REQUIRE(identity.Get<3>() == TestType{0});	// M21
-		REQUIRE(identity.Get<4>() == TestType{1});	// M22
-		REQUIRE(identity.Get<5>() == TestType{0});	// M23 (translation Y)
-		REQUIRE(identity.Get<6>() == TestType{0});	// padding
-		REQUIRE(identity.Get<7>() == TestType{0});	// padding
+		REQUIRE(identity.M11() == TestType{1});
+		REQUIRE(identity.M12() == TestType{0});
+		REQUIRE(identity.M13() == TestType{0});
+		REQUIRE(identity.M21() == TestType{0});
+		REQUIRE(identity.M22() == TestType{1});
+		REQUIRE(identity.M23() == TestType{0});
+
 	}
 }
 
@@ -1399,21 +1401,19 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixZero() works correctly - imp
                     "[saber][matrix][helper]",
                     int, float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixZero")
 	{
 		// Zero matrix should be all zeros
-		auto zero = MatrixZero<TestType, ImplKind::kScalar>();
+		auto zero = Matrix<TestType, ImplKind::kScalar>::MakeZero();
 		
-		REQUIRE(zero.Get<0>() == TestType{0});
-		REQUIRE(zero.Get<1>() == TestType{0});
-		REQUIRE(zero.Get<2>() == TestType{0});
-		REQUIRE(zero.Get<3>() == TestType{0});
-		REQUIRE(zero.Get<4>() == TestType{0});
-		REQUIRE(zero.Get<5>() == TestType{0});
-		REQUIRE(zero.Get<6>() == TestType{0});
-		REQUIRE(zero.Get<7>() == TestType{0});
+		REQUIRE(zero.M11() == TestType{0});
+		REQUIRE(zero.M12() == TestType{0});
+		REQUIRE(zero.M13() == TestType{0});
+		REQUIRE(zero.M21() == TestType{0});
+		REQUIRE(zero.M22() == TestType{0});
+		REQUIRE(zero.M23() == TestType{0});
 	}
 }
 
@@ -1421,36 +1421,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixScale() works correctly - im
                     "[saber][matrix][helper]",
                     int, float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixScale with scalars")
 	{
-		// Scale matrix: [sx, 0, 0, 0, sy, 0, 0, 0]
-		auto scaled = MatrixScale<TestType, ImplKind::kScalar>(TestType{2}, TestType{3});
+		// Scale matrix: [sx, 0, 0, 0, sy, 0]
+		auto scaled = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{2}, TestType{3});
 		
-		REQUIRE(scaled.Get<0>() == TestType{2});	// M11 (scale X)
-		REQUIRE(scaled.Get<1>() == TestType{0});	// M12
-		REQUIRE(scaled.Get<2>() == TestType{0});	// M13
-		REQUIRE(scaled.Get<3>() == TestType{0});	// M21
-		REQUIRE(scaled.Get<4>() == TestType{3});	// M22 (scale Y)
-		REQUIRE(scaled.Get<5>() == TestType{0});	// M23
-		REQUIRE(scaled.Get<6>() == TestType{0});	// padding
-		REQUIRE(scaled.Get<7>() == TestType{0});	// padding
+		REQUIRE(scaled.M11() == TestType{2});	// (scale X)
+		REQUIRE(scaled.M12() == TestType{0});
+		REQUIRE(scaled.M13() == TestType{0});
+		REQUIRE(scaled.M21() == TestType{0});
+		REQUIRE(scaled.M22() == TestType{3});	// (scale Y)
+		REQUIRE(scaled.M23() == TestType{0});
 	}
 
 	SECTION("ImplKind::kScalar - MatrixScale with Impl2")
 	{
-		using namespace saber::geometry::detail;
+		using namespace saber::geometry;
 		
 		// Create an Impl2 with scale values
-		typename Impl2<TestType>::Scalar scaleImpl2{TestType{5}, TestType{7}};
-		auto scaled = MatrixScale<TestType>(scaleImpl2);
+		Point<TestType, ImplKind::kScalar> scale1{TestType{5}, TestType{7}};
+		auto scaled1 = Matrix<TestType, ImplKind::kScalar>::MakeScale(scale1);
 		
-		REQUIRE(scaled.Get<0>() == TestType{5});	// M11
-		REQUIRE(scaled.Get<1>() == TestType{0});	// M12
-		REQUIRE(scaled.Get<4>() == TestType{7});	// M22
-		REQUIRE(scaled.Get<2>() == TestType{0});	// M13
-		REQUIRE(scaled.Get<5>() == TestType{0});	// M23
+		REQUIRE(scaled1.M11() == TestType{5});
+		REQUIRE(scaled1.M12() == TestType{0});
+		REQUIRE(scaled1.M13() == TestType{0});
+		REQUIRE(scaled1.M21() == TestType{0});
+		REQUIRE(scaled1.M22() == TestType{7});
+		REQUIRE(scaled1.M23() == TestType{0});
+
+		Point<TestType, ImplKind::kScalar> scale2{TestType{5}, TestType{7}};
+		auto scaled2 = Matrix<TestType, ImplKind::kScalar>::MakeScale(scale2);
+		
+		REQUIRE(scaled2.M11() == TestType{5});
+		REQUIRE(scaled2.M12() == TestType{0});
+		REQUIRE(scaled2.M13() == TestType{0});
+		REQUIRE(scaled2.M21() == TestType{0});
+		REQUIRE(scaled2.M22() == TestType{7});
+		REQUIRE(scaled2.M23() == TestType{0});
 	}
 }
 
@@ -1458,35 +1467,45 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixTranslation() works correctl
                     "[saber][matrix][helper]",
                     int, float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixTranslation with scalars")
 	{
 		// Translation matrix: [1, 0, tx, 0, 1, ty, 0, 0]
-		auto translated = MatrixTranslation<TestType, ImplKind::kScalar>(TestType{4}, TestType{5});
+		auto translated = Matrix<TestType, ImplKind::kScalar>::MakeTranslation(TestType{4}, TestType{5});
 		
-		REQUIRE(translated.Get<0>() == TestType{1});	// M11
-		REQUIRE(translated.Get<1>() == TestType{0});	// M12
-		REQUIRE(translated.Get<2>() == TestType{4});	// M13 (translation X)
-		REQUIRE(translated.Get<3>() == TestType{0});	// M21
-		REQUIRE(translated.Get<4>() == TestType{1});	// M22
-		REQUIRE(translated.Get<5>() == TestType{5});	// M23 (translation Y)
-		REQUIRE(translated.Get<6>() == TestType{0});	// padding
-		REQUIRE(translated.Get<7>() == TestType{0});	// padding
+		REQUIRE(translated.M11() == TestType{1});
+		REQUIRE(translated.M12() == TestType{0});
+		REQUIRE(translated.M13() == TestType{4}); // (translation X)
+		REQUIRE(translated.M21() == TestType{0});
+		REQUIRE(translated.M22() == TestType{1});
+		REQUIRE(translated.M23() == TestType{5}); // (translation Y)
 	}
 
 	SECTION("ImplKind::kScalar - MatrixTranslation with Impl2")
 	{
-		using namespace saber::geometry::detail;
+		using namespace saber::geometry;
 		
 		// Create an Impl2 with translation values
-		typename Impl2<TestType>::Scalar transImpl2{TestType{10}, TestType{20}};
-		auto translated = MatrixTranslation<TestType>(transImpl2);
-		
-		REQUIRE(translated.Get<0>() == TestType{1});	// M11
-		REQUIRE(translated.Get<4>() == TestType{1});	// M22
-		REQUIRE(translated.Get<2>() == TestType{10});	// M13 (translation X)
-		REQUIRE(translated.Get<5>() == TestType{20});	// M23 (translation Y)
+		Point<TestType, ImplKind::kScalar> translate1{TestType{10}, TestType{20}};
+		auto translated1 = Matrix<TestType, ImplKind::kScalar>::MakeTranslation(translate1);
+
+		REQUIRE(translated1.M11() == TestType{1});
+		REQUIRE(translated1.M12() == TestType{0});
+		REQUIRE(translated1.M13() == TestType{10});	// (translation X)
+		REQUIRE(translated1.M21() == TestType{0});
+		REQUIRE(translated1.M22() == TestType{1});
+		REQUIRE(translated1.M23() == TestType{20});	// (translation Y)
+
+		Size<TestType, ImplKind::kScalar> translate2{TestType{10}, TestType{20}};
+		auto translated2 = Matrix<TestType, ImplKind::kScalar>::MakeTranslation(translate2);
+
+		REQUIRE(translated2.M11() == TestType{1});
+		REQUIRE(translated2.M12() == TestType{0});
+		REQUIRE(translated2.M13() == TestType{10});	// (translation X)
+		REQUIRE(translated2.M21() == TestType{0});
+		REQUIRE(translated2.M22() == TestType{1});
+		REQUIRE(translated2.M23() == TestType{20});	// (translation Y)
 	}
 }
 
@@ -1494,46 +1513,52 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixRotation() works correctly -
                     "[saber][matrix][helper]",
                     float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixRotation zero radians")
 	{
 		// 0 radians: sin(0) = 0, cos(0) = 1
 		// Rotation matrix: [cos, -sin, 0, sin, cos, 0, 0, 0]
-		auto rotated = MatrixRotation<TestType, ImplKind::kScalar>(TestType{0});
+		auto rotated = Matrix<TestType, ImplKind::kScalar>::MakeRotation(TestType{0});
 		
-		REQUIRE(Inexact::IsEq(rotated.Get<0>(), TestType{1}));	// M11 = cos(0) = 1
-		REQUIRE(Inexact::IsEq(rotated.Get<1>(), TestType{0}));	// M12 = -sin(0) = 0
-		REQUIRE(Inexact::IsEq(rotated.Get<2>(), TestType{0}));	// M13 = 0
-		REQUIRE(Inexact::IsEq(rotated.Get<3>(), TestType{0}));	// M21 = sin(0) = 0
-		REQUIRE(Inexact::IsEq(rotated.Get<4>(), TestType{1}));	// M22 = cos(0) = 1
-		REQUIRE(Inexact::IsEq(rotated.Get<5>(), TestType{0}));	// M23 = 0
+		REQUIRE(Inexact::IsEq(rotated.M11(), TestType{1}));	// cos(0) = 1
+		REQUIRE(Inexact::IsEq(rotated.M12(), TestType{0}));	// -sin(0) = 0
+		REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));	// 0
+		REQUIRE(Inexact::IsEq(rotated.M21(), TestType{0}));	// sin(0) = 0
+		REQUIRE(Inexact::IsEq(rotated.M22(), TestType{1}));	// cos(0) = 1
+		REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));	// 0
 	}
 
 	SECTION("ImplKind::kScalar - MatrixRotation pi/2 radians (90 degrees)")
 	{
 		// pi/2 radians: sin(pi/2) ≈ 1, cos(pi/2) ≈ 0
-		const TestType pi_2 = TestType{1.5707963267948966};	// π/2
-		auto rotated = MatrixRotation<TestType, ImplKind::kScalar>(pi_2);
+		const TestType pi_2 = TestType{M_PI_2};	// π/2
+		auto rotated = Matrix<TestType, ImplKind::kScalar>::MakeRotation(pi_2);
 		
-		REQUIRE(Inexact::IsEq(rotated.Get<0>(), TestType{0}));	// M11 = cos(π/2) ≈ 0
-		REQUIRE(Inexact::IsEq(rotated.Get<1>(), TestType{-1}));	// M12 = -sin(π/2) ≈ -1
-		REQUIRE(Inexact::IsEq(rotated.Get<3>(), TestType{1}));	// M21 = sin(π/2) ≈ 1
-		REQUIRE(Inexact::IsEq(rotated.Get<4>(), TestType{0}));	// M22 = cos(π/2) ≈ 0
+		REQUIRE(Inexact::IsEq(rotated.M11(), TestType{0}));	// cos(π/2) ≈ 0
+		REQUIRE(Inexact::IsEq(rotated.M12(), TestType{-1}));// -sin(π/2) ≈ -1
+		REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));	// 0
+		REQUIRE(Inexact::IsEq(rotated.M21(), TestType{1}));	// sin(π/2) ≈ 1
+		REQUIRE(Inexact::IsEq(rotated.M22(), TestType{0}));	// cos(π/2) ≈ 0
+		REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));	// 0
 	}
 
 	SECTION("ImplKind::kScalar - MatrixRotation negative angle")
 	{
 		// Negative angle should work fine (clockwise rotation)
-		const TestType neg_pi_4 = TestType{-0.7853981633974483};	// -π/4
-		auto rotated = MatrixRotation<TestType, ImplKind::kScalar>(neg_pi_4);
+		const TestType neg_pi_4 = TestType{ -M_PI_4 };	// π/4
+		auto rotated = Matrix<TestType, ImplKind::kScalar>::MakeRotation(neg_pi_4);
 		
 		// cos(-π/4) ≈ 0.707, sin(-π/4) ≈ -0.707
-		const TestType sqrt2_2 = TestType{0.7071067811865476};
-		REQUIRE(Inexact::IsEq(rotated.Get<0>(), sqrt2_2));	// M11 = cos(-π/4)
-		REQUIRE(Inexact::IsEq(rotated.Get<1>(), sqrt2_2));	// M12 = -sin(-π/4) ≈ 0.707
-		REQUIRE(Inexact::IsEq(rotated.Get<3>(), -sqrt2_2));	// M21 = sin(-π/4) ≈ -0.707
-		REQUIRE(Inexact::IsEq(rotated.Get<4>(), sqrt2_2));	// M22 = cos(-π/4)
+		const TestType sqrt2_2 = TestType{ M_SQRT1_2 };
+
+		REQUIRE(Inexact::IsEq(rotated.M11(), sqrt2_2));		// M11 = cos(-π/4)
+		REQUIRE(Inexact::IsEq(rotated.M12(), sqrt2_2));		// M12 = -sin(-π/4) ≈ 0.707
+		REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));	// 0
+		REQUIRE(Inexact::IsEq(rotated.M21(), -sqrt2_2));	// M21 = sin(-π/4) ≈ -0.707
+		REQUIRE(Inexact::IsEq(rotated.M22(), sqrt2_2));		// M22 = cos(-π/4)
+		REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));	// 0
+
 	}
 }
 
@@ -1542,7 +1567,6 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
                     int, float, double)
 {
 	using namespace saber::geometry;
-	using namespace saber::geometry::detail;
 
 	SECTION("ImplKind::kScalar - MatrixMul with identity matrices")
 	{
@@ -1550,32 +1574,31 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
 		auto identity1 = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
 		auto identity2 = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
 		
-		//MatrixMul<TestType>(identity1, identity2);
 		identity1 *= identity2;
 		
-		REQUIRE(identity1.M11() == TestType{1});	// M11
-		REQUIRE(identity1.M12() == TestType{0});	// M12
-		REQUIRE(identity1.M13() == TestType{0});	// M13
-		REQUIRE(identity1.M21() == TestType{0});	// M21
-		REQUIRE(identity1.M22() == TestType{1});	// M22
-		REQUIRE(identity1.M23() == TestType{0});	// M23
+		REQUIRE(identity1.M11() == TestType{1});
+		REQUIRE(identity1.M12() == TestType{0});
+		REQUIRE(identity1.M13() == TestType{0});
+		REQUIRE(identity1.M21() == TestType{0});
+		REQUIRE(identity1.M22() == TestType{1});
+		REQUIRE(identity1.M23() == TestType{0});
 	}
 
 	SECTION("ImplKind::kScalar - MatrixMul with scale and translation")
 	{
 		// Scale [2, 0, 0, 0, 3, 0, 0, 0] * Translation [1, 0, 5, 0, 1, 7, 0, 0]
 		// Should result in: [2, 0, 5, 0, 3, 7, 0, 0]
-		auto scale = MatrixScale<TestType, ImplKind::kScalar>(TestType{2}, TestType{3});
-		auto translation = MatrixTranslation<TestType, ImplKind::kScalar>(TestType{5}, TestType{7});
+		auto scale = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{2}, TestType{3});
+		auto translation = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{5}, TestType{7});
 		
-		MatrixMul<TestType>(scale, translation);
+		scale *= translation;
 		
-		REQUIRE(scale.Get<0>() == TestType{2});	// M11
-		REQUIRE(scale.Get<1>() == TestType{0});	// M12
-		REQUIRE(scale.Get<2>() == TestType{5});	// M13
-		REQUIRE(scale.Get<3>() == TestType{0});	// M21
-		REQUIRE(scale.Get<4>() == TestType{3});	// M22
-		REQUIRE(scale.Get<5>() == TestType{7});	// M23
+		REQUIRE(scale.M11() == TestType{2});	// M11
+		REQUIRE(scale.M12() == TestType{0});	// M12
+		REQUIRE(scale.M13() == TestType{5});	// M13
+		REQUIRE(scale.M21() == TestType{0});	// M21
+		REQUIRE(scale.M22() == TestType{3});	// M22
+		REQUIRE(scale.M23() == TestType{7});	// M23
 	}
 
 	SECTION("ImplKind::kScalar - MatrixMul with two arbitrary matrices")
@@ -1590,19 +1613,17 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
 		// M13 = (1*1) + (2*3) + 3 = 10
 		// M23 = (4*1) + (5*3) + 6 = 25
 		
-		typename Impl8<TestType>::Scalar matA{TestType{1}, TestType{2}, TestType{3}, TestType{4}, TestType{5}, TestType{6}, 0, 0};
-		typename Impl8<TestType>::Scalar matB{TestType{2}, TestType{0}, TestType{1}, TestType{0}, TestType{2}, TestType{3}, 0, 0};
+		Matrix<TestType, ImplKind::kScalar> matA{TestType{1}, TestType{2}, TestType{3}, TestType{4}, TestType{5}, TestType{6}};
+		Matrix<TestType, ImplKind::kScalar> matB{TestType{2}, TestType{0}, TestType{1}, TestType{0}, TestType{2}, TestType{3}};
 		
-		MatrixMul<TestType>(matA, matB);
+		matA *= matB;
 		
-		REQUIRE(matA.Get<0>() == TestType{2});		// M11
-		REQUIRE(matA.Get<1>() == TestType{4});		// M12
-		REQUIRE(matA.Get<2>() == TestType{10});		// M13
-		REQUIRE(matA.Get<3>() == TestType{8});		// M21
-		REQUIRE(matA.Get<4>() == TestType{10});		// M22
-		REQUIRE(matA.Get<5>() == TestType{25});		// M23
-		REQUIRE(matA.Get<6>() == TestType{0});		// padding
-		REQUIRE(matA.Get<7>() == TestType{0});		// padding
+		REQUIRE(matA.M11() == TestType{2});
+		REQUIRE(matA.M12() == TestType{4});
+		REQUIRE(matA.M13() == TestType{10});
+		REQUIRE(matA.M21() == TestType{8});
+		REQUIRE(matA.M22() == TestType{10});
+		REQUIRE(matA.M23() == TestType{25});
 	}
 }
 
@@ -1610,77 +1631,80 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixInv() works correctly - impl
                     "[saber][matrix][helper]",
                     float, double)
 {
-	using namespace saber::geometry::detail;
+	using namespace saber::geometry;
 
 	SECTION("ImplKind::kScalar - MatrixInv of identity")
 	{
 		// Inverse of identity should be identity
-		auto identity = MatrixIdentity<TestType, ImplKind::kScalar>();
-		MatrixInv<TestType>(identity);
+		auto identity = Matrix<TestType, ImplKind::kScalar>::MakeIdentity();
+		identity.Invert();
 		
-		REQUIRE(Inexact::IsEq(identity.Get<0>(), TestType{1}));	// M11
-		REQUIRE(Inexact::IsEq(identity.Get<1>(), TestType{0}));	// M12
-		REQUIRE(Inexact::IsEq(identity.Get<2>(), TestType{0}));	// M13
-		REQUIRE(Inexact::IsEq(identity.Get<3>(), TestType{0}));	// M21
-		REQUIRE(Inexact::IsEq(identity.Get<4>(), TestType{1}));	// M22
-		REQUIRE(Inexact::IsEq(identity.Get<5>(), TestType{0}));	// M23
+		REQUIRE(Inexact::IsEq(identity.M11(), TestType{1}));
+		REQUIRE(Inexact::IsEq(identity.M12(), TestType{0}));
+		REQUIRE(Inexact::IsEq(identity.M13(), TestType{0}));
+		REQUIRE(Inexact::IsEq(identity.M21(), TestType{0}));
+		REQUIRE(Inexact::IsEq(identity.M22(), TestType{1}));
+		REQUIRE(Inexact::IsEq(identity.M23(), TestType{0}));
 	}
 
 	SECTION("ImplKind::kScalar - MatrixInv of scale matrix")
 	{
 		// Inverse of [2, 0, 0, 0, 3, 0, 0, 0] should be [0.5, 0, 0, 0, 1/3, 0, 0, 0]
-		auto scale = MatrixScale<TestType, ImplKind::kScalar>(TestType{2}, TestType{3});
-		MatrixInv<TestType>(scale);
+		auto scale = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{2}, TestType{3});
+		scale.Invert();
 		
-		REQUIRE(Inexact::IsEq(scale.Get<0>(), TestType{0.5}));		// M11 = 1/2
-		REQUIRE(Inexact::IsEq(scale.Get<1>(), TestType{0}));		// M12
-		REQUIRE(Inexact::IsEq(scale.Get<2>(), TestType{0}));		// M13
-		REQUIRE(Inexact::IsEq(scale.Get<3>(), TestType{0}));		// M21
-		REQUIRE(Inexact::IsEq(scale.Get<4>(), TestType{1}/TestType{3}));	// M22 = 1/3
-		REQUIRE(Inexact::IsEq(scale.Get<5>(), TestType{0}));		// M23
+		REQUIRE(Inexact::IsEq(scale.M11(), TestType{0.5}));		// M11 = 1/2
+		REQUIRE(Inexact::IsEq(scale.M12(), TestType{0}));		// M12
+		REQUIRE(Inexact::IsEq(scale.M13(), TestType{0}));		// M13
+		REQUIRE(Inexact::IsEq(scale.M21(), TestType{0}));		// M21
+		REQUIRE(Inexact::IsEq(scale.M22(), TestType{1}/TestType{3}));	// M22 = 1/3
+		REQUIRE(Inexact::IsEq(scale.M23(), TestType{0}));		// M23
 	}
 
 	SECTION("ImplKind::kScalar - MatrixInv of translation matrix")
 	{
 		// Inverse of [1, 0, 5, 0, 1, 7, 0, 0] should be [1, 0, -5, 0, 1, -7, 0, 0]
-		auto translation = MatrixTranslation<TestType, ImplKind::kScalar>(TestType{5}, TestType{7});
-		MatrixInv<TestType>(translation);
+		auto translation = Matrix<TestType, ImplKind::kScalar>::MakeTranslation(TestType{5}, TestType{7});
+		translation.Invert();
 		
-		REQUIRE(Inexact::IsEq(translation.Get<0>(), TestType{1}));		// M11
-		REQUIRE(Inexact::IsEq(translation.Get<1>(), TestType{0}));		// M12
-		REQUIRE(Inexact::IsEq(translation.Get<2>(), TestType{-5}));	// M13
-		REQUIRE(Inexact::IsEq(translation.Get<3>(), TestType{0}));		// M21
-		REQUIRE(Inexact::IsEq(translation.Get<4>(), TestType{1}));		// M22
-		REQUIRE(Inexact::IsEq(translation.Get<5>(), TestType{-7}));	// M23
+		REQUIRE(Inexact::IsEq(translation.M11(), TestType{1}));
+		REQUIRE(Inexact::IsEq(translation.M12(), TestType{0}));
+		REQUIRE(Inexact::IsEq(translation.M13(), TestType{-5}));
+		REQUIRE(Inexact::IsEq(translation.M21(), TestType{0}));
+		REQUIRE(Inexact::IsEq(translation.M22(), TestType{1}));
+		REQUIRE(Inexact::IsEq(translation.M23(), TestType{-7}));
 	}
 
 	SECTION("ImplKind::kScalar - MatrixInv of general invertible matrix")
 	{
 		// Matrix [2, 1, 0, 1, 2, 0, 0, 0] has determinant: (2*2) - (1*1) = 3
 		// Its inverse should be [2/3, -1/3, 0, -1/3, 2/3, 0, 0, 0]
-		typename Impl8<TestType>::Scalar mat{TestType{2}, TestType{1}, TestType{0}, TestType{1}, TestType{2}, TestType{0}, 0, 0};
-		MatrixInv<TestType>(mat);
+		Matrix<TestType, ImplKind::kScalar> mat{TestType{2}, TestType{1}, TestType{0}, TestType{1}, TestType{2}, TestType{0}};
+		mat.Invert();
 		
-		REQUIRE(Inexact::IsEq(mat.Get<0>(), TestType{2}/TestType{3}));		// M11 = 2/3
-		REQUIRE(Inexact::IsEq(mat.Get<1>(), TestType{-1}/TestType{3}));	// M12 = -1/3
-		REQUIRE(Inexact::IsEq(mat.Get<3>(), TestType{-1}/TestType{3}));	// M21 = -1/3
-		REQUIRE(Inexact::IsEq(mat.Get<4>(), TestType{2}/TestType{3}));		// M22 = 2/3
+		REQUIRE(Inexact::IsEq(mat.M11(), TestType{2}/TestType{3}));		// M11 = 2/3
+		REQUIRE(Inexact::IsEq(mat.M12(), TestType{-1}/TestType{3}));	// M12 = -1/3
+		REQUIRE(Inexact::IsEq(mat.M13(), TestType{0}));
+		REQUIRE(Inexact::IsEq(mat.M21(), TestType{-1}/TestType{3}));	// M21 = -1/3
+		REQUIRE(Inexact::IsEq(mat.M22(), TestType{2}/TestType{3}));		// M22 = 2/3
+		REQUIRE(Inexact::IsEq(mat.M23(), TestType{0}));
+
 	}
 
 	SECTION("ImplKind::kScalar - MatrixInv throws on singular matrix")
 	{
 		// Singular matrix [0, 0, 0, 0, 0, 0, 0, 0] has determinant 0 and cannot be inverted
-		typename Impl8<TestType>::Scalar singularMat{TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}, 0, 0};
+		Matrix<TestType, ImplKind::kScalar> singularMat{TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}};
 		
-		REQUIRE_THROWS_AS(MatrixInv<TestType>(singularMat), std::runtime_error);
+		REQUIRE_THROWS_AS(singularMat.Invert(), std::runtime_error);
 	}
 
 	SECTION("ImplKind::kScalar - MatrixInv throws on singular matrix (rows are parallel)")
 	{
 		// Singular matrix [1, 2, 0, 2, 4, 0, 0, 0] has determinant: (1*4) - (2*2) = 0
-		typename Impl8<TestType>::Scalar singularMat{TestType{1}, TestType{2}, TestType{0}, TestType{2}, TestType{4}, TestType{0}, 0, 0};
+		Matrix<TestType, ImplKind::kScalar> singularMat{TestType{1}, TestType{2}, TestType{0}, TestType{2}, TestType{4}, TestType{0}};
 		
-		REQUIRE_THROWS_AS(MatrixInv<TestType>(singularMat), std::runtime_error);
+		REQUIRE_THROWS_AS(singularMat.Invert(), std::runtime_error);
 	}
 }
 
