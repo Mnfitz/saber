@@ -141,13 +141,17 @@ inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(T inX, T inY)
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Point<T, Impl>& inPoint)
 {
-	return Matrix{detail::MatrixScale<T>(inPoint)};
+	// Note: Don't decompose SIMD capable Point into scalar x & y, make Matrix friend class to Point
+	// return Matrix{detail::MatrixScale<T>(inPoint.X(), inPoint.Y())};
+	return Matrix{detail::MatrixScale<T>(inPoint.mImpl)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeScale(const Size<T, Impl>& inSize)
 {
-	return Matrix{detail::MatrixScale<T>(inSize)};
+	// Note: Don't decompose SIMD capable Size into scalar width & height, make Matrix friend class to Size
+	// return Matrix{detail::MatrixScale<T>(inSize.Width(), inSize.Height())};
+	return Matrix{detail::MatrixScale<T>(inSize.mImpl)};
 }
 
 template<typename T, ImplKind Impl>
@@ -159,19 +163,19 @@ inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(T inX, T inY)
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Point<T, Impl>& inPoint)
 {
-	return Matrix{detail::MatrixTranslation<T>(inPoint)};
+	return Matrix{detail::MatrixTranslation<T>(inPoint.mImpl)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeTranslation(const Size<T, Impl>& inSize)
 {
-	return Matrix{detail::MatrixTranslation<T>(inSize)};
+	return Matrix{detail::MatrixTranslation<T>(inSize.mImpl)};
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeRotation(T inRads)
 {
-	return Matrix{detail::MatrixRotation(inRads)};
+	return Matrix{detail::MatrixRotation<T, Impl>(inRads)};
 }
 
 
@@ -207,7 +211,7 @@ inline constexpr Matrix<T, Impl>& Matrix<T, Impl>::operator*=(const Matrix& inRH
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::Invert()
 {
-	detail::MatrixInv(mImpl);
+	detail::MatrixInv<T>(mImpl);
 }
 
 // Getters
