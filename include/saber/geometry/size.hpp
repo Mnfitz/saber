@@ -16,6 +16,9 @@ namespace saber::geometry {
 template<typename T, ImplKind Impl>
 class Rectangle;
 
+template<typename T, ImplKind Impl>
+class Matrix;
+
 /// @brief 
 /// @tparam T 
 /// @tparam ImplKind 
@@ -142,6 +145,7 @@ private:
 	// Friend Functions
 	friend constexpr bool operator==<>(const Size& inLHS, const Size& inRHS);
 	friend constexpr bool operator!=<>(const Size& inLHS, const Size& inRHS);
+	friend class Matrix<T, Impl>;
 	friend class Rectangle<T, Impl>;
 
 private:

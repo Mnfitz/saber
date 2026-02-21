@@ -14,6 +14,9 @@ namespace saber::geometry {
 
 // Forward Declaration
 template<typename T, ImplKind Impl>
+class Matrix;
+
+template<typename T, ImplKind Impl>
 class Rectangle;
 
 /// @brief 
@@ -146,6 +149,7 @@ private:
 private:
     friend constexpr bool operator==<>(const Point& inLHS, const Point& inRHS);
     friend constexpr bool operator!=<>(const Point& inLHS, const Point& inRHS);
+	friend class Matrix<T, Impl>;
     friend class Rectangle<T, Impl>;
 
 private:
