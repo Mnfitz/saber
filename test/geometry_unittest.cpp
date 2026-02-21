@@ -1587,18 +1587,18 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
 	SECTION("ImplKind::kScalar - MatrixMul with scale and translation")
 	{
 		// Scale [2, 0, 0, 0, 3, 0, 0, 0] * Translation [1, 0, 5, 0, 1, 7, 0, 0]
-		// Should result in: [2, 0, 5, 0, 3, 7, 0, 0]
+		// Should result in: [2, 0, 10, 0, 3, 21]
 		auto scale = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{2}, TestType{3});
-		auto translation = Matrix<TestType, ImplKind::kScalar>::MakeScale(TestType{5}, TestType{7});
+		auto translation = Matrix<TestType, ImplKind::kScalar>::MakeTranslation(TestType{5}, TestType{7});
 		
 		scale *= translation;
 		
 		REQUIRE(scale.M11() == TestType{2});	// M11
 		REQUIRE(scale.M12() == TestType{0});	// M12
-		REQUIRE(scale.M13() == TestType{5});	// M13
+		REQUIRE(scale.M13() == TestType{10});	// M13
 		REQUIRE(scale.M21() == TestType{0});	// M21
 		REQUIRE(scale.M22() == TestType{3});	// M22
-		REQUIRE(scale.M23() == TestType{7});	// M23
+		REQUIRE(scale.M23() == TestType{21});	// M23
 	}
 
 	SECTION("ImplKind::kScalar - MatrixMul with two arbitrary matrices")
