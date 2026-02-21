@@ -178,7 +178,6 @@ inline constexpr Matrix<T, Impl> Matrix<T, Impl>::MakeRotation(T inRads)
 	return Matrix{detail::MatrixRotation<T, Impl>(inRads)};
 }
 
-
 template<typename T, ImplKind Impl>
 inline constexpr bool Matrix<T, Impl>::IsEqual(const Matrix& inMatrix) const
 {
