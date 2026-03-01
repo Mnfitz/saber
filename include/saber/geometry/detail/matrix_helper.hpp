@@ -2,7 +2,9 @@
 #define SABER_GEOMETRY_DETAIL_MATRIX_HELPER_HPP
 
 // saber
+#include "saber/exception.hpp"
 #include "saber/inexact.hpp"
+#include "saber/geometry/config.hpp"
 #include "saber/geometry/detail/impl8.hpp"
 
 // std
@@ -102,11 +104,9 @@ public:
 	static typename Impl8<T>::Scalar MatrixInv(typename Impl8<T>::Scalar& ioLHS)
 	{
 		const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
-		const bool isNotInvertible = Inexact::IsEq<T>(det, 0);
-		if (isNotInvertible)
-		{
-			throw std::runtime_error("Saber: Matrix is not invertible");
-		}
+		const bool isInvertible = Inexact::IsNe<T>(det, 0);
+		SABER_REQUIRE(isInvertible);
+
 		const T invDet = (1 / det);
 
 		T m11 = (ioLHS.Get<4>() * invDet);
