@@ -26,10 +26,6 @@
 #define SABER_CONDITIONALS_HPP
 #pragma once
 
-// std
-#include <assert.h>
-#include <stdexcept>
-
 // "conditionals.hpp"
 //
 // Provides "conditional compilation" support in the form of a
@@ -349,13 +345,5 @@
 #else
 #error "Unsupported toolset"
 #endif
-
-// Runtime validation macros
-// REVISIT j3fitz 28apr2024: Could these be made "inline functions" instead of macros?
-// E.g: void saber::require(bool inCondition); Intead: of SABER_REQUIRE(condition);
-
-#define SABER_ASSERT(expr)		{ assert(expr); }
-#define SABER_ENSURE(expr)		{ if (!(expr)) { throw std::runtime_error{"saber::ensure"}; } }
-#define SABER_REQUIRE(expr)		{ if (!(expr)) { throw std::invalid_argument{"saber::require"}; } }
 
 #endif // SABER_CONDITIONALS_HPP
