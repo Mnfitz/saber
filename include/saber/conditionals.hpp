@@ -360,6 +360,7 @@
     ((void)( (expr) || \
         ((std::cerr << "SABER_ASSERT failed: " << #expr \
                    << ". File: " << __FILE__ \
+				   /* The comma operator allows std::cerr to be used inside an expression */ \
                    << ". Line: " << __LINE__ << std::endl, SABER_DEBUG_BREAK()), 0) ))
 #endif
 
