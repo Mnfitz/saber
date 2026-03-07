@@ -1,5 +1,3 @@
-
-
 #include "saber_unittest.hpp"
 
 /////////////////////////////////////////////////////////////////////
@@ -82,6 +80,14 @@ TEST_CASE(	"saber::Exception and macros (REQUIRE, ENSURE, ASSERT)",
 		REQUIRE_THROWS_WITH(SABER_ENSURE(falseCond), Catch::Matchers::ContainsSubstring("ENSURE failed"));
 	}
 
+	SECTION("SABER_ASSERT with true condition does not throw")
+	{
+		bool cond = true;
+		bool cond2 = (1 == 1);
+		REQUIRE_NOTHROW(SABER_ASSERT(cond));
+		REQUIRE_NOTHROW(SABER_ASSERT(cond2));
+	}
+
 	SECTION("saber::Exception derives from std::runtime_error")
 	{
 		try {
@@ -91,7 +97,7 @@ TEST_CASE(	"saber::Exception and macros (REQUIRE, ENSURE, ASSERT)",
 		}
 	}
 }
-TEST_CASE(	"saber::HashValue<> String hashing",
+TEST_CASE(	"saber::HashValue<> String hashing"
 			"[saber][template]")
 {
 	SECTION("Hash32{\"string\"}")

@@ -3,9 +3,10 @@
 
 // saber
 #include "saber/config.hpp"
+#include "saber/conditionals.hpp"
 
 // std
-#include <assert.h>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -27,13 +28,10 @@ struct Exception : public std::runtime_error
 
 } // namespace saber
 
-// TODO: Add proper assert support
-#define SABER_ASSERT(expr)       { assert(expr); }
-
 // Helpers to avoid warnings about constant conditional expressions when
 // the test expression is a compile-time constant.  MSVC issues C4127 in
 // that situation; we temporarily disable it around the macro definitions.
-#ifdef SABER_COMPILER(MSVC)
+#if SABER_COMPILER(MSVC)
 #pragma warning(push)
 #pragma warning(disable:4127)
 #endif
@@ -43,10 +41,10 @@ struct Exception : public std::runtime_error
 // rather than a compound statement.  The conditional operator works well
 // here since the "false" arm throws and the whole expression has type
 // void.
-#define SABER_ENSURE(expr)       ((expr) ? (void)0 : throw saber::Exception(std::string("ENSURE failed: ") + #expr))
-#define SABER_REQUIRE(expr)      ((expr) ? (void)0 : throw saber::Exception(std::string("REQUIRE failed: ") + #expr))
+#define SABER_ENSURE(expr)       ((expr) ? (void)0 : throw saber::Exception(std::string("SABER_ENSURE failed: ") + #expr))
+#define SABER_REQUIRE(expr)      ((expr) ? (void)0 : throw saber::Exception(std::string("SABER_REQUIRE failed: ") + #expr))
 
-#ifdef SABER_COMPILER(MSVC)
+#if SABER_COMPILER(MSVC)
 #pragma warning(pop)
 #endif
 
