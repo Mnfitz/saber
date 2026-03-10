@@ -1,279 +1,198 @@
 {
-  "version": 4,
+  "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 21,
+    "minor": 25,
     "patch": 0
   },
 
   "configurePresets": [
+
     {
       "name": "config-default",
-      "description": "Default build setting for saber",
+      "hidden": true,
+      "description": "Default build setting for saber/win",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "SABER_BUILD_UNITTESTS": "ON",
         "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "Debug"
+        "SABER_BUILD_DOCS": "OFF"
       }
     },
 
     {
-      "name": "config-win-default",
-      "description": "Default settings for Windows using Visual Studio 2022",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/x64",
+      "name": "config-default-win",
+      "hidden": true,
+      "description": "Default build setting for saber/win",
       "inherits": "config-default",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
       }
     },
 
     {
-      "name": "config-win-x64",
-      "displayName": "Windows x64",
-      "description": "Build for Windows/x64 using Visual Studio",
-      "inherits": "config-win-default",
-      "architecture": "x64"
+      "name": "config-win-vs2026",
+      "displayName": "Configure Win VS2026",
+      "generator": "Visual Studio 18 2026",
+      "inherits": "config-default-win",
+      "binaryDir": "${sourceDir}/build/win-vs2026",
+      "toolset": {
+        "value": "v145",
+        "strategy": "external"
+      }
     },
 
     {
-      "name": "config-win-arm64",
-      "displayName": "Windows ARM64",
-      "description": "Build for Windows/ARM64 using Visual Studio",
-      "inherits": "config-win-default",
-      "architecture": "ARM64",
-      "binaryDir": "${sourceDir}/build/arm64"
+      "name": "config-win-vs2022",
+      "displayName": "Configure Win VS2022",
+      "generator": "Visual Studio 17 2022",
+      "inherits": "config-default-win",
+      "binaryDir": "${sourceDir}/build/win-vs2022",
+      "toolset": {
+        "value": "v143",
+        "strategy": "external"
+      }
     },
 
     {
-      "name": "config-mac-default",
-      "description": "Default settings for macOS using Xcode",
+      "name": "config-win-vs2019",
+      "displayName": "Configure Win VS2019",
+      "generator": "Visual Studio 16 2019",
+      "inherits": "config-default-win",
+      "binaryDir": "${sourceDir}/build/win-vs2019",
+      "toolset": {
+        "value": "v142",
+        "strategy": "external"
+      }
+    },
+
+    {
+      "name": "config-default-apple",
+      "hidden": true,
+      "description": "Default build setting for saber/apple",
       "inherits": "config-default",
-      "generator": "Xcode",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "IOS": "OFF"
-      },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Darwin"
+      },
+      "architecture": {
+        "value": "arm64"
       }
     },
 
     {
-      "name": "config-mac",
-      "displayName": "macOS ARM64",
-      "description": "Build for macOS/ARM64 using Xcode",
-      "inherits": "config-mac-default"
+      "name": "config-macos-xcode",
+      "displayName": "Configure macOS Xcode",
+      "generator": "Xcode",
+      "inherits": "config-default-apple",
+      "binaryDir": "${sourceDir}/build/macos-xcode",
+      "cacheVariables": {
+        "IOS": "OFF"
+      }
     },
 
     {
-      "name": "config-ios",
-      "displayName": "iOS ARM64",
-      "description": "Build for iOS/ARM64 using Xcode",
-      "inherits": "config-mac-default",
+      "name": "config-ios-xcode",
+      "displayName": "Configure iOS Xcode",
+      "generator": "Xcode",
+      "inherits": "config-default-apple",
+      "binaryDir": "${sourceDir}/build/ios-xcode",
       "cacheVariables": {
         "IOS": "ON"
       }
     },
 
     {
-      "name": "config-linux-default",
-      "description": "Default settings for Linux using Make",
+      "name": "config-default-linux",
+      "hidden": true,
+      "description": "Default build setting saber/Make",
       "generator": "Unix Makefiles",
-      "architecture": "x64",
-      "binaryDir": "${sourceDir}/build/x64",
-      "cacheVariables": {
-        "SABER_BUILD_UNITTESTS": "ON",
-        "SABER_BUILD_BENCHMARKS": "ON",
-        "SABER_BUILD_DOCS": "OFF",
-        "CMAKE_BUILD_TYPE": "Debug"
-      },
+      "inherits": "config-default",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
       }
     },
 
     {
-      "name": "config-linux-x64",
-      "displayName": "Linux x64",
-      "description": "Build for Linux/x64 using Make",
-      "inherits": "config-linux-default"
-    },
-
-    {
-      "name": "config-linux-arm64",
-      "displayName": "Linux ARM64",
-      "description": "Build for Linux/ARM64 using Make",
-      "inherits": "config-linux-default",
-      "architecture": "ARM64",
-      "binaryDir": "${sourceDir}/build/arm64"
+      "name": "config-linux-make",
+      "displayName": "Configure Linux using Make",
+      "binaryDir": "${sourceDir}/build/linux-make",
+      "inherits": "config-default-linux"
     }
   ],
 
   "buildPresets": [
     {
-      "name": "build-win-default",
-      "configurePreset": "config-win-default",
+      "name": "build-default-win",
+      "hidden": true,
+      "configurePreset": "config-default-win",
       "jobs": 0,
       "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "build-win-x64-debug",
-      "configurePreset": "config-win-x64",
-      "configuration": "Debug",
-      "inherits": "build-win-default"
+      "name": "build-win-vs2026",
+      "configurePreset": "config-win-vs2026",
+      "inherits": "build-default-win"
     },
 
     {
-      "name": "build-win-arm64-debug",
-      "configurePreset": "config-win-arm64",
-      "configuration": "Debug",
-       "inherits": "build-win-default"
+      "name": "build-win-vs2022",
+      "configurePreset": "config-win-vs2022",
+      "inherits": "build-default-win"
     },
 
     {
-      "name": "build-win-x64-relwithdebinfo",
-      "configurePreset": "config-win-x64",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-win-default"
+      "name": "build-win-vs2019",
+      "configurePreset": "config-win-vs2019",
+      "inherits": "build-default-win"
     },
 
     {
-      "name": "build-win-arm64-relwithdebinfo",
-      "configurePreset": "config-win-arm64",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-win-default"
-    },
-
-    {
-      "name": "build-win-x64-release",
-      "configurePreset": "config-win-x64",
-      "configuration": "Release",
-      "inherits": "build-win-default"
-    },
-
-    {
-      "name": "build-win-arm64-release",
-      "configurePreset": "config-win-arm64",
-      "configuration": "Release",
-      "inherits": "build-win-default"
-    },
-
-    {
-      "name": "build-mac-default",
-      "configurePreset": "config-mac",
-      "configuration": "Debug",
+      "name": "build-default-apple",
+      "hidden": true,
+      "configurePreset": "config-default-apple",
       "jobs": 0,
       "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "build-mac-debug",
-      "configurePreset": "config-mac",
-      "configuration": "Debug",
-      "inherits": "build-mac-default"
+      "name": "build-macos-xcode",
+      "configurePreset": "config-macos-xcode",
+      "inherits": "build-default-apple"
     },
 
     {
-      "name": "build-mac-relwithdebinfo",
-      "configurePreset": "config-mac",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-mac-default"
+      "name": "build-ios-xcode",
+      "configurePreset": "config-ios-xcode",
+      "inherits": "build-default-apple"
     },
 
     {
-      "name": "build-mac-release",
-      "configurePreset": "config-mac",
-      "configuration": "Release",
-      "inherits": "build-mac-default"
-    },
-
-    {
-      "name": "build-ios-default",
-      "configurePreset": "config-ios",
-      "configuration": "Debug",
+      "name": "build-default-linux",
+      "hidden": true,
+      "configurePreset": "config-default-linux",
       "jobs": 0,
       "targets": [ "ALL_BUILD" ]
     },
 
     {
-      "name": "build-ios-debug",
-      "configurePreset": "config-ios",
-      "configuration": "Debug",
-      "inherits": "build-ios-default"
-    },
-
-    {
-      "name": "build-ios-relwithdebinfo",
-      "configurePreset": "config-ios",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-ios-default"
-    },
-
-    {
-      "name": "build-ios-release",
-      "configurePreset": "config-ios",
-      "configuration": "Release",
-      "inherits": "build-ios-default"
-    },
-
-    {
-      "name": "build-linux-default",
-      "configurePreset": "config-linux-default",
-      "configuration": "Debug",
-      "jobs": 0,
-      "targets": [ "ALL_BUILD" ]
-    },
-
-    {
-      "name": "build-linux-x64-debug",
-      "configurePreset": "config-linux-x64",
-      "configuration": "Debug",
-      "inherits": "build-linux-default"
-    },
-
-    {
-      "name": "build-linux-arm64-debug",
-      "configurePreset": "config-linux-arm64",
-      "configuration": "Debug",
-      "inherits": "build-linux-default"
-    },
-
-    {
-      "name": "build-linux-x64-relwithdebinfo",
-      "configurePreset": "config-linux-x64",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-linux-default"
-    },
-
-    {
-      "name": "build-linux-arm64-relwithdebinfo",
-      "configurePreset": "config-linux-arm64",
-      "configuration": "RelWithDebInfo",
-      "inherits": "build-linux-default"
-    },
-
-    {
-      "name": "build-linux-x64-release",
-      "configurePreset": "config-linux-x64",
-      "configuration": "Release",
-      "inherits": "build-linux-default"
-    },
-
-    {
-      "name": "build-linux-arm64-release",
-      "configurePreset": "config-linux-arm64",
-      "configuration": "Release",
-      "inherits": "build-linux-default"
+      "name": "build-linux-make",
+      "configurePreset": "config-linux-make",
+      "inherits": "build-default-linux"
     }
   ]
 }

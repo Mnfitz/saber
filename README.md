@@ -75,20 +75,19 @@ There are 3 `saber` build targets, dis/enabled via macro defines:
 CMakePresets.json provides presets for building
 these targets on a variety of supported platforms.
 These are the available presets for configuring (regenerate) project/make files from cmake:
-* `config-win-{x64|arm64}`
-* `config-mac`
-* `config-ios`
-* `config-linux-{x64|arm64}`
+* `config-win-{vs2022|vs2026} -- -A {x64|arm64}`
+* `config-{macos|ios}-xcode`
+* `config-linux-make -- -A {x64|arm64} -DCMAKE_BUILD_TYPE=Debug`
 ```
-> cmake --preset config-win-x64
+> cmake --preset config-win-vs2022 -- -A x64
 ```
 Presets available for building projects directly from cmake:
-* `build-win-{x64|arm64}-{debug|release|relwithdebinfo}`
-* `build-mac-{debug|release|relwithdebinfo}`
-* `build-ios-{debug|release|relwithdebinfo}`
-* `build-linux-{x64|arm64}-{debug|release|relwithdebinfo}`
+* `build-win-{vs2022|vs2026} -- -A {x64|arm64} --config {Debug|Release|RelWithDebInfo|MinSizeRel}`
+* `build-[macos|ios]-xcode -- -config {Debug|Release|RelWithDebInfo|MinSizeRel}`
+* `build-ios-{Debug|Release|RelWithDebInfo|MinSizeRel}`
+* `build-linux-make -- -A {x64|arm64} --config {Debug|Release|RelWithDebInfo|MinSizeRel}`
 ```
-> cmake --build --preset build-win-x64-debug
+> cmake --build --preset build-win-vs2022 -- -A x64 --config Debug
 ```
 
 Note: The cmake generators 'Visual Studio 17 2022' and 'Xcode'
