@@ -26,10 +26,6 @@
 #define SABER_CONDITIONALS_HPP
 #pragma once
 
-// std
-#include <assert.h>
-#include <stdexcept>
-
 // "conditionals.hpp"
 //
 // Provides "conditional compilation" support in the form of a
@@ -160,6 +156,7 @@
 // ------------------------------------------------------------------
 #pragma region WIN32: Visual Studio toolset detection
 
+	#include <intrin.h> // for __debugbreak()
 	#include <winapifamily.h>
 	#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) // exclude UWP apps
 		#define SABER_PRIVATE_PLATFORM_WIN32(unused)	1
@@ -212,7 +209,8 @@
 		#error "Unsupported architecture (msvc)"
 	#endif
 
-	#define SABER_DEBUG	_DEBUG
+	#define SABER_DEBUG()	_DEBUG
+	#define SABER_DEBUG_BREAK()	__debugbreak()
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
@@ -276,7 +274,8 @@
 	#define SABER_PRIVATE_COMPILER_GCC(unused)		(defined(__GNUC__) && !defined(__clang__))
 	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
 
-	#define SABER_DEBUG	(!defined(NDEBUG))
+	#define SABER_DEBUG()	(!defined(NDEBUG))
+	#define SABER_DEBUG_BREAK()	__builtin_trap()
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
@@ -340,7 +339,8 @@
 	#define SABER_PRIVATE_COMPILER_GCC(unused)		(defined(__GNUC__) && !defined(__clang__))
 	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
 
-	#define SABER_DEBUG	(!defined(NDEBUG))
+	#define SABER_DEBUG()	(!defined(NDEBUG))
+	#define SABER_DEBUG_BREAK()	__builtin_trap()
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
@@ -350,12 +350,18 @@
 #error "Unsupported toolset"
 #endif
 
-// Runtime validation macros
-// REVISIT j3fitz 28apr2024: Could these be made "inline functions" instead of macros?
-// E.g: void saber::require(bool inCondition); Intead: of SABER_REQUIRE(condition);
+#if !SABER_DEBUG()
+// Release Block
+#define SABER_ASSERT(expr) ((void)0)
 
-#define SABER_ASSERT(expr)		{ assert(expr); }
-#define SABER_ENSURE(expr)		{ if (!(expr)) { throw std::runtime_error{"saber::ensure"}; } }
-#define SABER_REQUIRE(expr)		{ if (!(expr)) { throw std::invalid_argument{"saber::require"}; } }
+#else
+// Debug Block
+#define SABER_ASSERT(expr) \
+    ((void)( (expr) || \
+        ((std::cerr << "SABER_ASSERT failed: " << #expr \
+                   << ". File: " << __FILE__ \
+				   /* The comma operator allows std::cerr to be used inside an expression */ \
+                   << ". Line: " << __LINE__ << std::endl, SABER_DEBUG_BREAK()), 0) ))
+#endif
 
 #endif // SABER_CONDITIONALS_HPP

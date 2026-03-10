@@ -1,5 +1,3 @@
-
-
 #include "saber_unittest.hpp"
 
 /////////////////////////////////////////////////////////////////////
@@ -21,18 +19,85 @@
 // catch2
 #include "catch2/catch_template_test_macros.hpp"
 #include "catch2/catch_test_macros.hpp"
+#include "catch2/matchers/catch_matchers_string.hpp"
 
 // saber
+#include "saber/exception.hpp"
 #include "saber/hash.hpp"
 #include "saber/inexact.hpp"
 
 // std
 #include <cstdio>
+#include <stdexcept>
+#include <string>
 #include <unordered_map>
 
 using namespace saber;
+TEST_CASE(	"saber::Exception and macros (REQUIRE, ENSURE, ASSERT)",
+			"[saber][exception]")
+{
+	SECTION("SABER_REQUIRE with true condition does not throw")
+	{
+		bool cond = true;
+		bool cond2 = (1 == 1);
+		REQUIRE_NOTHROW(SABER_REQUIRE(cond));
+		REQUIRE_NOTHROW(SABER_REQUIRE(cond2));
+	}
 
-TEST_CASE(	"saber::HashValue<> String hashing",
+	SECTION("SABER_REQUIRE with false condition throws saber::Exception")
+	{
+		bool falseCond = false;
+		bool falseCond2 = (1 == 2);
+		REQUIRE_THROWS_AS(SABER_REQUIRE(falseCond), saber::Exception);
+		REQUIRE_THROWS_AS(SABER_REQUIRE(falseCond2), saber::Exception);
+	}
+
+	SECTION("SABER_REQUIRE exception message contains 'REQUIRE failed'")
+	{
+		bool falseCond = false;
+		REQUIRE_THROWS_WITH(SABER_REQUIRE(falseCond), Catch::Matchers::ContainsSubstring("REQUIRE failed"));
+	}
+
+	SECTION("SABER_ENSURE with true condition does not throw")
+	{
+		bool cond = true;
+		bool cond2 = (1 == 1);
+		REQUIRE_NOTHROW(SABER_ENSURE(cond));
+		REQUIRE_NOTHROW(SABER_ENSURE(cond2));
+	}
+
+	SECTION("SABER_ENSURE with false condition throws saber::Exception")
+	{
+		bool falseCond = false;
+		bool falseCond2 = (1 == 2);
+		REQUIRE_THROWS_AS(SABER_ENSURE(falseCond), saber::Exception);
+		REQUIRE_THROWS_AS(SABER_ENSURE(falseCond2), saber::Exception);
+	}
+
+	SECTION("SABER_ENSURE exception message contains 'ENSURE failed'")
+	{
+		bool falseCond = false;
+		REQUIRE_THROWS_WITH(SABER_ENSURE(falseCond), Catch::Matchers::ContainsSubstring("ENSURE failed"));
+	}
+
+	SECTION("SABER_ASSERT with true condition does not throw")
+	{
+		bool cond = true;
+		bool cond2 = (1 == 1);
+		REQUIRE_NOTHROW(SABER_ASSERT(cond));
+		REQUIRE_NOTHROW(SABER_ASSERT(cond2));
+	}
+
+	SECTION("saber::Exception derives from std::runtime_error")
+	{
+		try {
+			throw saber::Exception("test message");
+		} catch (const std::runtime_error &e) {
+			REQUIRE(std::string(e.what()) == "test message");
+		}
+	}
+}
+TEST_CASE(	"saber::HashValue<> String hashing"
 			"[saber][template]")
 {
 	SECTION("Hash32{\"string\"}")
