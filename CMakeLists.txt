@@ -1,11 +1,11 @@
-cmake_minimum_required(VERSION 3.25..3.61)
+cmake_minimum_required(VERSION 3.25)
 
 project(
 	saber
 	VERSION		1.0
 	DESCRIPTION	"Saber Utilities C++ Header Library")
 
-message(STATUS "Building saber/...")
+message(STATUS "Configuring saber/...")
 
 # Organizes project into folders to reduce clutter
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

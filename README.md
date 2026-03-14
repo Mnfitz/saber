@@ -77,7 +77,7 @@ these targets on a variety of supported platforms.
 These are the available presets for configuring (regenerate) project/make files from cmake:
 * `config-win-{vs2022|vs2026} -- -A {x64|arm64}`
 * `config-{macos|ios}-xcode`
-* `config-linux-make -- -A {x64|arm64} -DCMAKE_BUILD_TYPE=Debug`
+* `config-linux-make -- -A {x64|arm64} -DCMAKE_BUILD_TYPE={Debug|Release|RelWithDebInfo|MinSizeRel}`
 ```
 > cmake --preset config-win-vs2022 -- -A x64
 ```
