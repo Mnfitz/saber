@@ -94,6 +94,16 @@
         "kind": "build",
         "isDefault": false
       }
+    },
+
+    {
+      "label": "clean-all",
+      "type": "shell",
+      "command": "rm -rf \"${workspaceFolder}/build\"",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
     }
   ],
 
