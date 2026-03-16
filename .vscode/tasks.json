@@ -15,13 +15,26 @@
       "label": "generate",
       "type": "shell",
       "windows": {
-        "command": "cmake --preset config-win-${input:buildPlatform}"
+        "command": "cmake",
+        "args": [
+          "--preset", "config-win-${input:configGeneratorWin}",
+          "-A", "${input:buildPlatform}"
+        ]
       },
       "osx": {
-        "command": "cmake --preset config-mac"
+        "command": "cmake",
+        "args": [
+          "--preset", "config-${input:configGeneratorApple}-xcode"
+        ]
       },
       "linux": {
-        "command": "cmake --preset config-linux-${input:buildPlatform}-${input:buildConfig}"
+        "command": "cmake",
+        "args": [
+          "--preset",
+          "config-linux-make",
+          "-A", "${input:buildPlatform}",
+          "-DCMAKE_BUILD_TYPE=${input:buildConfig}"
+        ]
       },
       "group": {
         "kind": "build",
@@ -33,13 +46,30 @@
       "label": "build",
       "type": "shell",
       "windows": {
-        "command": "cmake --build --preset build-win-${input:buildPlatform}-${input:buildConfig}"
+        "command": "cmake",
+        "args": [
+          "--build",
+          "--preset", "build-win-${input:configGeneratorWin}",
+          "-A", "${input:buildPlatform}",
+          "--config", "${input:buildConfig}"
+        ]
       },
       "osx": {
-        "command": "cmake --build --preset build-mac-${input:buildConfig}"
+        "command": "cmake",
+        "args": [
+          "--build",
+          "--preset", "build-${input:configGeneratorApple}-xcode",
+          "--config", "${input:buildConfig}"
+        ]
       },
       "linux": {
-        "command": "cmake --build --preset build-linux--${input:buildPlatform}-${input:buildConfig}"
+        "command": "cmake",
+        "args": [
+          "--build",
+          "--preset", "build-linux-make",
+          "-A", "${input:buildPlatform}",
+          "-DCMAKE_BUILD_TYPE$={input:buildConfig}"
+        ]
       },
       "group": {
         "kind": "build",
@@ -49,52 +79,16 @@
     },
 
     {
-      "label": "generate iOS",
-      "type": "shell",
-      "windows": {
-        "command": "echo \"iOS builds not supported on Windows!\""
-      },
-      "osx": {
-        "command": "cmake --preset config-ios"
-      },
-      "linux": {
-        "command": "echo \"iOS builds not supported on Linux!\""
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      }
-    },
-
-    {
-      "label": "build iOS",
-      "type": "shell",
-      "windows": {
-        "command": "echo \"iOS builds not supported on Windows!\""
-      },
-      "osx": {
-        "command": "cmake --build --preset build-ios-${input:buildConfig}"
-      },
-      "linux": {
-        "command": "echo \"iOS builds not supported on Linux!\""
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      }
-    },
-
-    {
       "label": "clean",
       "type": "shell",
       "windows": {
-        "command": "cmake --build --preset build-win-default --target clean"
+        "command": "cmake --build --preset build-win-${input:configGeneratorWin} --target clean"
       },
       "osx": {
-        "command": "cmake --build --preset build-mac-default --target clean && cmake --build --preset build-ios-default --target clean"
+        "command": "cmake --build --preset build-${input:configGeneratorApple}-xcode --target clean"
       },
       "linux": {
-        "command": "cmake --build --preset build-linux-default --target clean"
+        "command": "cmake --build --preset build-linux-make --target clean"
       },
       "group": {
         "kind": "build",
@@ -103,17 +97,33 @@
     },
 
     {
-      "label": "test",
+      "label": "clean-all",
       "type": "shell",
-      "command": "(cd ${workspaceFolder}/build && ctest -C Debug --verbose)",
+      "command": "rm -rf \"${workspaceFolder}/build\"",
       "group": {
-        "kind": "test",
-        "isDefault": true
+        "kind": "build",
+        "isDefault": false
       }
     }
   ],
 
   "inputs": [
+    {
+      "id": "configGeneratorWin",
+      "type": "pickString",
+      "description": "Choose VS config generator [vs2022]",
+      "options": [ "vs2022", "vs2026" ],
+      "default": "vs2022"
+    },
+
+    {
+      "id": "configGeneratorApple",
+      "type": "pickString",
+      "description": "Choose Xcode config generator [macos]",
+      "options": [ "macos", "ios" ],
+      "default": "macos"
+    },
+
     {
       "id": "buildPlatform",
       "type": "pickString",
@@ -121,12 +131,13 @@
       "options": [ "x64", "arm64" ],
       "default": "x64"
     },
+
     {
       "id": "buildConfig",
       "type": "pickString",
-      "description": "Choose build configuration [debug]",
-      "options": [ "debug", "release", "relwithdebinfo", "minsizerel" ],
-      "default": "debug"
+      "description": "Choose build configuration [Debug]",
+      "options": [ "Debug", "Release", "RelWithDebInfo", "MinSizeRel" ],
+      "default": "Debug"
     }
   ]
 }

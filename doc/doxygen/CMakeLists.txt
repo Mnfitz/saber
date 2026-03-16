@@ -1,4 +1,4 @@
-message(STATUS "Building saber/doc/doxygen/...")
+message(STATUS "Configuring saber/doc/doxygen/...")
 
 include(FetchContent)
 
