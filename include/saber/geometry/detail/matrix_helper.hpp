@@ -49,8 +49,8 @@ public:
 
 	static constexpr typename Impl8<T>::Scalar MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
 	{
-		return { inImpl2.Get<0>(), 0, 0,
-				0, inImpl2.Get<1>(), 0,
+		return { inImpl2.template Get<0>(), 0, 0,
+				0, inImpl2.template Get<1>(), 0,
 				0, 0 };
 	}
 
@@ -63,8 +63,8 @@ public:
 
 	static constexpr typename Impl8<T>::Scalar MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
 	{
-		return { 1, 0, inImpl2.Get<0>(),
-				0, 1, inImpl2.Get<1>(),
+		return { 1, 0, inImpl2.template Get<0>(),
+				0, 1, inImpl2.template Get<1>(),
 				0, 0 };
 	}
 
@@ -80,52 +80,52 @@ public:
 	static typename Impl8<T>::Scalar MatrixMul(typename Impl8<T>::Scalar& ioLHS, const typename Impl8<T>::Scalar& inRHS)
 	{
 		// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
-		T m11 = (ioLHS.Get<0>() * inRHS.Get<0>()) + (ioLHS.Get<1>() * inRHS.Get<3>());
-		T m12 = (ioLHS.Get<0>() * inRHS.Get<1>()) + (ioLHS.Get<1>() * inRHS.Get<4>());
-		T m21 = (ioLHS.Get<3>() * inRHS.Get<0>()) + (ioLHS.Get<4>() * inRHS.Get<3>());
-		T m22 = (ioLHS.Get<3>() * inRHS.Get<1>()) + (ioLHS.Get<4>() * inRHS.Get<4>());
+		T m11 = (ioLHS.template Get<0>() * inRHS.template Get<0>()) + (ioLHS.template Get<1>() * inRHS.template Get<3>());
+		T m12 = (ioLHS.template Get<0>() * inRHS.template Get<1>()) + (ioLHS.template Get<1>() * inRHS.template Get<4>());
+		T m21 = (ioLHS.template Get<3>() * inRHS.template Get<0>()) + (ioLHS.template Get<4>() * inRHS.template Get<3>());
+		T m22 = (ioLHS.template Get<3>() * inRHS.template Get<1>()) + (ioLHS.template Get<4>() * inRHS.template Get<4>());
 
-		T m13 = ((ioLHS.Get<0>() * inRHS.Get<2>()) + (ioLHS.Get<1>() * inRHS.Get<5>()) + (ioLHS.Get<2>()));
-		T m23 = ((ioLHS.Get<3>() * inRHS.Get<2>()) + (ioLHS.Get<4>() * inRHS.Get<5>()) + (ioLHS.Get<5>()));
+		T m13 = ((ioLHS.template Get<0>() * inRHS.template Get<2>()) + (ioLHS.template Get<1>() * inRHS.template Get<5>()) + (ioLHS.template Get<2>()));
+		T m23 = ((ioLHS.template Get<3>() * inRHS.template Get<2>()) + (ioLHS.template Get<4>() * inRHS.template Get<5>()) + (ioLHS.template Get<5>()));
 
-		ioLHS.Get<0>() = m11;
-		ioLHS.Get<1>() = m12;
-		ioLHS.Get<2>() = m13;
-		ioLHS.Get<3>() = m21;
-		ioLHS.Get<4>() = m22;
-		ioLHS.Get<5>() = m23;
+		ioLHS.template Get<0>() = m11;
+		ioLHS.template Get<1>() = m12;
+		ioLHS.template Get<2>() = m13;
+		ioLHS.template Get<3>() = m21;
+		ioLHS.template Get<4>() = m22;
+		ioLHS.template Get<5>() = m23;
 
-		ioLHS.Get<6>() = 0;
-		ioLHS.Get<7>() = 0;
+		ioLHS.template Get<6>() = 0;
+		ioLHS.template Get<7>() = 0;
 
 		return ioLHS;
 	}
 
 	static typename Impl8<T>::Scalar MatrixInv(typename Impl8<T>::Scalar& ioLHS)
 	{
-		const T det = ((ioLHS.Get<0>() * ioLHS.Get<4>()) - (ioLHS.Get<1>() * ioLHS.Get<3>()));
+		const T det = ((ioLHS.template Get<0>() * ioLHS.template Get<4>()) - (ioLHS.template Get<1>() * ioLHS.template Get<3>()));
 		const bool isInvertible = Inexact::IsNe<T>(det, 0);
 		SABER_REQUIRE(isInvertible);
 
 		const T invDet = (1 / det);
 
-		T m11 = (ioLHS.Get<4>() * invDet);
-		T m12 = -(ioLHS.Get<1>() * invDet);
-		T m21 = -(ioLHS.Get<3>() * invDet);
-		T m22 = (ioLHS.Get<0>() * invDet);
+		T m11 = (ioLHS.template Get<4>() * invDet);
+		T m12 = -(ioLHS.template Get<1>() * invDet);
+		T m21 = -(ioLHS.template Get<3>() * invDet);
+		T m22 = (ioLHS.template Get<0>() * invDet);
 
-		T m13 = -((m11 * ioLHS.Get<2>()) + (m12 * ioLHS.Get<5>()));
-		T m23 = -((m21 * ioLHS.Get<2>()) + (m22 * ioLHS.Get<5>()));
+		T m13 = -((m11 * ioLHS.template Get<2>()) + (m12 * ioLHS.template Get<5>()));
+		T m23 = -((m21 * ioLHS.template Get<2>()) + (m22 * ioLHS.template Get<5>()));
 
-		ioLHS.Get<0>() = m11;
-		ioLHS.Get<1>() = m12;
-		ioLHS.Get<2>() = m13;
-		ioLHS.Get<3>() = m21;
-		ioLHS.Get<4>() = m22;
-		ioLHS.Get<5>() = m23;
+		ioLHS.template Get<0>() = m11;
+		ioLHS.template Get<1>() = m12;
+		ioLHS.template Get<2>() = m13;
+		ioLHS.template Get<3>() = m21;
+		ioLHS.template Get<4>() = m22;
+		ioLHS.template Get<5>() = m23;
 
-		ioLHS.Get<6>() = 0;
-		ioLHS.Get<7>() = 0;
+		ioLHS.template Get<6>() = 0;
+		ioLHS.template Get<7>() = 0;
 
 		return ioLHS;
 	}

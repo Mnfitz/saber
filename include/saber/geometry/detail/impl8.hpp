@@ -33,13 +33,13 @@ struct Impl8 final
 		}
 
 		constexpr Scalar(const typename Impl2<T>::Scalar& inFirst, const typename Impl2<T>::Scalar& inSecond, const typename Impl2<T>::Scalar& inThird, const typename Impl2<T>::Scalar& inFourth) :
-			mArray{inFirst.Get<0>(), inFirst.Get<1>(), inSecond.Get<0>(), inSecond.Get<1>(), inThird.Get<0>(), inThird.Get<1>(), inFourth.Get<0>(), inFourth.Get<1>()}
+			mArray{inFirst.template Get<0>(), inFirst.template Get<1>(), inSecond.template Get<0>(), inSecond.template Get<1>(), inThird.template Get<0>(), inThird.template Get<1>(), inFourth.template Get<0>(), inFourth.template Get<1>()}
 		{
 			// Do nothing
 		}
 
 		constexpr Scalar(const typename Impl4<T>::Scalar& inFirst, const typename Impl4<T>::Scalar& inSecond) :
-			mArray{inFirst.Get<0>(), inFirst.Get<1>(), inFirst.Get<2>(), inFirst.Get<3>(), inSecond.Get<0>(), inSecond.Get<1>(), inSecond.Get<2>(), inSecond.Get<3>()}
+			mArray{inFirst.template Get<0>(), inFirst.template Get<1>(), inFirst.template Get<2>(), inFirst.template Get<3>(), inSecond.template Get<0>(), inSecond.template Get<1>(), inSecond.template Get<2>(), inSecond.template Get<3>()}
 		{
 			// Do nothing
 		}
