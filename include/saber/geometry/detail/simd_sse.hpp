@@ -1,6 +1,5 @@
 #ifndef SABER_GEOMETRY_DETAIL_SIMD_SSE_HPP
 #define SABER_GEOMETRY_DETAIL_SIMD_SSE_HPP
-#pragma once
 
 // saber
 #include "saber/config.hpp"

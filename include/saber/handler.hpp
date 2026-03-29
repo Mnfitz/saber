@@ -1,4 +1,3 @@
-#pragma once
 #ifndef SABER_HANDLER_HPP
 #define SABER_HANDLER_HPP
 

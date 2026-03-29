@@ -15,7 +15,6 @@
 //
 /////////////////////////////////////////////////////////////////////
 
-#pragma once
 #ifndef SABER_GEOMETRY_UTILITY_HPP
 #define SABER_GEOMETRY_UTILITY_HPP
 

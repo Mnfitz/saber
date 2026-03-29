@@ -24,7 +24,6 @@
 
 #ifndef SABER_CONDITIONALS_HPP
 #define SABER_CONDITIONALS_HPP
-#pragma once
 
 // "conditionals.hpp"
 //

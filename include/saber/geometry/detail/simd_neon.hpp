@@ -1,6 +1,5 @@
 #ifndef SABER_GEOMETRY_DETAIL_SIMD_NEON_HPP
 #define SABER_GEOMETRY_DETAIL_SIMD_NEON_HPP
-#pragma once
 
 // This file was generated using ChatGPT 4.1 using the following query:
 // Using the pattern established in file "simd_sse.hpp", create an 

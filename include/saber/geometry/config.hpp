@@ -1,4 +1,3 @@
-#pragma once
 #ifndef SABER_GEOMETRY_CONFIG_HPP
 #define SABER_GEOMETRY_CONFIG_HPP
 
