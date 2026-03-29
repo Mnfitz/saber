@@ -37,6 +37,7 @@ using saber::geometry::ImplKind;
 using saber::geometry::Point;
 using saber::geometry::Size;
 using saber::geometry::Rectangle;
+using saber::geometry::Matrix;
 using saber::geometry::Union;
 using saber::geometry::Intersect;
 using saber::geometry::IsEmpty;
@@ -57,6 +58,50 @@ TEMPLATE_TEST_CASE( "saber::geometry::Point::ctor() works correctly - impl varia
             REQUIRE(p.X() == 0);
             REQUIRE(p.Y() == 0);
         }
+
+    if constexpr (std::is_floating_point_v<TestType>)
+    {
+        SECTION("ImplKind::kSimd - MatrixRotation zero radians")
+        {
+            // 0 radians: sin(0) = 0, cos(0) = 1
+            auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(TestType{0});
+
+            REQUIRE(Inexact::IsEq(rotated.M11(), TestType{1}));
+            REQUIRE(Inexact::IsEq(rotated.M12(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M21(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M22(), TestType{1}));
+            REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+        }
+
+        SECTION("ImplKind::kSimd - MatrixRotation pi/2 radians (90 degrees)")
+        {
+            const TestType pi_2 = static_cast<TestType>(M_PI_2);
+            auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(pi_2);
+
+            REQUIRE(Inexact::IsEq(rotated.M11(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M12(), TestType{-1}));
+            REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M21(), TestType{1}));
+            REQUIRE(Inexact::IsEq(rotated.M22(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+        }
+
+        SECTION("ImplKind::kSimd - MatrixRotation negative angle")
+        {
+            const TestType neg_pi_4 = static_cast<TestType>(-M_PI_4);
+            auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(neg_pi_4);
+
+            const TestType sqrt2_2 = static_cast<TestType>(M_SQRT1_2);
+
+            REQUIRE(Inexact::IsEq(rotated.M11(), sqrt2_2));
+            REQUIRE(Inexact::IsEq(rotated.M12(), sqrt2_2));
+            REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+            REQUIRE(Inexact::IsEq(rotated.M21(), -sqrt2_2));
+            REQUIRE(Inexact::IsEq(rotated.M22(), sqrt2_2));
+            REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+        }
+    }
 
         SECTION("Alt Construct")
         {
@@ -1395,6 +1440,20 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixIdentity() works correctly -
 		REQUIRE(identity.M23() == TestType{0});
 
 	}
+
+    SECTION("ImplKind::kSimd - MatrixIdentity")
+    {
+        // Identity matrix should be: [1, 0, 0, 1, 0, 0]
+        auto identity = Matrix<TestType, ImplKind::kSimd>::MakeIdentity();
+
+        REQUIRE(identity.M11() == TestType{1});
+        REQUIRE(identity.M12() == TestType{0});
+        REQUIRE(identity.M13() == TestType{0});
+        REQUIRE(identity.M21() == TestType{0});
+        REQUIRE(identity.M22() == TestType{1});
+        REQUIRE(identity.M23() == TestType{0});
+
+    }
 }
 
 TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixZero() works correctly - impl variants",
