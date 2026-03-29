@@ -52,7 +52,7 @@ struct Impl4 final
 		}
 
 		constexpr Scalar(const typename Impl2<T>::Scalar& inFirst, const typename Impl2<T>::Scalar& inSecond) :
-			mTuple(inFirst.Get<0>(), inFirst.Get<1>(), inSecond.Get<0>(), inSecond.Get<1>())
+			mTuple(inFirst.template Get<0>(), inFirst.template Get<1>(), inSecond.template Get<0>(), inSecond.template Get<1>())
 		{
 			// Do nothing
 		}
@@ -73,14 +73,14 @@ struct Impl4 final
 
 		constexpr void SetLo(const typename Impl2<T>::Scalar& inImpl2)
 		{
-			Get<0>() = inImpl2.Get<0>();
-			Get<1>() = inImpl2.Get<1>();
+			Get<0>() = inImpl2.template Get<0>();
+			Get<1>() = inImpl2.template Get<1>();
 		}
 
 		constexpr void SetHi(const typename Impl2<T>::Scalar& inImpl2)
 		{
-			Get<2>() = inImpl2.Get<0>();
-			Get<3>() = inImpl2.Get<1>();
+			Get<2>() = inImpl2.template Get<0>();
+			Get<3>() = inImpl2.template Get<1>();
 		}
 
 		constexpr Scalar& operator+=(const Scalar& inRHS)
@@ -127,17 +127,17 @@ struct Impl4 final
 			{   
 				// Floating point comparisons are always inexact within an epsilon
 				result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) 
-							&& Inexact::IsEq(Get<1>(), inRHS.Get<1>())
-							&& Inexact::IsEq(Get<2>(), inRHS.Get<2>())
-							&& Inexact::IsEq(Get<3>(), inRHS.Get<3>());
+						&& Inexact::IsEq(Get<1>(), inRHS.Get<1>())
+						&& Inexact::IsEq(Get<2>(), inRHS.Get<2>())
+						&& Inexact::IsEq(Get<3>(), inRHS.Get<3>());
 			}
 			else
 			{
 				// Integer comparisons are always exact
 				result = (Get<0>() == inRHS.Get<0>()) 
-							&& (Get<1>() == inRHS.Get<1>())
-							&& (Get<2>() == inRHS.Get<2>())
-							&& (Get<3>() == inRHS.Get<3>());
+						&& (Get<1>() == inRHS.Get<1>())
+						&& (Get<2>() == inRHS.Get<2>())
+						&& (Get<3>() == inRHS.Get<3>());
 			}
 			return result;
 		}
@@ -243,14 +243,14 @@ struct Impl4 final
 			do 
 			{
 				// Test the x and left component
-				if (inImpl2.Get<0>() < ltrb.Get<0>()) // Not greater than or equal
+				if (inImpl2.template Get<0>() < ltrb.Get<0>()) // Not greater than or equal
 				{
 					// Extra step needed for floating point equality
 					if constexpr(std::is_floating_point_v<T>)
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. x = 2.99999..., left = 3.0
-						if (!Inexact::IsEq(inImpl2.Get<0>(), ltrb.Get<0>()))
+						if (!Inexact::IsEq(inImpl2.template Get<0>(), ltrb.Get<0>()))
 						{
 							break;
 						}
@@ -264,14 +264,14 @@ struct Impl4 final
 				}
 
 				// Test the y and top component
-				if (inImpl2.Get<1>() < ltrb.Get<1>()) // Not greater than or equal
+				if (inImpl2.template Get<1>() < ltrb.Get<1>()) // Not greater than or equal
 				{
 					// Extra step needed for floating point equality
 					if constexpr(std::is_floating_point_v<T>)
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. y = 2.99999..., top = 3.0
-						if (!Inexact::IsEq(inImpl2.Get<1>(), ltrb.Get<1>()))
+						if (!Inexact::IsEq(inImpl2.template Get<1>(), ltrb.Get<1>()))
 						{
 							break;
 						}
@@ -286,7 +286,7 @@ struct Impl4 final
 
 				{
 					// Test the x and right component
-					if (inImpl2.Get<0>() >= ltrb.Get<2>()) // Not less than
+					if (inImpl2.template Get<0>() >= ltrb.Get<2>()) // Not less than
 					{
 						break;
 					}
@@ -296,7 +296,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., right = 3.0
-						if (Inexact::IsEq(inImpl2.Get<0>(), ltrb.Get<2>()))
+						if (Inexact::IsEq(inImpl2.template Get<0>(), ltrb.Get<2>()))
 						{
 							break;
 						}
@@ -305,7 +305,7 @@ struct Impl4 final
 
 				{
 					// Test the y and bottom component
-					if (inImpl2.Get<1>() >= ltrb.Get<3>()) // Not less than 
+					if (inImpl2.template Get<1>() >= ltrb.Get<3>()) // Not less than 
 					{
 						break;
 					}
@@ -315,7 +315,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., bottom = 3.0
-						if (Inexact::IsEq(inImpl2.Get<1>(), ltrb.Get<3>()))
+						if (Inexact::IsEq(inImpl2.template Get<1>(), ltrb.Get<3>()))
 						{
 							break;
 						}
@@ -334,7 +334,7 @@ struct Impl4 final
 			auto copy = *this;
 			auto intersection = copy.Intersect(inImpl4);
 			const bool isOverlapping = !IsEmpty(intersection);
-		   
+	   
 			return isOverlapping;
 		}
 
@@ -369,7 +369,7 @@ struct Impl4 final
 				{
 					// check for "inexact" width and height being zero
 					isEmpty = (Inexact::IsEq(inScalar.Get<2>(), static_cast<T>(0)) 
-								|| Inexact::IsEq(inScalar.Get<3>(), static_cast<T>(0)));
+							|| Inexact::IsEq(inScalar.Get<3>(), static_cast<T>(0)));
 				}
 
 			} while (false);
@@ -966,6 +966,7 @@ struct Impl4 final
 
 			auto lt = Simd128<T>::Load2(&ltrb.Get<0>());
 			auto rb = Simd128<T>::Load2(&ltrb.Get<2>());
+
 			auto xy = inImpl2.GetSimdType(); // Get the underlying Simd value
 
 			if constexpr (Is32BitDataType<T>()) // int/float up to 32 bit data type
@@ -1000,7 +1001,7 @@ struct Impl4 final
 			Simd copy = *this;
 			auto intersection = copy.Intersect(inImpl4);
 			const bool isOverlapping = !IsEmpty(intersection);
-		   
+	   
 			return isOverlapping;
 		}
 
@@ -1028,6 +1029,7 @@ struct Impl4 final
 			auto height = Simd128<T>::Load1(&inSimd.Get<3>());
 			auto min = Simd128<T>::Min(width, height);
 			auto zero = Simd128<T>::Load2(&kZero.Get<0>());
+
 			// TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
 			// The logic works, since the empty zeroes will not affect the Le check
 			bool isEmpty = Simd128<T>::IsLe(min, zero);
