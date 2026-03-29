@@ -1,6 +1,5 @@
 #ifndef SABER_GEOMETRY_OPERATORS_HPP
 #define SABER_GEOMETRY_OPERATORS_HPP
-#pragma once
 
 // std
 #include <type_traits>

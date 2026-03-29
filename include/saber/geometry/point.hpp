@@ -1,6 +1,5 @@
 #ifndef SABER_GEOMETRY_POINT_HPP
 #define SABER_GEOMETRY_POINT_HPP
-#pragma once
 
 // saber
 #include "saber/geometry/config.hpp"
