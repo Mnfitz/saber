@@ -37,6 +37,7 @@ using saber::geometry::ImplKind;
 using saber::geometry::Point;
 using saber::geometry::Size;
 using saber::geometry::Rectangle;
+using saber::geometry::Matrix;
 using saber::geometry::Union;
 using saber::geometry::Intersect;
 using saber::geometry::IsEmpty;
@@ -990,9 +991,9 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
 
     SECTION("ImplKind::kSimd")
     {
-        using R = Rectangle<TestType, ImplKind::kScalar>;
-        using P = Point<TestType, ImplKind::kScalar>;
-        using S = Size<TestType, ImplKind::kScalar>;
+        using R = Rectangle<TestType, ImplKind::kSimd>;
+        using P = Point<TestType, ImplKind::kSimd>;
+        using S = Size<TestType, ImplKind::kSimd>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -1395,6 +1396,20 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixIdentity() works correctly -
 		REQUIRE(identity.M23() == TestType{0});
 
 	}
+
+    SECTION("ImplKind::kSimd - MatrixIdentity")
+    {
+        // Identity matrix should be: [1, 0, 0, 1, 0, 0]
+        auto identity = Matrix<TestType, ImplKind::kSimd>::MakeIdentity();
+
+        REQUIRE(identity.M11() == TestType{1});
+        REQUIRE(identity.M12() == TestType{0});
+        REQUIRE(identity.M13() == TestType{0});
+        REQUIRE(identity.M21() == TestType{0});
+        REQUIRE(identity.M22() == TestType{1});
+        REQUIRE(identity.M23() == TestType{0});
+
+    }
 }
 
 TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixZero() works correctly - impl variants",
@@ -1415,6 +1430,19 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixZero() works correctly - imp
 		REQUIRE(zero.M22() == TestType{0});
 		REQUIRE(zero.M23() == TestType{0});
 	}
+
+    SECTION("ImplKind::kSimd - MatrixZero")
+    {
+        // Zero matrix should be all zeros
+        auto zero = Matrix<TestType, ImplKind::kSimd>::MakeZero();
+
+        REQUIRE(zero.M11() == TestType{0});
+        REQUIRE(zero.M12() == TestType{0});
+        REQUIRE(zero.M13() == TestType{0});
+        REQUIRE(zero.M21() == TestType{0});
+        REQUIRE(zero.M22() == TestType{0});
+        REQUIRE(zero.M23() == TestType{0});
+    }
 }
 
 TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixScale() works correctly - impl variants",
@@ -1451,7 +1479,7 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixScale() works correctly - im
 		REQUIRE(scaled1.M22() == TestType{7});
 		REQUIRE(scaled1.M23() == TestType{0});
 
-		Point<TestType, ImplKind::kScalar> scale2{TestType{5}, TestType{7}};
+		Size<TestType, ImplKind::kScalar> scale2{TestType{5}, TestType{7}};
 		auto scaled2 = Matrix<TestType, ImplKind::kScalar>::MakeScale(scale2);
 		
 		REQUIRE(scaled2.M11() == TestType{5});
@@ -1461,6 +1489,41 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixScale() works correctly - im
 		REQUIRE(scaled2.M22() == TestType{7});
 		REQUIRE(scaled2.M23() == TestType{0});
 	}
+
+    SECTION("ImplKind::kSimd - MatrixScale with scalars")
+    {
+        auto scaled = Matrix<TestType, ImplKind::kSimd>::MakeScale(TestType{2}, TestType{3});
+
+        REQUIRE(scaled.M11() == TestType{2});
+        REQUIRE(scaled.M12() == TestType{0});
+        REQUIRE(scaled.M13() == TestType{0});
+        REQUIRE(scaled.M21() == TestType{0});
+        REQUIRE(scaled.M22() == TestType{3});
+        REQUIRE(scaled.M23() == TestType{0});
+    }
+
+    SECTION("ImplKind::kSimd - MatrixScale with Impl2")
+    {
+        Point<TestType, ImplKind::kSimd> scale1{TestType{5}, TestType{7}};
+        auto scaled1 = Matrix<TestType, ImplKind::kSimd>::MakeScale(scale1);
+
+        REQUIRE(scaled1.M11() == TestType{5});
+        REQUIRE(scaled1.M12() == TestType{0});
+        REQUIRE(scaled1.M13() == TestType{0});
+        REQUIRE(scaled1.M21() == TestType{0});
+        REQUIRE(scaled1.M22() == TestType{7});
+        REQUIRE(scaled1.M23() == TestType{0});
+
+        Size<TestType, ImplKind::kSimd> scale2{TestType{5}, TestType{7}};
+        auto scaled2 = Matrix<TestType, ImplKind::kSimd>::MakeScale(scale2);
+
+        REQUIRE(scaled2.M11() == TestType{5});
+        REQUIRE(scaled2.M12() == TestType{0});
+        REQUIRE(scaled2.M13() == TestType{0});
+        REQUIRE(scaled2.M21() == TestType{0});
+        REQUIRE(scaled2.M22() == TestType{7});
+        REQUIRE(scaled2.M23() == TestType{0});
+    }
 }
 
 TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixTranslation() works correctly - impl variants",
@@ -1506,7 +1569,88 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixTranslation() works correctl
 		REQUIRE(translated2.M21() == TestType{0});
 		REQUIRE(translated2.M22() == TestType{1});
 		REQUIRE(translated2.M23() == TestType{20});	// (translation Y)
+   }
+
+    SECTION("ImplKind::kSimd - MatrixTranslation with scalars")
+    {
+        // Translation matrix: [1, 0, tx, 0, 1, ty, 0, 0]
+        auto translated = Matrix<TestType, ImplKind::kSimd>::MakeTranslation(TestType{4}, TestType{5});
+
+        REQUIRE(translated.M11() == TestType{1});
+        REQUIRE(translated.M12() == TestType{0});
+        REQUIRE(translated.M13() == TestType{4}); // (translation X)
+        REQUIRE(translated.M21() == TestType{0});
+        REQUIRE(translated.M22() == TestType{1});
+        REQUIRE(translated.M23() == TestType{5}); // (translation Y)
+    }
+
+    SECTION("ImplKind::kSimd - MatrixTranslation with Impl2")
+    {
+        Point<TestType, ImplKind::kSimd> translate1{TestType{10}, TestType{20}};
+        auto translated1 = Matrix<TestType, ImplKind::kSimd>::MakeTranslation(translate1);
+
+        REQUIRE(translated1.M11() == TestType{1});
+        REQUIRE(translated1.M12() == TestType{0});
+        REQUIRE(translated1.M13() == TestType{10});
+        REQUIRE(translated1.M21() == TestType{0});
+        REQUIRE(translated1.M22() == TestType{1});
+        REQUIRE(translated1.M23() == TestType{20});
+
+        Size<TestType, ImplKind::kSimd> translate2{TestType{10}, TestType{20}};
+        auto translated2 = Matrix<TestType, ImplKind::kSimd>::MakeTranslation(translate2);
+
+        REQUIRE(translated2.M11() == TestType{1});
+        REQUIRE(translated2.M12() == TestType{0});
+        REQUIRE(translated2.M13() == TestType{10});
+        REQUIRE(translated2.M21() == TestType{0});
+        REQUIRE(translated2.M22() == TestType{1});
+        REQUIRE(translated2.M23() == TestType{20});
+    }
+
+	if constexpr (std::is_floating_point_v<TestType>)
+	{
+		SECTION("ImplKind::kSimd - MatrixRotation zero radians")
+		{
+			// 0 radians: sin(0) = 0, cos(0) = 1
+			auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(TestType{ 0 });
+
+			REQUIRE(Inexact::IsEq(rotated.M11(), TestType{ 1 }));
+			REQUIRE(Inexact::IsEq(rotated.M12(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M13(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M21(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M22(), TestType{ 1 }));
+			REQUIRE(Inexact::IsEq(rotated.M23(), TestType{ 0 }));
+		}
+
+		SECTION("ImplKind::kSimd - MatrixRotation pi/2 radians (90 degrees)")
+		{
+			const TestType pi_2 = static_cast<TestType>(M_PI_2);
+			auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(pi_2);
+
+			REQUIRE(Inexact::IsEq(rotated.M11(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M12(), TestType{ -1 }));
+			REQUIRE(Inexact::IsEq(rotated.M13(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M21(), TestType{ 1 }));
+			REQUIRE(Inexact::IsEq(rotated.M22(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M23(), TestType{ 0 }));
+		}
+
+		SECTION("ImplKind::kSimd - MatrixRotation negative angle")
+		{
+			const TestType neg_pi_4 = static_cast<TestType>(-M_PI_4);
+			auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(neg_pi_4);
+
+			const TestType sqrt2_2 = static_cast<TestType>(M_SQRT1_2);
+
+			REQUIRE(Inexact::IsEq(rotated.M11(), sqrt2_2));
+			REQUIRE(Inexact::IsEq(rotated.M12(), sqrt2_2));
+			REQUIRE(Inexact::IsEq(rotated.M13(), TestType{ 0 }));
+			REQUIRE(Inexact::IsEq(rotated.M21(), -sqrt2_2));
+			REQUIRE(Inexact::IsEq(rotated.M22(), sqrt2_2));
+			REQUIRE(Inexact::IsEq(rotated.M23(), TestType{ 0 }));
+		}
 	}
+
 }
 
 TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixRotation() works correctly - impl variants",
@@ -1528,6 +1672,47 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixRotation() works correctly -
 		REQUIRE(Inexact::IsEq(rotated.M22(), TestType{1}));	// cos(0) = 1
 		REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));	// 0
 	}
+
+    SECTION("ImplKind::kSimd - MatrixRotation zero radians")
+    {
+        // 0 radians: sin(0) = 0, cos(0) = 1
+        auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(TestType{0});
+
+        REQUIRE(Inexact::IsEq(rotated.M11(), TestType{1}));
+        REQUIRE(Inexact::IsEq(rotated.M12(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M21(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M22(), TestType{1}));
+        REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixRotation pi/2 radians (90 degrees)")
+    {
+        const TestType pi_2 = TestType{M_PI_2};
+        auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(pi_2);
+
+        REQUIRE(Inexact::IsEq(rotated.M11(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M12(), TestType{-1}));
+        REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M21(), TestType{1}));
+        REQUIRE(Inexact::IsEq(rotated.M22(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixRotation negative angle")
+    {
+        const TestType neg_pi_4 = TestType{ -M_PI_4 };
+        auto rotated = Matrix<TestType, ImplKind::kSimd>::MakeRotation(neg_pi_4);
+
+        const TestType sqrt2_2 = TestType{ M_SQRT1_2 };
+
+        REQUIRE(Inexact::IsEq(rotated.M11(), sqrt2_2));
+        REQUIRE(Inexact::IsEq(rotated.M12(), sqrt2_2));
+        REQUIRE(Inexact::IsEq(rotated.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(rotated.M21(), -sqrt2_2));
+        REQUIRE(Inexact::IsEq(rotated.M22(), sqrt2_2));
+        REQUIRE(Inexact::IsEq(rotated.M23(), TestType{0}));
+    }
 
 	SECTION("ImplKind::kScalar - MatrixRotation pi/2 radians (90 degrees)")
 	{
@@ -1600,6 +1785,51 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixMul() works correctly - impl
 		REQUIRE(scale.M22() == TestType{3});	// M22
 		REQUIRE(scale.M23() == TestType{21});	// M23
 	}
+
+    SECTION("ImplKind::kSimd - MatrixMul with identity matrices")
+    {
+        auto identity1 = Matrix<TestType, ImplKind::kSimd>::MakeIdentity();
+        auto identity2 = Matrix<TestType, ImplKind::kSimd>::MakeIdentity();
+
+        identity1 *= identity2;
+
+        REQUIRE(identity1.M11() == TestType{1});
+        REQUIRE(identity1.M12() == TestType{0});
+        REQUIRE(identity1.M13() == TestType{0});
+        REQUIRE(identity1.M21() == TestType{0});
+        REQUIRE(identity1.M22() == TestType{1});
+        REQUIRE(identity1.M23() == TestType{0});
+    }
+
+    SECTION("ImplKind::kSimd - MatrixMul with scale and translation")
+    {
+        auto scale = Matrix<TestType, ImplKind::kSimd>::MakeScale(TestType{2}, TestType{3});
+        auto translation = Matrix<TestType, ImplKind::kSimd>::MakeTranslation(TestType{5}, TestType{7});
+
+        scale *= translation;
+
+        REQUIRE(scale.M11() == TestType{2});
+        REQUIRE(scale.M12() == TestType{0});
+        REQUIRE(scale.M13() == TestType{10});
+        REQUIRE(scale.M21() == TestType{0});
+        REQUIRE(scale.M22() == TestType{3});
+        REQUIRE(scale.M23() == TestType{21});
+    }
+
+    SECTION("ImplKind::kSimd - MatrixMul with two arbitrary matrices")
+    {
+        Matrix<TestType, ImplKind::kSimd> matA{TestType{1}, TestType{2}, TestType{3}, TestType{4}, TestType{5}, TestType{6}};
+        Matrix<TestType, ImplKind::kSimd> matB{TestType{2}, TestType{0}, TestType{1}, TestType{0}, TestType{2}, TestType{3}};
+
+        matA *= matB;
+
+        REQUIRE(matA.M11() == TestType{2});
+        REQUIRE(matA.M12() == TestType{4});
+        REQUIRE(matA.M13() == TestType{10});
+        REQUIRE(matA.M21() == TestType{8});
+        REQUIRE(matA.M22() == TestType{10});
+        REQUIRE(matA.M23() == TestType{25});
+    }
 
 	SECTION("ImplKind::kScalar - MatrixMul with two arbitrary matrices")
 	{
@@ -1674,6 +1904,70 @@ TEMPLATE_TEST_CASE( "saber::geometry::detail::MatrixInv() works correctly - impl
 		REQUIRE(Inexact::IsEq(translation.M22(), TestType{1}));
 		REQUIRE(Inexact::IsEq(translation.M23(), TestType{-7}));
 	}
+
+    SECTION("ImplKind::kSimd - MatrixInv of identity")
+    {
+        auto identity = Matrix<TestType, ImplKind::kSimd>::MakeIdentity();
+        identity.Invert();
+
+        REQUIRE(Inexact::IsEq(identity.M11(), TestType{1}));
+        REQUIRE(Inexact::IsEq(identity.M12(), TestType{0}));
+        REQUIRE(Inexact::IsEq(identity.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(identity.M21(), TestType{0}));
+        REQUIRE(Inexact::IsEq(identity.M22(), TestType{1}));
+        REQUIRE(Inexact::IsEq(identity.M23(), TestType{0}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixInv of scale matrix")
+    {
+        auto scale = Matrix<TestType, ImplKind::kSimd>::MakeScale(TestType{2}, TestType{3});
+        scale.Invert();
+
+        REQUIRE(Inexact::IsEq(scale.M11(), TestType{0.5}));
+        REQUIRE(Inexact::IsEq(scale.M12(), TestType{0}));
+        REQUIRE(Inexact::IsEq(scale.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(scale.M21(), TestType{0}));
+        REQUIRE(Inexact::IsEq(scale.M22(), TestType{1}/TestType{3}));
+        REQUIRE(Inexact::IsEq(scale.M23(), TestType{0}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixInv of translation matrix")
+    {
+        auto translation = Matrix<TestType, ImplKind::kSimd>::MakeTranslation(TestType{5}, TestType{7});
+        translation.Invert();
+
+        REQUIRE(Inexact::IsEq(translation.M11(), TestType{1}));
+        REQUIRE(Inexact::IsEq(translation.M12(), TestType{0}));
+        REQUIRE(Inexact::IsEq(translation.M13(), TestType{-5}));
+        REQUIRE(Inexact::IsEq(translation.M21(), TestType{0}));
+        REQUIRE(Inexact::IsEq(translation.M22(), TestType{1}));
+        REQUIRE(Inexact::IsEq(translation.M23(), TestType{-7}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixInv of general invertible matrix")
+    {
+        Matrix<TestType, ImplKind::kSimd> mat{TestType{2}, TestType{1}, TestType{0}, TestType{1}, TestType{2}, TestType{0}};
+        mat.Invert();
+
+        REQUIRE(Inexact::IsEq(mat.M11(), TestType{2}/TestType{3}));
+        REQUIRE(Inexact::IsEq(mat.M12(), TestType{-1}/TestType{3}));
+        REQUIRE(Inexact::IsEq(mat.M13(), TestType{0}));
+        REQUIRE(Inexact::IsEq(mat.M21(), TestType{-1}/TestType{3}));
+        REQUIRE(Inexact::IsEq(mat.M22(), TestType{2}/TestType{3}));
+        REQUIRE(Inexact::IsEq(mat.M23(), TestType{0}));
+    }
+
+    SECTION("ImplKind::kSimd - MatrixInv throws on singular matrix")
+    {
+        Matrix<TestType, ImplKind::kSimd> singularMat{TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}, TestType{0}};
+        REQUIRE_THROWS_AS(singularMat.Invert(), std::runtime_error);
+    }
+
+    SECTION("ImplKind::kSimd - MatrixInv throws on singular matrix (rows are parallel)")
+    {
+        Matrix<TestType, ImplKind::kSimd> singularMat{TestType{1}, TestType{2}, TestType{0}, TestType{2}, TestType{4}, TestType{0}};
+        REQUIRE_THROWS_AS(singularMat.Invert(), std::runtime_error);
+    }
 
 	SECTION("ImplKind::kScalar - MatrixInv of general invertible matrix")
 	{
