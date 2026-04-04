@@ -132,6 +132,121 @@ public:
 
 }; // specialized template class MatrixHelper<T>
 
+template<typename T>
+class MatrixHelper<T, ImplKind::kSimd>
+{
+public:
+	MatrixHelper()
+	{
+		static_assert(std::is_arithmetic_v<T>, "Matrix does not support non-arithmetic types");
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixIdentity()
+	{
+		return { 1, 0, 0,
+				 0, 1, 0,
+				 0, 0 };
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixZero()
+	{
+		return { 0, 0, 0,
+				 0, 0, 0,
+				 0, 0 };
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixScale(T inX, T inY)
+	{
+		return { inX, 0, 0,
+				 0, inY, 0,
+				 0, 0 };
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixScale(const typename Impl2<T>::Simd& inImpl2)
+	{
+		return { inImpl2.template Get<0>(), 0, 0,
+				 0, inImpl2.template Get<1>(), 0,
+				 0, 0 };
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixTranslation(T inX, T inY)
+	{
+		return { 1, 0, inX,
+				 0, 1, inY,
+				 0, 0 };
+	}
+
+	static constexpr typename Impl8<T>::Simd MatrixTranslation(const typename Impl2<T>::Simd& inImpl2)
+	{
+		return { 1, 0, inImpl2.template Get<0>(),
+				 0, 1, inImpl2.template Get<1>(),
+				 0, 0 };
+	}
+
+	static typename Impl8<T>::Simd MatrixRotation(T inRads)
+	{
+		const T sinv = std::sin(inRads);
+		const T cosv = std::cos(inRads);
+		return { cosv, -sinv, 0,
+				 sinv, cosv, 0,
+				 0, 0 };
+	}
+
+	static typename Impl8<T>::Simd MatrixMul(typename Impl8<T>::Simd& ioLHS, const typename Impl8<T>::Simd& inRHS)
+	{
+		// NOTE: 3x2 Matrixes only. We treat inRHS as if it were Transpose 2x3
+		T m11 = (ioLHS.template Get<0>() * inRHS.template Get<0>()) + (ioLHS.template Get<1>() * inRHS.template Get<3>());
+		T m12 = (ioLHS.template Get<0>() * inRHS.template Get<1>()) + (ioLHS.template Get<1>() * inRHS.template Get<4>());
+		T m21 = (ioLHS.template Get<3>() * inRHS.template Get<0>()) + (ioLHS.template Get<4>() * inRHS.template Get<3>());
+		T m22 = (ioLHS.template Get<3>() * inRHS.template Get<1>()) + (ioLHS.template Get<4>() * inRHS.template Get<4>());
+
+		T m13 = ((ioLHS.template Get<0>() * inRHS.template Get<2>()) + (ioLHS.template Get<1>() * inRHS.template Get<5>()) + (ioLHS.template Get<2>()));
+		T m23 = ((ioLHS.template Get<3>() * inRHS.template Get<2>()) + (ioLHS.template Get<4>() * inRHS.template Get<5>()) + (ioLHS.template Get<5>()));
+
+		ioLHS.template Get<0>() = m11;
+		ioLHS.template Get<1>() = m12;
+		ioLHS.template Get<2>() = m13;
+		ioLHS.template Get<3>() = m21;
+		ioLHS.template Get<4>() = m22;
+		ioLHS.template Get<5>() = m23;
+
+		ioLHS.template Get<6>() = 0;
+		ioLHS.template Get<7>() = 0;
+
+		return ioLHS;
+	}
+
+	static typename Impl8<T>::Simd MatrixInv(typename Impl8<T>::Simd& ioLHS)
+	{
+		const T det = ((ioLHS.template Get<0>() * ioLHS.template Get<4>()) - (ioLHS.template Get<1>() * ioLHS.template Get<3>()));
+		const bool isInvertible = Inexact::IsNe<T>(det, 0);
+		SABER_REQUIRE(isInvertible);
+
+		const T invDet = (1 / det);
+
+		T m11 = (ioLHS.template Get<4>() * invDet);
+		T m12 = -(ioLHS.template Get<1>() * invDet);
+		T m21 = -(ioLHS.template Get<3>() * invDet);
+		T m22 = (ioLHS.template Get<0>() * invDet);
+
+		T m13 = -((m11 * ioLHS.template Get<2>()) + (m12 * ioLHS.template Get<5>()));
+		T m23 = -((m21 * ioLHS.template Get<2>()) + (m22 * ioLHS.template Get<5>()));
+
+		ioLHS.template Get<0>() = m11;
+		ioLHS.template Get<1>() = m12;
+		ioLHS.template Get<2>() = m13;
+		ioLHS.template Get<3>() = m21;
+		ioLHS.template Get<4>() = m22;
+		ioLHS.template Get<5>() = m23;
+
+		ioLHS.template Get<6>() = 0;
+		ioLHS.template Get<7>() = 0;
+
+		return ioLHS;
+	}
+};
+
+
 // Primary MatrixIdentity template declaration
 template<typename T, ImplKind Impl>
 constexpr auto MatrixIdentity()
@@ -157,6 +272,12 @@ constexpr auto MatrixScale(const typename Impl2<T>::Scalar& inImpl2)
 	return MatrixHelper<T, ImplKind::kScalar>::MatrixScale(inImpl2);
 }
 
+template<typename T>
+constexpr auto MatrixScale(const typename Impl2<T>::Simd& inImpl2)
+{
+	return MatrixHelper<T, ImplKind::kSimd>::MatrixScale(inImpl2);
+}
+
 template<typename T, ImplKind Impl>
 constexpr auto MatrixTranslation(T inX, T inY)
 {
@@ -167,6 +288,12 @@ template<typename T>
 constexpr auto MatrixTranslation(const typename Impl2<T>::Scalar& inImpl2)
 {
 	return MatrixHelper<T, ImplKind::kScalar>::MatrixTranslation(inImpl2);
+}
+
+template<typename T>
+constexpr auto MatrixTranslation(const typename Impl2<T>::Simd& inImpl2)
+{
+	return MatrixHelper<T, ImplKind::kSimd>::MatrixTranslation(inImpl2);
 }
 
 template<typename T, ImplKind Impl>
@@ -182,9 +309,21 @@ constexpr auto MatrixMul(typename Impl8<T>::Scalar& ioLHS, const typename Impl8<
 }
 
 template<typename T>
+auto MatrixMul(typename Impl8<T>::Simd& ioLHS, const typename Impl8<T>::Simd& inRHS)
+{
+	return MatrixHelper<T, ImplKind::kSimd>::MatrixMul(ioLHS, inRHS);
+}
+
+template<typename T>
 typename auto MatrixInv(typename Impl8<T>::Scalar& ioLHS)
 {
 	return MatrixHelper<T, ImplKind::kScalar>::MatrixInv(ioLHS);
+}
+
+template<typename T>
+auto MatrixInv(typename Impl8<T>::Simd& ioLHS)
+{
+	return MatrixHelper<T, ImplKind::kSimd>::MatrixInv(ioLHS);
 }
 
 } // namespace saber::geometry::detail
