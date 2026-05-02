@@ -14,6 +14,7 @@ class EventCallback
 	// We need to add some beef here so it can take user provided callbacks as constructor args
 };
 
+// Using NVI pattern here
 class EventManager
 {
 	// Consider using saber::TaggedType<std::uint64_t> as the basis for token in saber/utility.hpp
@@ -35,49 +36,90 @@ class EventManager
 
 public:
 	template<typename EventType>
-	// Consume:
-	Token Register(EventCallback&& ioCallback);
-	// Observe:
-	Token Register(const EventCallback& inCallback);
+	Token Register(EventCallback&& ioCallback); // Consume
+
+	template<typename EventType>
+	Token Register(const EventCallback& inCallback); // Observe
 
 	void Unregister(Token inToken);
 
+	// TODO: Fix ME! Notify should notify all consumers of an EventType, not just one token.
 	void Notify(Token inToken);
 
 private:
-	Token OnRegister() = 0;
+	virtual Token OnRegister(EventCallback&& inCallback) = 0;
 
-	void OnUnregister() = 0;
+	virtual void OnUnregister(Token inToken) = 0;
 
-	void OnNotify() = 0;
+	virtual void OnNotify() = 0;
 
-	//private:
-	std::uint64_t counter{ 0 }; // Counter to generate unique tokens
-	std::vector<std::tuple<Token, EventCallback>> mCallbackList;
+	~EventManager() = default;
 }; // class EventManager
 
 template<typename EventType>
-inline EventManager::Token EventManager::Register(EventCallback&& ioCallback)
+inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
-	//OnRegister();
-	Token newToken{ counter++ }; // Create a unique token
-	// TODO: Resolve observe vs consume callback parameter
-	mCallbackList.push_back(std::tuple<Token, EventCallback>{newToken, ioCallback}); // Store the token in the list
-	return newToken;
+	OnRegister(ioCallback);
+}
+
+inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
+{
+	OnRegister(inCallback);
 }
 
 inline EventManager::Token EventManager::Unregister(Token inToken)
 {
-	//OnUnregister();
-	// Search for the token in both lists and remove it
+	OnUnregister(inToken);
 }
 
-EventManager::Token EventManager::Notify(Token inToken)
+inline void EventManager::Notify(Token inToken)
 {
-	// Invoke any callbacks associated with the token
-	//OnNotify();
+	OnNotify(inToken);
+}
+
+class SimpleEventManager final : public EventManager // SimpleEventManager is-a EventManager
+{
+private:
+	Token OnRegister(EventCallback&& inCallback) override;
+
+	void OnUnregister(Token inToken) override;
+
+	void OnNotify(Token inToken) override;
+
+private:
+	std::uint64_t counter{ 0 }; // Counter to generate unique tokens
+	std::vector<std::tuple<Token, EventCallback>> mCallbackList;
+}; // class SimpleEventManager
+
+inline EventManager::Token SimpleEventManager::OnRegister(EventCallback&& inCallback)
+{
+	Token newToken{ counter++ }; // Create a unique token
+	mCallbackList.push_back(std::tuple<Token, EventCallback>{newToken, ioCallback}); // Store the token in the list
+	return newToken;
+}
+
+inline void SimpleEventManager::OnUnregister(Token inToken)
+{
+	// Search for the token in list and remove it
+	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
+	auto isTargetToken = [inToken](const CallbackElement& element) {
+		const bool isTarget = std::get<0>(element).mId == inToken.mId;
+		return isTarget;
+	};
+	// FIX ME: No need to go through the entire list; we can stop if we find the token
+	auto didRemove = std::remove_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
+	if (didRemove != mCallbackList.end()) {
+		// The remove makes a hole, the erase shifts the elements to fill the hole
+		// Game engines optimize this by moving the last element to the hole instead of shifting all elements
+		mCallbackList.erase(didRemove, mCallbackList.end());
+	}
+}
+
+inline void SimpleEventManager::OnNotify(Token inToken)
+{
 	// Search for the token in the callback list and invoke all associated callbacks
 }
+
 	/*
 	// I want to know when an NPC gets damaged
 	// Therefore, we have to keep track of the
