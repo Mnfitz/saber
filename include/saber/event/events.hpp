@@ -2,10 +2,12 @@
 #define SABER_EVENT_EVENTS_HPP
 
 // std
+#include <algorithm>
 #include <vector>
 
 // saber
 #include "saber/config.hpp"
+#include "saber/utility.hpp"
 
 namespace saber::event {
 
@@ -17,22 +19,8 @@ class EventCallback
 // Using NVI pattern here
 class EventManager
 {
-	// Consider using saber::TaggedType<std::uint64_t> as the basis for token in saber/utility.hpp
-	struct Token
-	{
-	public:
-		Token() = default;
-
-		Token(std::uint64_t inId)
-			: mId(inId)
-		{
-
-		}
-	private:
-		// 1. I need something to make it unique
-		// 2. It should be small enough for pass-by-value
-		std::uint64_t mId{ 0 }; // Unique identifier for the token
-	};
+public:
+	using Token = saber::TaggedType<std::uint64_t, EventManager>;
 
 public:
 	template<typename EventType>
@@ -44,10 +32,11 @@ public:
 	void Unregister(Token inToken);
 
 	// TODO: Fix ME! Notify should notify all consumers of an EventType, not just one token.
-	void Notify(Token inToken);
+	template<typename EventType>
+	void Notify(const EventType& inEvent);
 
 private:
-	virtual Token OnRegister(EventCallback&& inCallback) = 0;
+	virtual Token OnRegister(EventCallback&& ioCallback) = 0;
 
 	virtual void OnUnregister(Token inToken) = 0;
 
@@ -62,36 +51,38 @@ inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) //
 	OnRegister(ioCallback);
 }
 
+template<typename EventType>
 inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
 {
 	OnRegister(inCallback);
 }
 
-inline EventManager::Token EventManager::Unregister(Token inToken)
+inline void EventManager::Unregister(Token inToken)
 {
 	OnUnregister(inToken);
 }
 
-inline void EventManager::Notify(Token inToken)
+template<typename EventType>
+inline void EventManager::Notify(const EventType& inEvent)
 {
-	OnNotify(inToken);
+	OnNotify();
 }
 
 class SimpleEventManager final : public EventManager // SimpleEventManager is-a EventManager
 {
 private:
-	Token OnRegister(EventCallback&& inCallback) override;
+	Token OnRegister(EventCallback&& ioCallback) override;
 
 	void OnUnregister(Token inToken) override;
 
-	void OnNotify(Token inToken) override;
+	void OnNotify() override;
 
 private:
 	std::uint64_t counter{ 0 }; // Counter to generate unique tokens
 	std::vector<std::tuple<Token, EventCallback>> mCallbackList;
 }; // class SimpleEventManager
 
-inline EventManager::Token SimpleEventManager::OnRegister(EventCallback&& inCallback)
+inline EventManager::Token SimpleEventManager::OnRegister(EventCallback&& ioCallback)
 {
 	Token newToken{ counter++ }; // Create a unique token
 	mCallbackList.push_back(std::tuple<Token, EventCallback>{newToken, ioCallback}); // Store the token in the list
@@ -103,21 +94,38 @@ inline void SimpleEventManager::OnUnregister(Token inToken)
 	// Search for the token in list and remove it
 	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
 	auto isTargetToken = [inToken](const CallbackElement& element) {
-		const bool isTarget = std::get<0>(element).mId == inToken.mId;
+		const bool isTarget = std::get<0>(element) == inToken;
 		return isTarget;
 	};
-	// FIX ME: No need to go through the entire list; we can stop if we find the token
-	auto didRemove = std::remove_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
-	if (didRemove != mCallbackList.end()) {
-		// The remove makes a hole, the erase shifts the elements to fill the hole
-		// Game engines optimize this by moving the last element to the hole instead of shifting all elements
-		mCallbackList.erase(didRemove, mCallbackList.end());
+
+	// There will only ever be one matching token, therefore, we can use std::find_if to
+	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
+	const auto didFind = std::find_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
+	if (didFind != mCallbackList.end()) {
+
+		// REVISIT: Move assign might throw an exception?
+		// If so, we might have to do something like this:
+		//		std::iter_swap(didFind, std::prev(mCallbackList.end()));
+		//		mCallbackList.pop_back();
+
+		// Use an optimal O(1) removal for performance; note that list order is not considered important
+		*didFind = std::move(mCallbackList.back()); 
+		mCallbackList.pop_back(); // Remove the last element
 	}
 }
 
-inline void SimpleEventManager::OnNotify(Token inToken)
+inline void SimpleEventManager::OnNotify(/* we need a type parameter */)
 {
-	// Search for the token in the callback list and invoke all associated callbacks
+	EventCallback eventType{};
+	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
+	auto findAllCallbacks = [](const CallbackElement& element) -> void
+		{
+			// FIXME: Only invoke the callback if it matches the eventType
+			const EventCallback& callback = std::get<1>(element);
+			callback(); // Invoke the callback
+		};
+	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
+	std::for_each(mCallbackList.begin(), mCallbackList.end(), findAllCallbacks);
 }
 
 	/*
@@ -158,7 +166,8 @@ inline void SimpleEventManager::OnNotify(Token inToken)
 		NPC dummyNPC{};
 		HitpointChanged damage{dummyNPC, 20}; // HP changed and the instance which it occurred
 
-		eventManager.Notify(damage); // Notify all consumers the myNPC event has occurred
+		eventManager.Notify<HitpointChanged>(damage); // Notify all consumers the myNPC event has occurred
+		eventManager.Notify(5); // Notify all consumers the myNPC event has occurred
 
 		// Gameplay ends here
 

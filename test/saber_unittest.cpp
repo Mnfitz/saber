@@ -25,6 +25,7 @@
 #include "saber/exception.hpp"
 #include "saber/hash.hpp"
 #include "saber/inexact.hpp"
+#include "saber/event/events.hpp"
 
 // std
 #include <cstdio>
