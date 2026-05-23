@@ -1,19 +1,26 @@
 #ifndef SABER_EVENT_EVENTS_HPP
 #define SABER_EVENT_EVENTS_HPP
 
-// std
-#include <algorithm>
-#include <vector>
-
 // saber
 #include "saber/config.hpp"
 #include "saber/utility.hpp"
+
+// std
+#include <algorithm>
+#include <any>
+#include <typeindex>
+#include <typeinfo>
+#include <vector>
 
 namespace saber::event {
 
 class EventCallback
 {
 	// We need to add some beef here so it can take user provided callbacks as constructor args
+	int operator()(/*no parameters*/) const
+	{
+		return 0;
+	}
 };
 
 // Using NVI pattern here
@@ -31,29 +38,35 @@ public:
 
 	void Unregister(Token inToken);
 
-	// TODO: Fix ME! Notify should notify all consumers of an EventType, not just one token.
 	template<typename EventType>
 	void Notify(const EventType& inEvent);
 
 private:
-	virtual Token OnRegister(EventCallback&& ioCallback) = 0;
+	virtual Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) = 0;
 
 	virtual void OnUnregister(Token inToken) = 0;
 
-	virtual void OnNotify() = 0;
+	virtual void OnNotify(std::any inEventValue) = 0;
 
 	~EventManager() = default;
 }; // class EventManager
 
+// TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
 template<typename EventType>
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
-	OnRegister(ioCallback);
+	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
+	// to allow us to find callbacks of a certain type from the callback list
+	std::type_index eventType = typeid(ioCallback);
+	OnRegister(eventType, ioCallback);
 }
 
 template<typename EventType>
 inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
 {
+	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
+	// to allow us to find callbacks of a certain type from the callback list
+	std::type_index eventType = typeid(inCallback);
 	OnRegister(inCallback);
 }
 
@@ -65,27 +78,28 @@ inline void EventManager::Unregister(Token inToken)
 template<typename EventType>
 inline void EventManager::Notify(const EventType& inEvent)
 {
-	OnNotify();
+	// Get "work" value out of the event and pass it in
+	OnNotify(typeid(inEvent), inEvent /*the work value*/);
 }
 
 class SimpleEventManager final : public EventManager // SimpleEventManager is-a EventManager
 {
 private:
-	Token OnRegister(EventCallback&& ioCallback) override;
+	Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) override;
 
 	void OnUnregister(Token inToken) override;
 
-	void OnNotify() override;
+	void OnNotify(std::any inEventValue) override;
 
 private:
 	std::uint64_t counter{ 0 }; // Counter to generate unique tokens
-	std::vector<std::tuple<Token, EventCallback>> mCallbackList;
+	std::vector<std::tuple<Token, std::type_index, EventCallback>> mCallbackList;
 }; // class SimpleEventManager
 
-inline EventManager::Token SimpleEventManager::OnRegister(EventCallback&& ioCallback)
+inline EventManager::Token SimpleEventManager::OnRegister(std::type_index inEventType, EventCallback&& ioCallback)
 {
 	Token newToken{ counter++ }; // Create a unique token
-	mCallbackList.push_back(std::tuple<Token, EventCallback>{newToken, ioCallback}); // Store the token in the list
+	mCallbackList.push_back({newToken, inEventType, ioCallback}); // Store the token in the list
 	return newToken;
 }
 
@@ -114,18 +128,46 @@ inline void SimpleEventManager::OnUnregister(Token inToken)
 	}
 }
 
-inline void SimpleEventManager::OnNotify(/* we need a type parameter */)
+inline void SimpleEventManager::OnNotify(std::any inEventValue)
 {
 	EventCallback eventType{};
-	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
-	auto findAllCallbacks = [](const CallbackElement& element) -> void
+	const std::type_index targetType = inEventValue.type();
+	auto findAllCallbacks = [&inEventValue, &targetType](const auto& element) -> void
 		{
-			// FIXME: Only invoke the callback if it matches the eventType
-			const EventCallback& callback = std::get<1>(element);
-			callback(); // Invoke the callback
+			const auto& [token, eventType, callback] = element;
+			if (eventType == targetType)
+			{
+				// TODO: Get the value from event to pass into callback
+				callback(/*the work value*/); // Invoke the callback
+			}
 		};
+
 	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
+#if 1
+	// use range based for C++11, preferred way
 	std::for_each(mCallbackList.begin(), mCallbackList.end(), findAllCallbacks);
+#elif 0
+	// use range based for C++17
+	for (const auto& element : mCallbackList)
+	{
+		const EventCallback& callback = std::get<1>(element);
+		callback(); // Invoke the callback
+	}
+#elif 0
+	// use std::iterator C++03
+	for (auto iter = mCallbackList.begin(); iter != mCallbackList.end(); ++iter)
+	{
+		const EventCallback& callback = std::get<1>(*iter);
+		callback(); // Invoke the callback
+	}
+#elif 0
+	// use for loop with index C
+	for (size_t i = 0; i < mCallbackList.size(); ++i)
+	{
+		const EventCallback& callback = std::get<1>(mCallbackList[i]);
+		callback(); // Invoke the callback
+	}
+#endif
 }
 
 	/*
