@@ -8,12 +8,14 @@
 // std
 #include <algorithm>
 #include <any>
+#include <memory>
 #include <typeindex>
 #include <typeinfo>
 #include <vector>
 
 namespace saber::event {
 
+#if 0
 class EventCallback
 {
 	// We need to add some beef here so it can take user provided callbacks as constructor args
@@ -22,12 +24,72 @@ class EventCallback
 		return 0;
 	}
 };
+#elif 1
+// The `EventCallback` class type-erases a user-provided callable (e.g., a
+// lambda) and provides a uniform `int operator()(std::any)` entry point that
+// can be invoked by the event system regardless of the concrete event type.
+class EventCallback
+{
+public:
+	// Constructor template: capture any callable `Lambda` that accepts
+	// `const EventType&` and returns `int`. We store the callable in
+	// `mCallback` (as `std::any`) and create a small trampoline function
+	// (`mInvoke`) that knows how to cast the `std::any` values back to the
+	// original `Lambda` and `EventType` and call the callable.
+	template<typename EventType, typename Lambda>
+	EventCallback(Lambda inLambda) :
+		// store the user-provided callable (type-erased)
+		mCallback{inLambda},
+		// trampoline: casts the erased callable and erased event back to
+		// their concrete types and invokes the callable.
+		mInvoke{+[](const std::any& inCallback, const std::any& inArg)
+		{
+			// Recover the original callable (Lambda) from the std::any.
+			auto& callback = std::any_cast<const Lambda&>(inCallback);
+			// Recover the concrete event value from the std::any.
+			auto& arg = std::any_cast<const EventType&>(inArg);
+			// Call the original callable with the concrete event.
+			return callback(arg);
+		}}
+	{
+		// Compile-time check: ensure the provided Lambda matches the
+		// expected signature `int(const EventType&)`.
+		static_assert(std::is_invocable_r_v<int, Lambda, const EventType&>);
+	}
+
+	// Expose a uniform call operator that accepts the event as `std::any`.
+	// This forwards the erased event and callable into the trampoline.
+	int operator()(const std::any& inArg)
+	{
+		return mInvoke(mCallback, inArg);
+	}
+
+private:
+	// Trampoline function type: takes the erased callable and the erased
+	// event value and returns an `int` result.
+	using CallbackType = int(*)(const std::any&, const std::any&);
+
+private:
+	// The original callable stored with type-erasure so many different
+	// callable types can be stored in the same container.
+	std::any mCallback{};
+	// Pointer to the trampoline function that knows how to cast and
+	// invoke `mCallback` for the correct `EventType`.
+	CallbackType mInvoke{};
+};
+
+#endif
 
 // Using NVI pattern here
 class EventManager
 {
 public:
 	using Token = saber::TaggedType<std::uint64_t, EventManager>;
+
+public:
+	static std::unique_ptr<EventManager> Make();
+
+	virtual ~EventManager() = default;
 
 public:
 	template<typename EventType>
@@ -41,6 +103,9 @@ public:
 	template<typename EventType>
 	void Notify(const EventType& inEvent);
 
+protected:
+	EventManager() = default;
+
 private:
 	virtual Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) = 0;
 
@@ -48,7 +113,6 @@ private:
 
 	virtual void OnNotify(std::any inEventValue) = 0;
 
-	~EventManager() = default;
 }; // class EventManager
 
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
@@ -84,6 +148,11 @@ inline void EventManager::Notify(const EventType& inEvent)
 
 class SimpleEventManager final : public EventManager // SimpleEventManager is-a EventManager
 {
+public:
+	SimpleEventManager() = default;
+
+	~SimpleEventManager() override = default;
+
 private:
 	Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) override;
 
@@ -92,13 +161,13 @@ private:
 	void OnNotify(std::any inEventValue) override;
 
 private:
-	std::uint64_t counter{ 0 }; // Counter to generate unique tokens
+	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
 	std::vector<std::tuple<Token, std::type_index, EventCallback>> mCallbackList;
 }; // class SimpleEventManager
 
 inline EventManager::Token SimpleEventManager::OnRegister(std::type_index inEventType, EventCallback&& ioCallback)
 {
-	Token newToken{ counter++ }; // Create a unique token
+	Token newToken{ mCounter++ }; // Create a unique token
 	mCallbackList.push_back({newToken, inEventType, ioCallback}); // Store the token in the list
 	return newToken;
 }
@@ -114,8 +183,23 @@ inline void SimpleEventManager::OnUnregister(Token inToken)
 
 	// There will only ever be one matching token, therefore, we can use std::find_if to
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
+#if 1
 	const auto didFind = std::find_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
-	if (didFind != mCallbackList.end()) {
+#elif 0
+	// use range based version of std::find_if for C++17
+	for (const auto& element : mCallbackList)
+	{
+		if (isTargetToken(element))
+		{
+			didFind = &element; // Get pointer to the found element
+			break; // Exit loop after finding the first match
+		}
+	}
+#else
+	
+#endif
+
+if (didFind != mCallbackList.end()) {
 
 		// REVISIT: Move assign might throw an exception?
 		// If so, we might have to do something like this:
@@ -128,23 +212,24 @@ inline void SimpleEventManager::OnUnregister(Token inToken)
 	}
 }
 
-inline void SimpleEventManager::OnNotify(std::any inEventValue)
+inline void SimpleEventManager::OnNotify(std::any inEvent)
 {
-	EventCallback eventType{};
-	const std::type_index targetType = inEventValue.type();
-	auto findAllCallbacks = [&inEventValue, &targetType](const auto& element) -> void
+	const std::type_index targetType = inEvent.type();
+	auto findAllCallbacks = [&inEvent, &targetType](const auto& element) -> void
+	{
+		const auto& [token, eventType, callback] = element;
+		if (eventType == targetType)
 		{
-			const auto& [token, eventType, callback] = element;
-			if (eventType == targetType)
-			{
-				// TODO: Get the value from event to pass into callback
-				callback(/*the work value*/); // Invoke the callback
-			}
-		};
+			//C:\Users\mn-fi\Projects\git\saber\include\saber\event\events.hpp(223,4): error C2662: 
+			//'int saber::event::EventCallback::operator ()(const std::any &)': cannot convert 'this' 
+			//pointer from 'const saber::event::EventCallback' to 'saber::event::EventCallback &' 
+			callback(inEvent); // Reference operator(): invoke the callback
+		}
+	};
 
 	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
 #if 1
-	// use range based for C++11, preferred way
+	// use std::for_each for C++11, preferred way
 	std::for_each(mCallbackList.begin(), mCallbackList.end(), findAllCallbacks);
 #elif 0
 	// use range based for C++17
@@ -220,9 +305,17 @@ inline void SimpleEventManager::OnNotify(std::any inEventValue)
 
 namespace detail {
 
-
+// Implementation goes here
 
 } // namespace detail
+
+inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
+{
+
+	std::unique_ptr<EventManager> result{new SimpleEventManager()};
+
+	return result;
+}
 
 } // namespace saber::event
 #endif // SABER_EVENT_EVENTS_HPP
