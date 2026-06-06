@@ -38,8 +38,10 @@ public:
 		// Use it like this: 
 		//     struct MyEvent{int mHitpointsRemaining{};};
 		//     auto myCallback = EventCallback::Make<MyEvent>([](const MyEvent& inEvent){return 0;});
-		//     EventCallback<MyEvent> myCallback{[](const MyEvent& inEvent){return 0;}};
-		return EventCallback(std::move(ioLambda));
+		static_assert(std::is_invocable_r_v<int, Lambda, const EventType&>);
+		// FIX: pass a EventTypeTag so the private constructor can deduce EventType,
+		// since constructors cannot have explicit template arguments in C++17.
+		return EventCallback(EventTypeTag<EventType>{}, std::forward<Lambda>(ioLambda));
 	}
 
 	// Expose a uniform call operator that accepts the event as `std::any`.
@@ -50,13 +52,17 @@ public:
 	}
 
 private:
+	// Phantom tag so the constructor can deduce EventType without explicit
+	// template arguments (constructors cannot have explicit template args in C++17).
+	template<typename T> struct EventTypeTag {};
+
 	// Constructor template: capture any callable `Lambda` that accepts
 	// `const EventType&` and returns `int`. We store the callable in
 	// `mCallback` (as `std::any`) and create a small trampoline function
 	// (`mInvoke`) that knows how to cast the `std::any` values back to the
 	// original `Lambda` and `EventType` and call the callable.
 	template<typename EventType, typename Lambda>
-	EventCallback(Lambda inLambda) :
+	EventCallback(EventTypeTag<EventType>, Lambda inLambda) :
 		// store the user-provided callable (type-erased)
 		mCallback{inLambda},
 		// trampoline: casts the erased callable and erased event back to
@@ -71,9 +77,6 @@ private:
 			return callback(arg);
 		}}
 	{
-		// Compile-time check: ensure the provided Lambda matches the
-		// expected signature `int(const EventType&)`.
-		static_assert(std::is_invocable_r_v<int, Lambda, const EventType&>);
 	}
 
 	// Trampoline function type: takes the erased callable and the erased
