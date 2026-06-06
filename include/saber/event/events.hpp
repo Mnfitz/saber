@@ -28,9 +28,28 @@ class EventCallback
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
 // can be invoked by the event system regardless of the concrete event type.
+
 class EventCallback
 {
 public:
+	template<typename EventType, typename Lambda>
+	static EventCallback Make(Lambda&& ioLambda)
+	{
+		// Use it like this: 
+		//     struct MyEvent{int mHitpointsRemaining{};};
+		//     auto myCallback = EventCallback::Make<MyEvent>([](const MyEvent& inEvent){return 0;});
+		//     EventCallback<MyEvent> myCallback{[](const MyEvent& inEvent){return 0;}};
+		return EventCallback(std::move(ioLambda));
+	}
+
+	// Expose a uniform call operator that accepts the event as `std::any`.
+	// This forwards the erased event and callable into the trampoline.
+	int operator()(const std::any& inArg) const
+	{
+		return mInvoke(mCallback, inArg);
+	}
+
+private:
 	// Constructor template: capture any callable `Lambda` that accepts
 	// `const EventType&` and returns `int`. We store the callable in
 	// `mCallback` (as `std::any`) and create a small trampoline function
@@ -57,14 +76,6 @@ public:
 		static_assert(std::is_invocable_r_v<int, Lambda, const EventType&>);
 	}
 
-	// Expose a uniform call operator that accepts the event as `std::any`.
-	// This forwards the erased event and callable into the trampoline.
-	int operator()(const std::any& inArg)
-	{
-		return mInvoke(mCallback, inArg);
-	}
-
-private:
 	// Trampoline function type: takes the erased callable and the erased
 	// event value and returns an `int` result.
 	using CallbackType = int(*)(const std::any&, const std::any&);
@@ -93,10 +104,10 @@ public:
 
 public:
 	template<typename EventType>
-	Token Register(EventCallback&& ioCallback); // Consume
+	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
 
 	template<typename EventType>
-	Token Register(const EventCallback& inCallback); // Observe
+	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
 
 	void Unregister(Token inToken);
 
@@ -111,7 +122,7 @@ private:
 
 	virtual void OnUnregister(Token inToken) = 0;
 
-	virtual void OnNotify(std::any inEventValue) = 0;
+	virtual void OnNotify(std::any inEvent) = 0;
 
 }; // class EventManager
 
@@ -121,8 +132,8 @@ inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) //
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
-	std::type_index eventType = typeid(ioCallback);
-	OnRegister(eventType, ioCallback);
+	std::type_index eventType = typeid(EventType); // use the template param
+	return OnRegister(eventType, std::move(ioCallback));
 }
 
 template<typename EventType>
@@ -130,8 +141,9 @@ inline EventManager::Token EventManager::Register(const EventCallback& inCallbac
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
-	std::type_index eventType = typeid(inCallback);
-	OnRegister(inCallback);
+	EventCallback copy{inCallback}; // explicit copy
+	std::type_index eventType = typeid(EventType); // use the template param
+    return OnRegister(eventType, std::move(copy));
 }
 
 inline void EventManager::Unregister(Token inToken)
@@ -142,65 +154,55 @@ inline void EventManager::Unregister(Token inToken)
 template<typename EventType>
 inline void EventManager::Notify(const EventType& inEvent)
 {
-	// Get "work" value out of the event and pass it in
-	OnNotify(typeid(inEvent), inEvent /*the work value*/);
+	OnNotify(std::any{inEvent}); // Explicit copy
 }
 
-class SimpleEventManager final : public EventManager // SimpleEventManager is-a EventManager
+namespace detail {
+
+class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
 public:
-	SimpleEventManager() = default;
+	~EventManagerImpl() override = default;
 
-	~SimpleEventManager() override = default;
+private:
+	friend class EventManager; // allow Make() to construct it
+    EventManagerImpl() = default;
 
 private:
 	Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) override;
 
 	void OnUnregister(Token inToken) override;
 
-	void OnNotify(std::any inEventValue) override;
+	void OnNotify(std::any inEvent) override;
 
 private:
 	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
 	std::vector<std::tuple<Token, std::type_index, EventCallback>> mCallbackList;
-}; // class SimpleEventManager
+}; // class EventManagerImpl
 
-inline EventManager::Token SimpleEventManager::OnRegister(std::type_index inEventType, EventCallback&& ioCallback)
+inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inEventType, EventCallback&& ioCallback)
 {
 	Token newToken{ mCounter++ }; // Create a unique token
-	mCallbackList.push_back({newToken, inEventType, ioCallback}); // Store the token in the list
+	mCallbackList.emplace_back(newToken, inEventType, std::move(ioCallback));
 	return newToken;
 }
 
-inline void SimpleEventManager::OnUnregister(Token inToken)
+inline void EventManagerImpl::OnUnregister(Token inToken)
 {
 	// Search for the token in list and remove it
 	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
-	auto isTargetToken = [inToken](const CallbackElement& element) {
+	auto isTargetToken = [inToken](const CallbackElement& element) 
+	{
 		const bool isTarget = std::get<0>(element) == inToken;
 		return isTarget;
 	};
 
 	// There will only ever be one matching token, therefore, we can use std::find_if to
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
-#if 1
 	const auto didFind = std::find_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
-#elif 0
-	// use range based version of std::find_if for C++17
-	for (const auto& element : mCallbackList)
+
+	if (didFind != mCallbackList.end()) 
 	{
-		if (isTargetToken(element))
-		{
-			didFind = &element; // Get pointer to the found element
-			break; // Exit loop after finding the first match
-		}
-	}
-#else
-	
-#endif
-
-if (didFind != mCallbackList.end()) {
-
 		// REVISIT: Move assign might throw an exception?
 		// If so, we might have to do something like this:
 		//		std::iter_swap(didFind, std::prev(mCallbackList.end()));
@@ -212,7 +214,7 @@ if (didFind != mCallbackList.end()) {
 	}
 }
 
-inline void SimpleEventManager::OnNotify(std::any inEvent)
+inline void EventManagerImpl::OnNotify(std::any inEvent)
 {
 	const std::type_index targetType = inEvent.type();
 	auto findAllCallbacks = [&inEvent, &targetType](const auto& element) -> void
@@ -220,100 +222,20 @@ inline void SimpleEventManager::OnNotify(std::any inEvent)
 		const auto& [token, eventType, callback] = element;
 		if (eventType == targetType)
 		{
-			//C:\Users\mn-fi\Projects\git\saber\include\saber\event\events.hpp(223,4): error C2662: 
-			//'int saber::event::EventCallback::operator ()(const std::any &)': cannot convert 'this' 
-			//pointer from 'const saber::event::EventCallback' to 'saber::event::EventCallback &' 
 			callback(inEvent); // Reference operator(): invoke the callback
 		}
 	};
 
 	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
-#if 1
 	// use std::for_each for C++11, preferred way
 	std::for_each(mCallbackList.begin(), mCallbackList.end(), findAllCallbacks);
-#elif 0
-	// use range based for C++17
-	for (const auto& element : mCallbackList)
-	{
-		const EventCallback& callback = std::get<1>(element);
-		callback(); // Invoke the callback
-	}
-#elif 0
-	// use std::iterator C++03
-	for (auto iter = mCallbackList.begin(); iter != mCallbackList.end(); ++iter)
-	{
-		const EventCallback& callback = std::get<1>(*iter);
-		callback(); // Invoke the callback
-	}
-#elif 0
-	// use for loop with index C
-	for (size_t i = 0; i < mCallbackList.size(); ++i)
-	{
-		const EventCallback& callback = std::get<1>(mCallbackList[i]);
-		callback(); // Invoke the callback
-	}
-#endif
 }
-
-	/*
-	// I want to know when an NPC gets damaged
-	// Therefore, we have to keep track of the
-	// 1. list of tokens
-	// 2. type of event
-	// 3. function callback
-
-		struct NPC
-		{
-			// NPC data here
-			int hitpoints;
-		};
-
-		struct HitpointChanged // Event to modify NPCs
-		{
-			NPC& npc;
-			int hitpoints;
-		};
-
-		void AdjustHitpoints(const HitpointsChanged& inChange);
-		void ShowExplode(const HitpointsChanged& inChange);
-
-		EventCallback hitpointAdjust{AdjustHitpoints, damage};
-		EventCallback showExplode{ShowExplode};
-
-		// Just 1 event manager to rule them all
-		EventManager& eventManager = magic;
-
-		auto tokenHP = eventManager.Register<HitpointChanged>(hitpointAdjust); // Consumer 1: NPC has a hitpoint adjust event registered
-		auto tokenExplode1 = eventManager.Register<HitpointChanged>(showExplode); // Consumer 2: NPC has an explode event registered
-		auto tokenExplode2 = eventManager.Register<HitpointChanged>(showExplode); // Consumer 3: NPC is registered for explode event again, but as tokens are unique, it is fine
-
-		// Gameplay occurs here
-
-		// Send a notification here
-		NPC dummyNPC{};
-		HitpointChanged damage{dummyNPC, 20}; // HP changed and the instance which it occurred
-
-		eventManager.Notify<HitpointChanged>(damage); // Notify all consumers the myNPC event has occurred
-		eventManager.Notify(5); // Notify all consumers the myNPC event has occurred
-
-		// Gameplay ends here
-
-		eventManager.Unregister(tokenExplode1); // Order isn't as important, but we can unregister the explode event first
-		eventManager.Unregister(tokenExplode2); // Unregister tokenExplode2
-		eventManager.Unregister(tokenHP); // NPC is dead, unregister hitpoint adjust event
-	*/
-
-namespace detail {
-
-// Implementation goes here
 
 } // namespace detail
 
 inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 {
-
-	std::unique_ptr<EventManager> result{new SimpleEventManager()};
-
+	std::unique_ptr<EventManager> result{new detail::EventManagerImpl()};
 	return result;
 }
 
