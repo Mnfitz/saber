@@ -106,16 +106,16 @@ public:
 	virtual ~EventManager() = default;
 
 public:
-	template<typename EventType>
+	template<typename SenderType, typename EventType>
 	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
 
-	template<typename EventType>
+	template<typename SenderType, typename EventType>
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
 
 	void Unregister(Token inToken);
 
-	template<typename EventType>
-	void Notify(const EventType& inEvent);
+	template<typename SenderType, typename EventType>
+	void Notify(const SenderType& inSender, const EventType& inEvent);
 
 protected:
 	EventManager() = default;
@@ -130,7 +130,7 @@ private:
 }; // class EventManager
 
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
-template<typename EventType>
+template<typename SenderType, typename EventType>
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
@@ -139,7 +139,7 @@ inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) //
 	return OnRegister(eventType, std::move(ioCallback));
 }
 
-template<typename EventType>
+template<typename SenderType, typename EventType>
 inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
@@ -154,8 +154,8 @@ inline void EventManager::Unregister(Token inToken)
 	OnUnregister(inToken);
 }
 
-template<typename EventType>
-inline void EventManager::Notify(const EventType& inEvent)
+template<typename SenderType, typename EventType>
+inline void EventManager::Notify(const SenderType& inSender, const EventType& inEvent)
 {
 	OnNotify(std::any{inEvent}); // Explicit copy
 }

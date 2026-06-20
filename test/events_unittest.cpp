@@ -13,7 +13,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "saber/event/events.hpp"
+#include "saber/event/event_manager.hpp"
 
 // ============================================================================
 // Test event types
@@ -32,7 +32,7 @@ struct HealEvent
 struct EmptyEvent {};
 
 // Convenience alias
-using namespace saber::event;
+using namespace saber::events;
 
 // ============================================================================
 // Helpers
