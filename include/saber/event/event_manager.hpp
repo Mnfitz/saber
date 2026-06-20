@@ -13,7 +13,7 @@
 #include <typeinfo>
 #include <vector>
 
-namespace saber::event {
+namespace saber::events {
 
 #if 0
 class EventCallback
@@ -242,5 +242,5 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 	return result;
 }
 
-} // namespace saber::event
+} // namespace saber::events
 #endif // SABER_EVENT_EVENTS_HPP
