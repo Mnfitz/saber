@@ -83,10 +83,8 @@ TEST_CASE(	"saber::Exception and macros (REQUIRE, ENSURE, ASSERT)",
 
 	SECTION("SABER_ASSERT with true condition does not throw")
 	{
-		bool cond = true;
-		bool cond2 = (1 == 1);
-		REQUIRE_NOTHROW(SABER_ASSERT(cond));
-		REQUIRE_NOTHROW(SABER_ASSERT(cond2));
+		REQUIRE_NOTHROW(SABER_ASSERT(true));
+		REQUIRE_NOTHROW(SABER_ASSERT(1 == 1));
 	}
 
 	SECTION("saber::Exception derives from std::runtime_error")

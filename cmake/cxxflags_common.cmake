@@ -25,8 +25,8 @@ if (MSVC)
 	# revert to the desired (and default) inlining behavior as that exercises more interesting code paths
 	if ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
 		# TODO: This is currently blocked by an apparent Clang bug: https://github.com/llvm/llvm-project/issues/59690
-		# replace_cxx_flag("/Ob1" "/Ob2")
-		replace_cxx_flag("/Ob1" "/Ob2")
+		# replace_cxx_flag("/Ob1" "/Ob3")
+		replace_cxx_flag("/Ob1" "/Ob3")
 	endif() # STREQUAL "RelWithDebInfo"
 
 	# Turn on "multi-procssor compilation" switch

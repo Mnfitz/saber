@@ -7,7 +7,7 @@
 #include "saber/geometry/point.hpp"
 #include "saber/geometry/size.hpp"
 #include "saber/geometry/detail/impl4.hpp"
-#include "saber/utility.hpp"
+#include "saber/geometry/utility.hpp"
 
 // std
 #include <utility>
