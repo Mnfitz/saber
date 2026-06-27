@@ -53,24 +53,35 @@ public:
     struct Eq
     {
     public:
-        Eq(const T& inLHS) :
-            mLHS{inLHS}
+        Eq(const T& inLHS) : mLHS{ inLHS } {}
+
+        template<typename U = T, typename SFINAE = std::enable_if_t<std::is_integral_v<U>>>
+        bool operator()(const T& inRHS) const
         {
-            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
-            static_assert(isFloatingPoint, "Eq only supports floating point types");
-        };
+            return (mLHS == inRHS); // integral types can be compared using regular equality
+        }
 
         bool operator()(const T& inRHS) const
         {
-            // magnitude: the further we get away from 0, the more inexactness we allow
-            const T magnitude = std::max<T>(std::max<T>(std::abs(mLHS), std::abs(inRHS)), 1.0f); 
-            // difference: compare the 2 numbers
-            const T difference = std::abs(mLHS - inRHS);
-            // epsilon: minimal permitted amount of inexactness
-            const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
-            // IsEqual: equality occurs if the difference is within a scaled epsilon
-            const bool IsEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
-            return IsEqual;
+            if constexpr (!std::is_floating_point_v<T>)
+            {
+                // integral types can be compared using regular equality
+                return (mLHS == inRHS);
+            }
+            else
+            {
+                // floating point types require finesse to account for "inexactness"...
+
+                // magnitude: the further we get away from 0, the more inexactness we allow
+                const T magnitude = std::max<T>(std::max<T>(std::abs(mLHS), std::abs(inRHS)), 1.0f);
+                // difference: compare the 2 numbers
+                const T difference = std::abs(mLHS - inRHS);
+                // epsilon: minimal permitted amount of inexactness
+                const T epsilon = std::numeric_limits<T>::epsilon() * magnitude;
+                // IsEqual: equality occurs if the difference is within a scaled epsilon
+                const bool IsEqual = difference <= epsilon; // some arbirtary small number (Note: Intergral epsilon is 0)
+                return IsEqual;
+            }
         }
 
     private:
@@ -84,12 +95,7 @@ public:
     struct Ne
     {
     public:
-        Ne(const T& inLHS) :
-            mLHS{inLHS}
-        {
-            constexpr bool isFloatingPoint = std::is_floating_point_v<T>;
-            static_assert(isFloatingPoint, "Ne only supports floating point types");
-        };
+        Ne(const T& inLHS) : mLHS{inLHS} {}
 
         bool operator()(const T& inRHS) const
         {
