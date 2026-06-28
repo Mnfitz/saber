@@ -9,11 +9,15 @@
 #include <algorithm>
 #include <any>
 #include <memory>
+#include <tuple>
 #include <typeindex>
 #include <typeinfo>
 #include <vector>
 
 namespace saber::events {
+
+template<typename SenderType, typename EventType>
+using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
 #if 0
 class EventCallback
@@ -32,16 +36,14 @@ class EventCallback
 class EventCallback
 {
 public:
-	template<typename EventType, typename Lambda>
+	template<typename SenderType, typename EventType, typename Lambda>
 	static EventCallback Make(Lambda&& ioLambda)
 	{
-		// Use it like this: 
+		// Use it like this:
 		//     struct MyEvent{int mHitpointsRemaining{};};
-		//     auto myCallback = EventCallback::Make<MyEvent>([](const MyEvent& inEvent){return 0;});
-		static_assert(std::is_invocable_r_v<int, Lambda, const EventType&>);
-		// FIX: pass a EventTypeTag so the private constructor can deduce EventType,
-		// since constructors cannot have explicit template arguments in C++17.
-		return EventCallback(EventTypeTag<EventType>{}, std::forward<Lambda>(ioLambda));
+		//     auto myCallback = EventCallback::Make<SenderType, MyEvent>([](const SenderType&, const MyEvent&){return 0;});
+		static_assert(std::is_invocable_r_v<int, Lambda, const SenderType&, const EventType&>);
+		return EventCallback(SenderTypeTag<SenderType>{}, EventTypeTag<EventType>{}, std::forward<Lambda>(ioLambda));
 	}
 
 	// Expose a uniform call operator that accepts the event as `std::any`.
@@ -55,33 +57,35 @@ private:
 	// Phantom tag so the constructor can deduce EventType without explicit
 	// template arguments (constructors cannot have explicit template args in C++17).
 	template<typename T> struct EventTypeTag {};
+	template<typename T> struct SenderTypeTag {};
 
 	// Constructor template: capture any callable `Lambda` that accepts
-	// `const EventType&` and returns `int`. We store the callable in
-	// `mCallback` (as `std::any`) and create a small trampoline function
-	// (`mInvoke`) that knows how to cast the `std::any` values back to the
-	// original `Lambda` and `EventType` and call the callable.
-	template<typename EventType, typename Lambda>
-	EventCallback(EventTypeTag<EventType>, Lambda inLambda) :
+	// `(const SenderType&, const EventType&)` and returns `int`. We store the
+	// callable in `mCallback` (as `std::any`) and create a small trampoline
+	// function (`mInvoke`) that knows how to cast the `std::any` values back to
+	// the original `Lambda` and event tuple and call the callable.
+	template<typename SenderType, typename EventType, typename Lambda>
+	EventCallback(SenderTypeTag<SenderType>, EventTypeTag<EventType>, Lambda inLambda) :
 		// store the user-provided callable (type-erased)
 		mCallback{inLambda},
 		// trampoline: casts the erased callable and erased event back to
 		// their concrete types and invokes the callable.
-		mInvoke{+[](const std::any& inCallback, const std::any& inArg)
+		mInvoke{+[](const std::any& inCallback, const std::any& inArgs)
 		{
 			// Recover the original callable (Lambda) from the std::any.
 			auto& callback = std::any_cast<const Lambda&>(inCallback);
-			// Recover the concrete event value from the std::any.
-			auto& arg = std::any_cast<const EventType&>(inArg);
-			// Call the original callable with the concrete event.
-			return callback(arg);
+			// Recover the concrete sender/event values from the std::any.
+			auto& args = std::any_cast<const EventArgsType<SenderType, EventType>&>(inArgs);
+			auto [senderValue, eventValue] = args;
+			// Call the original callback using its sender and event.
+			return callback(senderValue, eventValue);
 		}}
 	{
 	}
 
 	// Trampoline function type: takes the erased callable and the erased
 	// event value and returns an `int` result.
-	using CallbackType = int(*)(const std::any&, const std::any&);
+	using CallbackType = int(*)(const std::any& inCallback, const std::any& inArgs);
 
 private:
 	// The original callable stored with type-erasure so many different
@@ -115,7 +119,7 @@ public:
 	void Unregister(Token inToken);
 
 	template<typename SenderType, typename EventType>
-	void Notify(const SenderType& inSender, const EventType& inEvent);
+	void Notify(SenderType& inSender, const EventType& inEvent);
 
 protected:
 	EventManager() = default;
@@ -125,7 +129,7 @@ private:
 
 	virtual void OnUnregister(Token inToken) = 0;
 
-	virtual void OnNotify(std::any inEvent) = 0;
+	virtual void OnNotify(std::any inArgs) = 0;
 
 }; // class EventManager
 
@@ -135,7 +139,7 @@ inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) //
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
-	std::type_index eventType = typeid(EventType); // use the template param
+	std::type_index eventType = typeid(EventArgsType<SenderType, EventType>); // use the template params
 	return OnRegister(eventType, std::move(ioCallback));
 }
 
@@ -145,7 +149,7 @@ inline EventManager::Token EventManager::Register(const EventCallback& inCallbac
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
 	EventCallback copy{inCallback}; // explicit copy
-	std::type_index eventType = typeid(EventType); // use the template param
+	std::type_index eventType = typeid(EventArgsType<SenderType, EventType>); // use the template params
     return OnRegister(eventType, std::move(copy));
 }
 
@@ -155,9 +159,10 @@ inline void EventManager::Unregister(Token inToken)
 }
 
 template<typename SenderType, typename EventType>
-inline void EventManager::Notify(const SenderType& inSender, const EventType& inEvent)
+inline void EventManager::Notify(SenderType& inSender, const EventType& inEvent)
 {
-	OnNotify(std::any{inEvent}); // Explicit copy
+	EventArgsType<SenderType, EventType> args{inSender, inEvent};
+	OnNotify(std::any{args}); // Explicit copy
 }
 
 namespace detail {
@@ -176,7 +181,7 @@ private:
 
 	void OnUnregister(Token inToken) override;
 
-	void OnNotify(std::any inEvent) override;
+	void OnNotify(std::any inArgs) override;
 
 private:
 	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
@@ -217,15 +222,15 @@ inline void EventManagerImpl::OnUnregister(Token inToken)
 	}
 }
 
-inline void EventManagerImpl::OnNotify(std::any inEvent)
+inline void EventManagerImpl::OnNotify(std::any inArgs)
 {
-	const std::type_index targetType = inEvent.type();
-	auto findAllCallbacks = [&inEvent, &targetType](const auto& element) -> void
+	const std::type_index targetType = inArgs.type();
+	auto findAllCallbacks = [&inArgs, &targetType](const auto& element) -> void
 	{
 		const auto& [token, eventType, callback] = element;
 		if (eventType == targetType)
 		{
-			callback(inEvent); // Reference operator(): invoke the callback
+			callback(inArgs); // Reference operator(): invoke the callback
 		}
 	};
 
