@@ -181,9 +181,9 @@ TEST_CASE("Notify dispatches to a single registered callback", "[Register][Notif
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto token = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
+    auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{10});
+    manager->Notify(sender, DamageEvent{10});
 
     REQUIRE(log.size() == 1);
     REQUIRE(log[0] == 10);
@@ -196,10 +196,10 @@ TEST_CASE("Notify dispatches to multiple callbacks registered for the same event
     auto manager = EventManager::Make();
     std::vector<int> logA, logB;
 
-    auto tA = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logA));
-    auto tB = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logB));
+    auto tA = manager->Register(MakeLoggingCallback<DamageEvent>(logA));
+    auto tB = manager->Register(MakeLoggingCallback<DamageEvent>(logB));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{25});
+    manager->Notify(sender, DamageEvent{25});
 
     REQUIRE(logA.size() == 1);
     REQUIRE(logA[0] == 25);
@@ -215,10 +215,10 @@ TEST_CASE("Notify does NOT dispatch to callbacks registered for a different even
     auto manager = EventManager::Make();
     std::vector<int> damageLog, healLog;
 
-    auto tDmg  = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(damageLog));
-    auto tHeal = manager->Register<TestSender, HealEvent>(MakeLoggingCallback<HealEvent>(healLog));
+    auto tDmg  = manager->Register(MakeLoggingCallback<DamageEvent>(damageLog));
+    auto tHeal = manager->Register(MakeLoggingCallback<HealEvent>(healLog));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{5});
+    manager->Notify(sender, DamageEvent{5});
 
     REQUIRE(damageLog.size() == 1);
     REQUIRE(healLog.empty());
@@ -230,7 +230,7 @@ TEST_CASE("Notify does NOT dispatch to callbacks registered for a different even
 TEST_CASE("Notify with no registered callbacks is a no-op", "[Notify]")
 {
     auto manager = EventManager::Make();
-    REQUIRE_NOTHROW(manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{99}));
+    REQUIRE_NOTHROW(manager->Notify(sender, DamageEvent{99}));
 }
 
 TEST_CASE("Notify delivers correct event data (field values preserved)", "[Notify]")
@@ -238,14 +238,14 @@ TEST_CASE("Notify delivers correct event data (field values preserved)", "[Notif
     auto manager = EventManager::Make();
     int capturedAmount = -1;
 
-    auto token = manager->Register<TestSender, DamageEvent>(
+    auto token = manager->Register(
         EventCallback::Make<TestSender, DamageEvent>([&capturedAmount](const TestSender&, const DamageEvent& e) -> int
         {
             capturedAmount = e.mAmount;
             return 0;
         }));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{1337});
+    manager->Notify(sender, DamageEvent{1337});
 
     REQUIRE(capturedAmount == 1337);
     manager->Unregister(token);
@@ -255,11 +255,11 @@ TEST_CASE("Notify can fire the same event type multiple times", "[Notify]")
 {
     auto manager = EventManager::Make();
     std::vector<int> log;
-    auto token = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
+    auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{1});
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{2});
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{3});
+    manager->Notify(sender, DamageEvent{1});
+    manager->Notify(sender, DamageEvent{2});
+    manager->Notify(sender, DamageEvent{3});
 
     REQUIRE(log == std::vector<int>{1, 2, 3});
     manager->Unregister(token);
@@ -270,11 +270,11 @@ TEST_CASE("Notify can fire different event types independently", "[Notify]")
     auto manager = EventManager::Make();
     std::vector<int> damageLog, healLog;
 
-    auto tDmg  = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(damageLog));
-    auto tHeal = manager->Register<TestSender, HealEvent>(MakeLoggingCallback<HealEvent>(healLog));
+    auto tDmg  = manager->Register(MakeLoggingCallback<DamageEvent>(damageLog));
+    auto tHeal = manager->Register(MakeLoggingCallback<HealEvent>(healLog));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{10});
-    manager->Notify<TestSender, HealEvent>(sender, HealEvent{20});
+    manager->Notify(sender, DamageEvent{10});
+    manager->Notify(sender, HealEvent{20});
 
     REQUIRE(damageLog == std::vector<int>{10});
     REQUIRE(healLog == std::vector<int>{20});
@@ -298,8 +298,8 @@ TEST_CASE("Register rvalue overload (consume) — callback fires correctly", "[R
         return 0;
     });
 
-    auto token = manager->Register<TestSender, DamageEvent>(std::move(cb));
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{});
+    auto token = manager->Register(std::move(cb));
+    manager->Notify(sender, DamageEvent{});
 
     REQUIRE(fired);
     manager->Unregister(token);
@@ -316,8 +316,8 @@ TEST_CASE("Register const-ref overload (observe) — callback fires correctly", 
         return 0;
     });
 
-    auto token = manager->Register<TestSender, DamageEvent>(cb);
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{});
+    auto token = manager->Register(cb);
+    manager->Notify(sender, DamageEvent{});
 
     REQUIRE(fired);
     manager->Unregister(token);
@@ -334,11 +334,11 @@ TEST_CASE("Register const-ref overload does not consume the original callback", 
         return 0;
     });
 
-    auto token = manager->Register<TestSender, DamageEvent>(cb);
+    auto token = manager->Register(cb);
 
     cb(MakeEventArgs(sender, DamageEvent{}));
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{});
+    manager->Notify(sender, DamageEvent{});
 
     REQUIRE(callCount == 2);
     manager->Unregister(token);
@@ -349,9 +349,9 @@ TEST_CASE("Register returns distinct tokens for each registration", "[Register]"
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto t1 = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
-    auto t2 = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
-    auto t3 = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
+    auto t1 = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+    auto t2 = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+    auto t3 = manager->Register(MakeLoggingCallback<DamageEvent>(log));
 
     REQUIRE(t1 != t2);
     REQUIRE(t2 != t3);
@@ -373,10 +373,10 @@ TEST_CASE("Same callback can be registered multiple times, each fires independen
         return 0;
     });
 
-    auto t1 = manager->Register<TestSender, DamageEvent>(cb);
-    auto t2 = manager->Register<TestSender, DamageEvent>(cb);
+    auto t1 = manager->Register(cb);
+    auto t2 = manager->Register(cb);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{});
+    manager->Notify(sender, DamageEvent{});
 
     REQUIRE(callCount == 2);
 
@@ -393,11 +393,11 @@ TEST_CASE("Unregister prevents the callback from firing on subsequent Notify", "
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto token = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{1});
+    auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+    manager->Notify(sender, DamageEvent{1});
 
     manager->Unregister(token);
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{2});
+    manager->Notify(sender, DamageEvent{2});
 
     REQUIRE(log.size() == 1);
     REQUIRE(log[0] == 1);
@@ -408,12 +408,12 @@ TEST_CASE("Unregistering one token does not affect other registered callbacks", 
     auto manager = EventManager::Make();
     std::vector<int> logA, logB;
 
-    auto tA = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logA));
-    auto tB = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logB));
+    auto tA = manager->Register(MakeLoggingCallback<DamageEvent>(logA));
+    auto tB = manager->Register(MakeLoggingCallback<DamageEvent>(logB));
 
     manager->Unregister(tA);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{7});
+    manager->Notify(sender, DamageEvent{7});
 
     REQUIRE(logA.empty());
     REQUIRE(logB.size() == 1);
@@ -427,10 +427,10 @@ TEST_CASE("Unregister of the only remaining callback leaves manager in clean not
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto token = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
+    auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
     manager->Unregister(token);
 
-    REQUIRE_NOTHROW(manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{42}));
+    REQUIRE_NOTHROW(manager->Notify(sender, DamageEvent{42}));
     REQUIRE(log.empty());
 }
 
@@ -439,7 +439,7 @@ TEST_CASE("Unregister is a no-op for an already-removed token (double unregister
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto token = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
+    auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
     manager->Unregister(token);
 
     REQUIRE_NOTHROW(manager->Unregister(token));
@@ -450,13 +450,13 @@ TEST_CASE("Unregister middle element — remaining callbacks still fire", "[Unre
     auto manager = EventManager::Make();
     std::vector<int> logA, logB, logC;
 
-    auto tA = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logA));
-    auto tB = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logB));
-    auto tC = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logC));
+    auto tA = manager->Register(MakeLoggingCallback<DamageEvent>(logA));
+    auto tB = manager->Register(MakeLoggingCallback<DamageEvent>(logB));
+    auto tC = manager->Register(MakeLoggingCallback<DamageEvent>(logC));
 
     manager->Unregister(tB);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{3});
+    manager->Notify(sender, DamageEvent{3});
 
     REQUIRE(logA.size() == 1);
     REQUIRE(logB.empty());
@@ -471,12 +471,12 @@ TEST_CASE("Unregister first element — remaining callbacks still fire", "[Unreg
     auto manager = EventManager::Make();
     std::vector<int> logA, logB;
 
-    auto tA = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logA));
-    auto tB = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(logB));
+    auto tA = manager->Register(MakeLoggingCallback<DamageEvent>(logA));
+    auto tB = manager->Register(MakeLoggingCallback<DamageEvent>(logB));
 
     manager->Unregister(tA);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{9});
+    manager->Notify(sender, DamageEvent{9});
 
     REQUIRE(logA.empty());
     REQUIRE(logB.size() == 1);
@@ -493,12 +493,12 @@ TEST_CASE("Re-registering after unregister works correctly", "[Register][Unregis
     auto manager = EventManager::Make();
     std::vector<int> log;
 
-    auto t1 = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{1});
+    auto t1 = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+    manager->Notify(sender, DamageEvent{1});
     manager->Unregister(t1);
 
-    auto t2 = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log));
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{2});
+    auto t2 = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+    manager->Notify(sender, DamageEvent{2});
     manager->Unregister(t2);
 
     REQUIRE(log == std::vector<int>{1, 2});
@@ -509,13 +509,13 @@ TEST_CASE("Interleaved register/unregister across event types is isolated", "[Re
     auto manager = EventManager::Make();
     std::vector<int> damageLog, healLog;
 
-    auto tDmg  = manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(damageLog));
-    auto tHeal = manager->Register<TestSender, HealEvent>(MakeLoggingCallback<HealEvent>(healLog));
+    auto tDmg  = manager->Register(MakeLoggingCallback<DamageEvent>(damageLog));
+    auto tHeal = manager->Register(MakeLoggingCallback<HealEvent>(healLog));
 
     manager->Unregister(tDmg);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{5});
-    manager->Notify<TestSender, HealEvent>(sender, HealEvent{10});
+    manager->Notify(sender, DamageEvent{5});
+    manager->Notify(sender, HealEvent{10});
 
     REQUIRE(damageLog.empty());
     REQUIRE(healLog == std::vector<int>{10});
@@ -532,7 +532,7 @@ TEST_CASE("EmptyEvent (no data fields) can be registered and notified", "[EdgeCa
     auto manager = EventManager::Make();
     bool fired = false;
 
-    auto token = manager->Register<TestSender, EmptyEvent>(
+    auto token = manager->Register(
         EventCallback::Make<TestSender, EmptyEvent>([&fired](const TestSender&, const EmptyEvent&) -> int
         {
             fired = true;
@@ -556,7 +556,7 @@ TEST_CASE("Large number of registrations all fire correctly", "[EdgeCase]")
 
     for (int i = 0; i < kCount; ++i)
     {
-        tokens.push_back(manager->Register<TestSender, DamageEvent>(
+        tokens.push_back(manager->Register(
             EventCallback::Make<TestSender, DamageEvent>([&totalFired](const TestSender&, const DamageEvent&) -> int
             {
                 ++totalFired;
@@ -564,7 +564,7 @@ TEST_CASE("Large number of registrations all fire correctly", "[EdgeCase]")
             })));
     }
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{1});
+    manager->Notify(sender, DamageEvent{1});
     REQUIRE(totalFired == kCount);
 
     for (auto& t : tokens)
@@ -581,11 +581,11 @@ TEST_CASE("All callbacks unregistered in reverse order — no crashes or missed 
     tokens.reserve(kCount);
 
     for (int i = 0; i < kCount; ++i)
-        tokens.push_back(manager->Register<TestSender, DamageEvent>(MakeLoggingCallback<DamageEvent>(log)));
+        tokens.push_back(manager->Register(MakeLoggingCallback<DamageEvent>(log)));
 
     for (int i = kCount - 1; i >= 0; --i)
         manager->Unregister(tokens[i]);
 
-    manager->Notify<TestSender, DamageEvent>(sender, DamageEvent{99});
+    manager->Notify(sender, DamageEvent{99});
     REQUIRE(log.empty());
 }

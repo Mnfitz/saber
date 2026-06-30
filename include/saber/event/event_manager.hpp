@@ -19,21 +19,13 @@ namespace saber::events {
 template<typename SenderType, typename EventType>
 using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
-#if 0
-class EventCallback
-{
-	// We need to add some beef here so it can take user provided callbacks as constructor args
-	int operator()(/*no parameters*/) const
-	{
-		return 0;
-	}
-};
-#elif 1
+class EventManager; // forward declaration
+
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
 // can be invoked by the event system regardless of the concrete event type.
 
-class EventCallback
+class EventCallback 
 {
 public:
 	template<typename SenderType, typename EventType, typename Lambda>
@@ -54,10 +46,17 @@ public:
 	}
 
 private:
+	friend class EventManager; // allow EventManager to construct it
+
 	// Phantom tag so the constructor can deduce EventType without explicit
 	// template arguments (constructors cannot have explicit template args in C++17).
 	template<typename T> struct EventTypeTag {};
 	template<typename T> struct SenderTypeTag {};
+
+	std::type_index GetTypeIndex() const
+	{
+		return mTypeIndex;
+	}
 
 	// Constructor template: capture any callable `Lambda` that accepts
 	// `(const SenderType&, const EventType&)` and returns `int`. We store the
@@ -66,8 +65,12 @@ private:
 	// the original `Lambda` and event tuple and call the callable.
 	template<typename SenderType, typename EventType, typename Lambda>
 	EventCallback(SenderTypeTag<SenderType>, EventTypeTag<EventType>, Lambda inLambda) :
+
 		// store the user-provided callable (type-erased)
-		mCallback{inLambda},
+		mCallback{std::move(inLambda)}, // Consume the input lambda; no need to make a copy
+
+		mTypeIndex{typeid(EventArgsType<SenderType, EventType>)}, // store the type_index of the event args
+
 		// trampoline: casts the erased callable and erased event back to
 		// their concrete types and invokes the callable.
 		mInvoke{+[](const std::any& inCallback, const std::any& inArgs)
@@ -76,9 +79,9 @@ private:
 			auto& callback = std::any_cast<const Lambda&>(inCallback);
 			// Recover the concrete sender/event values from the std::any.
 			auto& args = std::any_cast<const EventArgsType<SenderType, EventType>&>(inArgs);
-			auto [senderValue, eventValue] = args;
+			auto [senderRef, eventRef] = args;
 			// Call the original callback using its sender and event.
-			return callback(senderValue, eventValue);
+			return callback(senderRef, eventRef);
 		}}
 	{
 	}
@@ -91,12 +94,13 @@ private:
 	// The original callable stored with type-erasure so many different
 	// callable types can be stored in the same container.
 	std::any mCallback{};
+	// Stores the type_index of the EventArgsType<SenderType, EventType>
+	std::type_index mTypeIndex{typeid(void)}; 
 	// Pointer to the trampoline function that knows how to cast and
 	// invoke `mCallback` for the correct `EventType`.
 	CallbackType mInvoke{};
 };
 
-#endif
 
 // Using NVI pattern here
 class EventManager
@@ -110,10 +114,8 @@ public:
 	virtual ~EventManager() = default;
 
 public:
-	template<typename SenderType, typename EventType>
 	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
 
-	template<typename SenderType, typename EventType>
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
 
 	void Unregister(Token inToken);
@@ -134,22 +136,20 @@ private:
 }; // class EventManager
 
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
-template<typename SenderType, typename EventType>
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
-	std::type_index eventType = typeid(EventArgsType<SenderType, EventType>); // use the template params
+	std::type_index eventType = ioCallback.GetTypeIndex(); // use the template params
 	return OnRegister(eventType, std::move(ioCallback));
 }
 
-template<typename SenderType, typename EventType>
 inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
 	EventCallback copy{inCallback}; // explicit copy
-	std::type_index eventType = typeid(EventArgsType<SenderType, EventType>); // use the template params
+	std::type_index eventType = inCallback.GetTypeIndex(); // use the template params
     return OnRegister(eventType, std::move(copy));
 }
 
