@@ -127,7 +127,7 @@ protected:
 	EventManager() = default;
 
 private:
-	virtual Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) = 0;
+	virtual Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) = 0;
 
 	virtual void OnUnregister(Token inToken) = 0;
 
@@ -177,7 +177,7 @@ private:
     EventManagerImpl() = default;
 
 private:
-	Token OnRegister(std::type_index inEventType, EventCallback&& ioCallback) override;
+	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
 
 	void OnUnregister(Token inToken) override;
 
@@ -185,21 +185,45 @@ private:
 
 private:
 	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
-	std::vector<std::tuple<Token, std::type_index, EventCallback>> mCallbackList;
+
+	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
+	using CallbackElement = CallbackList::value_type;
+	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+
+	// GetCallbackListOrCopy() enforces Copy On Write safety for the callback list
+	CallbackList& GetCallbackListOrCopy()
+	{
+		// NOTE: use_count() is not thread-safe; use_count() checks assume no concurrent access
+		{
+			if (mCallbackList.use_count() > 1)
+			{
+				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+			}
+		}
+
+		return *mCallbackList;
+	}
+
+	auto GetCallbackList() const
+	{
+		return mCallbackList;
+	}
+
 }; // class EventManagerImpl
 
-inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inEventType, EventCallback&& ioCallback)
+inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
 	Token newToken{ mCounter++ }; // Create a unique token
-	mCallbackList.emplace_back(newToken, inEventType, std::move(ioCallback));
+	auto& mutableList = GetCallbackListOrCopy();
+	mutableList.emplace_back(newToken, inArgsType, std::move(ioCallback));
 	return newToken;
 }
 
 inline void EventManagerImpl::OnUnregister(Token inToken)
 {
 	// Search for the token in list and remove it
-	using CallbackElement = decltype(mCallbackList)::value_type; // Get the type of elements in mCallbackList
-	auto isTargetToken = [inToken](const CallbackElement& element) 
+	auto& mutableList = GetCallbackListOrCopy();
+	auto isTargetToken = [inToken](const CallbackElement& element)
 	{
 		const bool isTarget = std::get<0>(element) == inToken;
 		return isTarget;
@@ -207,24 +231,25 @@ inline void EventManagerImpl::OnUnregister(Token inToken)
 
 	// There will only ever be one matching token, therefore, we can use std::find_if to
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
-	const auto didFind = std::find_if(mCallbackList.begin(), mCallbackList.end(), isTargetToken);
+	const auto didFind = std::find_if(mutableList.begin(), mutableList.end(), isTargetToken);
 
-	if (didFind != mCallbackList.end()) 
+	if (didFind != mutableList.end())
 	{
 		// REVISIT: Move assign might throw an exception?
 		// If so, we might have to do something like this:
-		//		std::iter_swap(didFind, std::prev(mCallbackList.end()));
-		//		mCallbackList.pop_back();
+		//		std::iter_swap(didFind, std::prev(mutableList.end()));
+		//		mutableList.pop_back();
 
 		// Use an optimal O(1) removal for performance; note that list order is not considered important
-		*didFind = std::move(mCallbackList.back()); 
-		mCallbackList.pop_back(); // Remove the last element
+		*didFind = std::move(mutableList.back());
+		mutableList.pop_back(); // Remove the last element
 	}
 }
 
 inline void EventManagerImpl::OnNotify(std::any inArgs)
 {
 	const std::type_index targetType = inArgs.type();
+	auto snapshot = GetCallbackList();
 	auto findAllCallbacks = [&inArgs, &targetType](const auto& element) -> void
 	{
 		const auto& [token, eventType, callback] = element;
@@ -236,7 +261,7 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 
 	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
 	// use std::for_each for C++11, preferred way
-	std::for_each(mCallbackList.begin(), mCallbackList.end(), findAllCallbacks);
+	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
 } // namespace detail
