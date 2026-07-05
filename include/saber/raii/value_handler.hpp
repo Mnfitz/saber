@@ -6,7 +6,7 @@
 #include <memory>
 #include <optional>
 
-namespace saber {
+namespace saber::raii {
 
 /// @brief ValueHandler takes in a reference to a variable and a value which the variable will be assigned.
 /// When the ValueHandler is destructed, it will revert the variable back to it's original state
@@ -90,6 +90,6 @@ private:
 
 }; // class ValueHandler
 
-}// namespace saber
+} // namespace saber::raii
 
 #endif // SABER_RAII_VALUEHANDLER_HPP

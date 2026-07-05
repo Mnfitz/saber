@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace saber {
+namespace saber::raii {
 namespace detail {
 
 template<typename T>
@@ -122,6 +122,6 @@ private:
     std::unique_ptr<T, detail::Deleter<T>> mReference{};
 }; // class ReferenceHandler
 
-}// namespace saber
+} // namespace saber::raii
 
 #endif // SABER_RAII_REFERENCEHANDLER_HPP
