@@ -26,11 +26,16 @@
 #include "catch2/catch_test_macros.hpp"
 
 // saber
-#include "saber/handler.hpp"
+#include "saber/raii/reference_handler.hpp"
+#include "saber/raii/value_handler.hpp"
 
 // std
 #include <cstdio>
 #include <type_traits>
+
+namespace saber {
+using namespace saber::raii; // Bring `raii` namespace into `saber` scope
+} // namespace saber
 
 TEST_CASE("saber::ValueHandler", "[saber]")
 {
