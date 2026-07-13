@@ -20,13 +20,17 @@
 #include <catch2/benchmark/catch_benchmark.hpp>
 
 // saber
-#include "saber/handler.hpp"
+#include "saber/raii/value_handler.hpp"
 
 // std
 #include <array>
 #include <string>
 #include <tuple>
 #include <vector>
+
+namespace saber {
+using namespace saber::raii; // Bring `raii` namespace into `saber` scope
+} // namespace saber
 
 TEST_CASE("saber::ValueHandler", "[saber]")
 {
