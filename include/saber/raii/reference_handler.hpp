@@ -53,7 +53,7 @@ struct Deleter<std::FILE> // specialization!
 
 } // namespace detail
 
-template<typename T>
+template<typename T, typename DeleterType = detail::Deleter<T>>
 class ReferenceHandler
 {
 public:
@@ -62,7 +62,7 @@ public:
     /// You can use it to give RAII lifetime management to types that are incpmpatible with std::unique_ptr.
     /// For instance, invoking fclose() on the destrucyion of type std::FILE
     // ctor stores a copy of the variable's stored data
-    ReferenceHandler(T* inReference) :
+    explicit ReferenceHandler(T* inReference) :
         mReference{inReference}
     {
         // Do nothing
@@ -119,7 +119,7 @@ public:
     }
 
 private:
-    std::unique_ptr<T, detail::Deleter<T>> mReference{};
+    std::unique_ptr<T, DeleterType> mReference{};
 }; // class ReferenceHandler
 
 } // namespace saber::raii

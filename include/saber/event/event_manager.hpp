@@ -4,6 +4,7 @@
 // saber
 #include "saber/config.hpp"
 #include "saber/utility.hpp"
+#include "saber/raii/reference_handler.hpp"
 
 // std
 #include <algorithm>
@@ -12,6 +13,7 @@
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
+#include <type_traits>
 #include <vector>
 
 namespace saber::events {
@@ -20,6 +22,12 @@ template<typename SenderType, typename EventType>
 using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
 class EventManager; // forward declaration
+
+struct EventManagerTokenDeleter
+{
+	template<typename T>
+	void operator()(T* inToken) const noexcept;
+};
 
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
@@ -102,11 +110,26 @@ private:
 };
 
 
+/*
+Jira SABER-76: "Create RAII handler for EventManager::Register"
+EventManager provides Register(), Unregister() methods for consumers to attach/detach interest to given EventManager::Id. However, “unregistering“ interest is currently not RAII safe and could leak if an exception is encountered
+
+Action Item:
+
+provide RAII-style types to handle EventManager Register/Unregister
+(using: saber::ReferenceHandler<>)
+
+*/
+
+// Marker type for RAII usage
+struct UsingRAII{};
+
 // Using NVI pattern here
 class EventManager
 {
 public:
 	using Token = saber::TaggedType<std::uint64_t, EventManager>;
+	using TokenHandler = saber::raii::ReferenceHandler<Token, EventManagerTokenDeleter>; // RAII handler for EventManager::Token
 
 public:
 	static std::unique_ptr<EventManager> Make();
@@ -114,9 +137,11 @@ public:
 	virtual ~EventManager() = default;
 
 public:
-	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
+	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback); // Consume
 
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
+
+	[[nodiscard]] Token Register(EventCallback&& ioCallback);
 
 	void Unregister(Token inToken);
 
@@ -135,22 +160,42 @@ private:
 
 }; // class EventManager
 
+template<typename T>
+void EventManagerTokenDeleter::operator()(T* inToken) const noexcept
+{
+	if constexpr (std::is_same_v<T, EventManager::Token>)
+	{
+		if (inToken && inToken->Value() != 0)
+		{
+			// Unregister the token from the EventManager before releasing the owned token.
+			extern std::unique_ptr<EventManager> gEventManager; // Assuming a global instance
+			if (gEventManager)
+			{
+				gEventManager->Unregister(*inToken);
+			}
+			delete inToken;
+		}
+	}
+}
+
+inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallback&& ioCallback) // Consume
+{
+	auto token = std::make_unique<Token>(Register(std::move(ioCallback)));
+	return TokenHandler{token.release()}; // RAII handler for the token
+}
+
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
+inline EventManager::Token EventManager::Register(const EventCallback& inCallback)
+{
+	return Register(EventCallback{inCallback});
+}
+
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
 	std::type_index eventType = ioCallback.GetTypeIndex(); // use the template params
 	return OnRegister(eventType, std::move(ioCallback));
-}
-
-inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
-{
-	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
-	// to allow us to find callbacks of a certain type from the callback list
-	EventCallback copy{inCallback}; // explicit copy
-	std::type_index eventType = inCallback.GetTypeIndex(); // use the template params
-    return OnRegister(eventType, std::move(copy));
 }
 
 inline void EventManager::Unregister(Token inToken)
@@ -212,9 +257,11 @@ private:
 
 inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
+	// SABER-76: "Create RAII handler for EventManager::Register"
 	Token newToken{ mCounter++ }; // Create a unique token
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
+	//saber::raii::ReferenceHandler<Token> tokenHandler{ &newToken }; // RAII handler for the token
 	return newToken;
 }
 
@@ -281,4 +328,6 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 }
 
 } // namespace saber::events
+
+
 #endif // SABER_EVENT_EVENTS_HPP
