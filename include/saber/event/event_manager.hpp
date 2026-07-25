@@ -16,6 +16,35 @@
 #include <type_traits>
 #include <vector>
 
+
+// --- 1. Proper forward declarations, in the real namespace ---
+namespace saber::events {
+    class EventManager;
+    using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
+} // namespace saber::events
+
+// --- 2. Deleter specialization: declare only, don't define the body yet ---
+namespace saber::raii::detail {
+
+template<>
+struct Deleter<saber::events::EventToken>
+{
+public:
+    explicit Deleter(saber::events::EventManager& inEventManager) noexcept :
+        mEventManager{inEventManager}
+    {
+    }
+
+    // Declaration only — EventManager is still incomplete here, which is fine
+    // because we aren't calling any of its members yet.
+    void operator()(saber::events::EventToken* inToken) const noexcept;
+
+private:
+    saber::events::EventManager& mEventManager; // a reference to an incomplete type is OK
+};
+
+} // namespace saber::raii::detail
+
 namespace saber::events {
 
 template<typename SenderType, typename EventType>
@@ -23,11 +52,7 @@ using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
 class EventManager; // forward declaration
 
-struct EventManagerTokenDeleter
-{
-	template<typename T>
-	void operator()(T* inToken) const noexcept;
-};
+using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
 
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
@@ -109,18 +134,6 @@ private:
 	CallbackType mInvoke{};
 };
 
-
-/*
-Jira SABER-76: "Create RAII handler for EventManager::Register"
-EventManager provides Register(), Unregister() methods for consumers to attach/detach interest to given EventManager::Id. However, “unregistering“ interest is currently not RAII safe and could leak if an exception is encountered
-
-Action Item:
-
-provide RAII-style types to handle EventManager Register/Unregister
-(using: saber::ReferenceHandler<>)
-
-*/
-
 // Marker type for RAII usage
 struct UsingRAII{};
 
@@ -128,8 +141,8 @@ struct UsingRAII{};
 class EventManager
 {
 public:
-	using Token = saber::TaggedType<std::uint64_t, EventManager>;
-	using TokenHandler = saber::raii::ReferenceHandler<Token, EventManagerTokenDeleter>; // RAII handler for EventManager::Token
+	using Token = EventToken;
+	using TokenHandler = saber::raii::ReferenceHandler<Token, raii::detail::Deleter<Token>>; // RAII handler for EventManager::Token
 
 public:
 	static std::unique_ptr<EventManager> Make();
@@ -160,26 +173,10 @@ private:
 
 }; // class EventManager
 
-template<typename T>
-void EventManagerTokenDeleter::operator()(T* inToken) const noexcept
-{
-	if constexpr (std::is_same_v<T, EventManager::Token>)
-	{
-		if (inToken && inToken->Value() != 0)
-		{
-			// Unregister the token from the EventManager before releasing the owned token.
-			extern std::unique_ptr<EventManager> gEventManager; // Assuming a global instance
-			if (gEventManager)
-			{
-				gEventManager->Unregister(*inToken);
-			}
-			delete inToken;
-		}
-	}
-}
-
 inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallback&& ioCallback) // Consume
 {
+	// FIXME: Cannot use make_unique because it does not allow you to specify a custom deleter
+	// TokenHandler specifies a custom deleter, but token is not a pointer
 	auto token = std::make_unique<Token>(Register(std::move(ioCallback)));
 	return TokenHandler{token.release()}; // RAII handler for the token
 }
@@ -261,7 +258,6 @@ inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsTy
 	Token newToken{ mCounter++ }; // Create a unique token
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
-	//saber::raii::ReferenceHandler<Token> tokenHandler{ &newToken }; // RAII handler for the token
 	return newToken;
 }
 
@@ -329,5 +325,16 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 
 } // namespace saber::events
 
+namespace saber::raii::detail {
+
+inline void Deleter<saber::events::EventToken>::operator()(saber::events::EventToken* inToken) const noexcept
+{
+    if (inToken)
+    {
+        mEventManager.Unregister(*inToken); // OK now — EventManager is complete
+    }
+}
+
+} // namespace saber::raii::detail
 
 #endif // SABER_EVENT_EVENTS_HPP
