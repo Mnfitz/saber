@@ -13,7 +13,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "saber/event/event_manager.hpp"
+#include "saber/events/event_manager.hpp"
 
 // ============================================================================
 // Test event types

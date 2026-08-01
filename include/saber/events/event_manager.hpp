@@ -1,5 +1,5 @@
-#ifndef SABER_EVENT_EVENTS_HPP
-#define SABER_EVENT_EVENTS_HPP
+#ifndef SABER_EVENTS_EVENTMANAGER_HPP
+#define SABER_EVENTS_EVENTMANAGER_HPP
 
 // saber
 #include "saber/config.hpp"
@@ -281,4 +281,4 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 }
 
 } // namespace saber::events
-#endif // SABER_EVENT_EVENTS_HPP
+#endif // SABER_EVENTS_EVENTMANAGER_HPP
