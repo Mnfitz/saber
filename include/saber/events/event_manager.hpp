@@ -1,5 +1,5 @@
-#ifndef SABER_EVENT_EVENTS_HPP
-#define SABER_EVENT_EVENTS_HPP
+#ifndef SABER_EVENTS_EVENTMANAGER_HPP
+#define SABER_EVENTS_EVENTMANAGER_HPP
 
 // saber
 #include "saber/config.hpp"
@@ -337,4 +337,4 @@ inline void Deleter<saber::events::EventToken>::operator()(saber::events::EventT
 
 } // namespace saber::raii::detail
 
-#endif // SABER_EVENT_EVENTS_HPP
+#endif // SABER_EVENTS_EVENTMANAGER_HPP
