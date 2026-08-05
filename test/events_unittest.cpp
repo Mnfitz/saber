@@ -589,3 +589,89 @@ TEST_CASE("All callbacks unregistered in reverse order — no crashes or missed 
     manager->Notify(sender, DamageEvent{99});
     REQUIRE(log.empty());
 }
+
+// ============================================================================
+// SECTION: EventManager::TokenHandler (RAII registration)
+// ============================================================================
+
+TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
+{
+    auto manager = EventManager::Make();
+    std::vector<int> log;
+
+    SECTION("Callback fires while handler is alive, and not after it dies")
+    {
+        {
+            auto handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
+            REQUIRE(static_cast<bool>(handler));
+
+            manager->Notify(sender, DamageEvent{7});
+            REQUIRE(log == std::vector<int>{7});
+        } // handler dtor: Unregister()
+
+        manager->Notify(sender, DamageEvent{8});
+        REQUIRE(log == std::vector<int>{7}); // Unchanged
+    }
+
+    SECTION("Reset() unregisters early and is idempotent")
+    {
+        auto handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
+
+        handler.Reset();
+        REQUIRE(!static_cast<bool>(handler));
+        REQUIRE(handler.Get() == nullptr);
+
+        handler.Reset(); // Second Reset() must be a NOP
+        manager->Notify(sender, DamageEvent{9});
+        REQUIRE(log.empty());
+    }
+
+    SECTION("TokenHandler is movable but not copyable")
+    {
+        using TokenHandler = EventManager::TokenHandler;
+        STATIC_REQUIRE(!std::is_copy_constructible_v<TokenHandler>);
+        STATIC_REQUIRE(!std::is_copy_assignable_v<TokenHandler>);
+        STATIC_REQUIRE(std::is_move_constructible_v<TokenHandler>);
+        STATIC_REQUIRE(std::is_move_assignable_v<TokenHandler>);
+
+        // No heap allocation: the Token lives inside the handler
+        STATIC_REQUIRE(sizeof(TokenHandler) < 64);
+    }
+
+    SECTION("Move construct transfers ownership")
+    {
+        auto handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
+        const auto token = *handler.Get();
+
+        auto moved = std::move(handler);
+        REQUIRE(handler.Get() == nullptr);
+        REQUIRE(*moved.Get() == token);
+
+        manager->Notify(sender, DamageEvent{1});
+        REQUIRE(log == std::vector<int>{1}); // Moved-from handler did not unregister
+    }
+
+    SECTION("Move assign unregisters the target's previous registration")
+    {
+        std::vector<int> otherLog;
+        auto first = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
+        auto second = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(otherLog));
+
+        first = std::move(second); // `first`'s registration is dropped here
+        REQUIRE(second.Get() == nullptr);
+
+        manager->Notify(sender, DamageEvent{5});
+        REQUIRE(log.empty());
+        REQUIRE(otherLog == std::vector<int>{5});
+    }
+
+    SECTION("Default constructed TokenHandler is empty and harmless")
+    {
+        EventManager::TokenHandler handler{};
+        REQUIRE(!static_cast<bool>(handler));
+        REQUIRE(handler.Get() == nullptr);
+
+        handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
+        REQUIRE(static_cast<bool>(handler));
+    }
+}
