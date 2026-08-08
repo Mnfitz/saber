@@ -10,9 +10,9 @@
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/x64/test/Debug/saber_unittest.exe",  
+            "program": "${workspaceFolder}/build/win-vs2026/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
-            "cwd": "${workspaceFolder}/build/x64/test/Debug", // Change this to the directory of your executable
+            "cwd": "${workspaceFolder}/build/win-vs2026/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false // Set to true to stop program execution at the first line of code
         },
 
@@ -21,9 +21,9 @@
             "type": "cppvsdbg", // Use the microsoft debugger 
             "request": "launch",
 
-            "program": "${workspaceFolder}/build/x64/test/Debug/saber_unittest.exe",  
+            "program": "${workspaceFolder}/build/win-vs2026/test/Debug/saber_unittest.exe",  
             "args": ["--success", "--break"], 
-            "cwd": "${workspaceFolder}/build/x64/test/Debug", // Change this to the directory of your executable
+            "cwd": "${workspaceFolder}/build/win-vs2026/test/Debug", // Change this to the directory of your executable
             "stopAtEntry": false, // Set to true to stop program execution at the first line of code
             "preLaunchTask": "build", // tasks.json: {"label": "build"}
         },
