@@ -8,7 +8,9 @@
 // std
 #include <algorithm>
 #include <any>
+#include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
@@ -258,7 +260,17 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 		const auto& [token, eventType, callback] = element;
 		if (eventType == targetType)
 		{
-			callback(inArgs); // Reference operator(): invoke the callback
+			// Stop exceptions from propogating to top level with try/catch
+			try
+			{
+				callback(inArgs); // Reference operator(): invoke the callback
+			}
+			catch (...)
+			{
+				// SABER_ASSERT drops you into debugger for debug builds
+				// but does nothing for release builds
+				SABER_ASSERT(!"Unexpected exception");
+			}
 		}
 	};
 
