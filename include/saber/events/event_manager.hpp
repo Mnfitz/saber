@@ -8,7 +8,9 @@
 // std
 #include <algorithm>
 #include <any>
+#include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
@@ -101,6 +103,10 @@ private:
 	CallbackType mInvoke{};
 };
 
+enum class Threading {
+	single_policy,
+	parallel_policy
+};
 
 // Using NVI pattern here
 class EventManager
@@ -258,7 +264,17 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 		const auto& [token, eventType, callback] = element;
 		if (eventType == targetType)
 		{
-			callback(inArgs); // Reference operator(): invoke the callback
+			// Stop exceptions from propogating to top level with try/catch
+			try
+			{
+				callback(inArgs); // Reference operator(): invoke the callback
+			}
+			catch (...)
+			{
+				// SABER_ASSERT drops you into debugger for debug builds
+				// but does nothing for release builds
+				SABER_ASSERT(!"Unexpected exception");
+			}
 		}
 	};
 
@@ -272,11 +288,140 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
+
+
+
+class EventManagerParallelImpl final : public EventManager // EventManagerImpl is-a EventManager
+{
+public:
+	~EventManagerParallelImpl() override = default;
+
+private:
+	friend class EventManager; // allow Make() to construct it
+    EventManagerParallelImpl() = default;
+
+private:
+	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
+
+	void OnUnregister(Token inToken) override;
+
+	void OnNotify(std::any inArgs) override;
+
+private:
+	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
+
+	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
+	using CallbackElement = CallbackList::value_type;
+	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+
+	// GetCallbackListOrCopy() enforces Copy On Write safety for the callback list
+	CallbackList& GetCallbackListOrCopy()
+	{
+		// NOTE: use_count() is not thread-safe; use_count() checks assume no concurrent access
+		{
+			const bool isNotifying = (mCallbackList.use_count() > 1);
+    		if (isNotifying)
+			{
+				// Copy-on-write: make copy of in-flight callbacklist...
+				// The use_count() of this new copy in mCallbackList becomes: "==1"
+				// The use_count() of the previous mCallback instance is now: "-=1"
+				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+			}
+		}
+
+		return *mCallbackList;
+	}
+
+}; // class EventManagerParallelImpl
+
+inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
+{
+	Token newToken{ mCounter++ }; // Create a unique token
+	auto& callbackList = GetCallbackListOrCopy();
+	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
+	return newToken;
+}
+
+inline void EventManagerParallelImpl::OnUnregister(Token inToken)
+{
+	// Search for the token in list and remove it
+	auto& callbackList = GetCallbackListOrCopy();
+	auto isTargetToken = [inToken](const CallbackElement& element)
+	{
+		const bool isTarget = std::get<0>(element) == inToken;
+		return isTarget;
+	};
+
+	// There will only ever be one matching token, therefore, we can use std::find_if to
+	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
+	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), isTargetToken);
+
+	if (didFind != callbackList.end())
+	{
+		// REVISIT: Move assign might throw an exception?
+		// If so, we might have to do something like this:
+		//		std::iter_swap(didFind, std::prev(callbackList.end()));
+		//		callbackList.pop_back();
+
+		// Use an optimal O(1) removal for performance; note that list order is not considered important
+		*didFind = std::move(callbackList.back());
+		callbackList.pop_back(); // Remove the last element
+	}
+}
+
+inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
+{
+    // "snapshot" the current state of the mCallbackList...
+    // This protects against modification of mCallbackList due to
+    // re-entrant Register/Unregister calls during OnNotify()
+
+	const std::type_index targetType = inArgs.type();
+	auto snapshot = mCallbackList;
+	auto findAllCallbacks = [&inArgs, &targetType](const auto& element) -> void
+	{
+		const auto& [token, eventType, callback] = element;
+		if (eventType == targetType)
+		{
+			// Stop exceptions from propogating to top level with try/catch
+			try
+			{
+				callback(inArgs); // Reference operator(): invoke the callback
+			}
+			catch (...)
+			{
+				// SABER_ASSERT drops you into debugger for debug builds
+				// but does nothing for release builds
+				SABER_ASSERT(!"Unexpected exception");
+			}
+		}
+	};
+
+	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
+	// use std::for_each for C++11, preferred way
+	// snapshot's .use_count() is decremented here (RAII)...
+    // if mCallbackList was modified during OnNotify(), the snapshot's .use_count()
+    // will ==0, and the snapshot's old-copy-of the callback list is also deleted.
+    // however, if no change was made to mCallbackList, snapshot's .use_count()
+    // will >=1, and no list deletion occurs.
+	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
+}
+
+
+
 } // namespace detail
 
 inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
 {
-	std::unique_ptr<EventManager> result{new detail::EventManagerImpl()};
+	std::unique_ptr<EventManager> result{};
+	Threading policy = Threading::single_policy;
+	if (policy == Threading::single_policy)
+	{
+		result = std::make_unique<detail::EventManagerParallelImpl>();
+	}
+	else
+	{
+		result = std::make_unique<detail::EventManagerImpl>();
+	}
 	return result;
 }
 
