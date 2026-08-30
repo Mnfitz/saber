@@ -8,8 +8,10 @@
 // std
 #include <algorithm>
 #include <any>
+#include <execution>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <tuple>
 #include <typeindex>
@@ -103,9 +105,9 @@ private:
 	CallbackType mInvoke{};
 };
 
-enum class Threading {
-	single_policy,
-	parallel_policy
+enum class ThreadingPolicy {
+	single,
+	parallel
 };
 
 // Using NVI pattern here
@@ -115,7 +117,7 @@ public:
 	using Token = saber::TaggedType<std::uint64_t, EventManager>;
 
 public:
-	static std::unique_ptr<EventManager> Make();
+	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::single);
 
 	virtual ~EventManager() = default;
 
@@ -299,44 +301,43 @@ public:
 private:
 	friend class EventManager; // allow Make() to construct it
     EventManagerParallelImpl() = default;
+	auto& GetCallbackListOrCopy();
 
 private:
 	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
-
 	void OnUnregister(Token inToken) override;
-
 	void OnNotify(std::any inArgs) override;
 
 private:
-	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
-
+	std::atomic<std::uint64_t> mCounter{ 0 }; // Counter to generate unique tokens
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+	std::mutex mMutex;
 
-	// GetCallbackListOrCopy() enforces Copy On Write safety for the callback list
-	CallbackList& GetCallbackListOrCopy()
-	{
-		// NOTE: use_count() is not thread-safe; use_count() checks assume no concurrent access
-		{
-			const bool isNotifying = (mCallbackList.use_count() > 1);
-    		if (isNotifying)
-			{
-				// Copy-on-write: make copy of in-flight callbacklist...
-				// The use_count() of this new copy in mCallbackList becomes: "==1"
-				// The use_count() of the previous mCallback instance is now: "-=1"
-				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
-			}
-		}
-
-		return *mCallbackList;
-	}
 
 }; // class EventManagerParallelImpl
 
+auto& EventManagerParallelImpl::GetCallbackListOrCopy()
+{
+	{
+		const bool isNotifying = (mCallbackList.use_count() > 1);
+		if (isNotifying)
+		{
+			// Copy-on-write: make copy of in-flight callbacklist...
+			// The use_count() of this new copy in mCallbackList becomes: "==1"
+			// The use_count() of the previous mCallback instance is now: "-=1"
+			mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+		}
+	}
+
+	return *mCallbackList;
+}
+
 inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
-	Token newToken{ mCounter++ }; // Create a unique token
+	Token newToken{ mCounter.fetch_add(1, std::memory_order_relaxed) }; // Create a thread safe unique token using fetch_add, better performing than ++
+	std::lock_guard<std::mutex> lock(mMutex);
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
 	return newToken;
@@ -344,84 +345,56 @@ inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index 
 
 inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 {
-	// Search for the token in list and remove it
-	auto& callbackList = GetCallbackListOrCopy();
-	auto isTargetToken = [inToken](const CallbackElement& element)
-	{
-		const bool isTarget = std::get<0>(element) == inToken;
-		return isTarget;
-	};
-
-	// There will only ever be one matching token, therefore, we can use std::find_if to
-	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
-	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), isTargetToken);
-
-	if (didFind != callbackList.end())
-	{
-		// REVISIT: Move assign might throw an exception?
-		// If so, we might have to do something like this:
-		//		std::iter_swap(didFind, std::prev(callbackList.end()));
-		//		callbackList.pop_back();
-
-		// Use an optimal O(1) removal for performance; note that list order is not considered important
-		*didFind = std::move(callbackList.back());
-		callbackList.pop_back(); // Remove the last element
-	}
+    std::lock_guard<std::mutex> lock(mMutex);
+    auto& callbackList = GetCallbackListOrCopy();
+    auto didFind = std::find_if(callbackList.begin(), callbackList.end(),
+        [inToken](const CallbackElement& e){ return std::get<0>(e) == inToken; });
+    if (didFind != callbackList.end())
+    {
+        *didFind = std::move(callbackList.back());
+        callbackList.pop_back();
+    }
 }
 
 inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
 {
-    // "snapshot" the current state of the mCallbackList...
-    // This protects against modification of mCallbackList due to
-    // re-entrant Register/Unregister calls during OnNotify()
+    std::shared_ptr<CallbackList> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        snapshot = mCallbackList; // now a synchronized read
+    }
 
-	const std::type_index targetType = inArgs.type();
-	auto snapshot = mCallbackList;
-	auto findAllCallbacks = [&inArgs, &targetType](const auto& element) -> void
-	{
-		const auto& [token, eventType, callback] = element;
-		if (eventType == targetType)
-		{
-			// Stop exceptions from propogating to top level with try/catch
-			try
-			{
-				callback(inArgs); // Reference operator(): invoke the callback
-			}
-			catch (...)
-			{
-				// SABER_ASSERT drops you into debugger for debug builds
-				// but does nothing for release builds
-				SABER_ASSERT(!"Unexpected exception");
-			}
-		}
-	};
-
-	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
-	// use std::for_each for C++11, preferred way
-	// snapshot's .use_count() is decremented here (RAII)...
-    // if mCallbackList was modified during OnNotify(), the snapshot's .use_count()
-    // will ==0, and the snapshot's old-copy-of the callback list is also deleted.
-    // however, if no change was made to mCallbackList, snapshot's .use_count()
-    // will >=1, and no list deletion occurs.
-	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
+    const std::type_index targetType = inArgs.type();
+    auto findAllCallbacks = [&inArgs, &targetType](const auto& element)
+    {
+        const auto& [token, eventType, callback] = element;
+        if (eventType == targetType)
+        {
+            try { callback(inArgs); }
+            catch (...) { SABER_ASSERT(!"Unexpected exception"); }
+        }
+    };
+    std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
-
-
 
 } // namespace detail
 
-inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
+inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
 {
 	std::unique_ptr<EventManager> result{};
-	Threading policy = Threading::single_policy;
-	if (policy == Threading::single_policy)
+	switch (inPolicy)
 	{
-		result = std::make_unique<detail::EventManagerParallelImpl>();
-	}
-	else
-	{
-		result = std::make_unique<detail::EventManagerImpl>();
-	}
+	case ThreadingPolicy::parallel:
+		result.reset(new detail::EventManagerParallelImpl());
+		break;
+	case ThreadingPolicy::single:
+		result.reset(new detail::EventManagerImpl());
+		break;
+	// default:
+	// We don't use default here because there are only 2 enum values, 
+	// and we want the compiler to hopefully alert us if someone ever adds a 3rd enum
+	} 
+	
 	return result;
 }
 
