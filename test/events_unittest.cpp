@@ -178,7 +178,7 @@ TEST_CASE("EventManager::Make returns independent instances", "[EventManager]")
 
 TEST_CASE("Parallel EventManager dispatches concurrent notifications", "[EventManager][Parallel]")
 {
-    auto manager = EventManager::Make(ThreadingPolicy::parallel);
+    auto manager = EventManager::Make(ThreadingPolicy::kParallel);
     std::atomic<int> callCount{0};
 
     auto token = manager->Register(
@@ -213,7 +213,7 @@ TEST_CASE("Parallel EventManager dispatches concurrent notifications", "[EventMa
 
 TEST_CASE("Parallel EventManager supports concurrent registration", "[EventManager][Parallel]")
 {
-    auto manager = EventManager::Make(ThreadingPolicy::parallel);
+    auto manager = EventManager::Make(ThreadingPolicy::kParallel);
     std::atomic<int> callCount{0};
 
     constexpr int kThreadCount = 8;

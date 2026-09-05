@@ -106,8 +106,8 @@ private:
 };
 
 enum class ThreadingPolicy {
-	single,
-	parallel
+	kSingle,
+	kParallel
 };
 
 // Using NVI pattern here
@@ -117,7 +117,7 @@ public:
 	using Token = saber::TaggedType<std::uint64_t, EventManager>;
 
 public:
-	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::single);
+	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
 
 	virtual ~EventManager() = default;
 
@@ -318,7 +318,7 @@ private:
 
 }; // class EventManagerParallelImpl
 
-auto& EventManagerParallelImpl::GetCallbackListOrCopy()
+inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
 {
 	{
 		const bool isNotifying = (mCallbackList.use_count() > 1);
@@ -398,10 +398,10 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPoli
 	std::unique_ptr<EventManager> result{};
 	switch (inPolicy)
 	{
-	case ThreadingPolicy::parallel:
+	case ThreadingPolicy::kParallel:
 		result.reset(new detail::EventManagerParallelImpl());
 		break;
-	case ThreadingPolicy::single:
+	case ThreadingPolicy::kSingle:
 		result.reset(new detail::EventManagerImpl());
 		break;
 	// default:
