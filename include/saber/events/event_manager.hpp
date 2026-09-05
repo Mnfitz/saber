@@ -336,24 +336,37 @@ auto& EventManagerParallelImpl::GetCallbackListOrCopy()
 
 inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
-	Token newToken{ mCounter.fetch_add(1, std::memory_order_relaxed) }; // Create a thread safe unique token using fetch_add, better performing than ++
-	std::lock_guard<std::mutex> lock(mMutex);
-	auto& callbackList = GetCallbackListOrCopy();
-	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
-	return newToken;
+	Token token;
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		token = Token{++mCounter};
+		auto& callbackList = GetCallbackListOrCopy();
+		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
+	} 
+	return token;
 }
 
 inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 {
-    std::lock_guard<std::mutex> lock(mMutex);
-    auto& callbackList = GetCallbackListOrCopy();
-    auto didFind = std::find_if(callbackList.begin(), callbackList.end(),
-        [inToken](const CallbackElement& e){ return std::get<0>(e) == inToken; });
-    if (didFind != callbackList.end())
-    {
-        *didFind = std::move(callbackList.back());
-        callbackList.pop_back();
-    }
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		auto& callbackList = GetCallbackListOrCopy();
+		auto element = std::find_if(callbackList.begin(), callbackList.end(),
+			[inToken](const CallbackElement& inElement)
+			{ 
+				const auto& [token, typeIndex, callback] = inElement;
+				return token == inToken; 
+			});
+		const bool wasFound = (element != callbackList.end());
+		if (wasFound)
+		{
+			// Fancy swap delete; overwrite iterator with last element in list then remove last elment
+			*element = std::move(callbackList.back());
+			callbackList.pop_back();
+		}
+	}
 }
 
 inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
@@ -361,6 +374,7 @@ inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
     std::shared_ptr<CallbackList> snapshot;
     {
         std::lock_guard<std::mutex> lock(mMutex);
+
         snapshot = mCallbackList; // now a synchronized read
     }
 
@@ -392,11 +406,12 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPoli
 		break;
 	// default:
 	// We don't use default here because there are only 2 enum values, 
-	// and we want the compiler to hopefully alert us if someone ever adds a 3rd enum
+	// and we want the compiler to helpfully alert us if someone ever adds a 3rd enum
 	} 
 	
 	return result;
 }
 
 } // namespace saber::events
+
 #endif // SABER_EVENTS_EVENTMANAGER_HPP

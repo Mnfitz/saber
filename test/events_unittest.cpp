@@ -15,6 +15,10 @@
 
 #include "saber/events/event_manager.hpp"
 
+#include <atomic>
+#include <thread>
+#include <vector>
+
 // ============================================================================
 // Test event types
 // ============================================================================
@@ -170,6 +174,75 @@ TEST_CASE("EventManager::Make returns independent instances", "[EventManager]")
     auto m1 = EventManager::Make();
     auto m2 = EventManager::Make();
     REQUIRE(m1 != m2);
+}
+
+TEST_CASE("Parallel EventManager dispatches concurrent notifications", "[EventManager][Parallel]")
+{
+    auto manager = EventManager::Make(ThreadingPolicy::parallel);
+    std::atomic<int> callCount{0};
+
+    auto token = manager->Register(
+        EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+        {
+            callCount.fetch_add(1, std::memory_order_relaxed);
+            return 0;
+        }));
+
+    constexpr int kThreadCount = 8;
+    constexpr int kNotificationsPerThread = 32;
+    std::vector<std::thread> threads;
+    threads.reserve(kThreadCount);
+
+    for (int threadIndex = 0; threadIndex < kThreadCount; ++threadIndex)
+    {
+        threads.emplace_back([&manager, threadIndex]
+        {
+            for (int notificationIndex = 0; notificationIndex < kNotificationsPerThread; ++notificationIndex)
+            {
+                manager->Notify(sender, DamageEvent{threadIndex + notificationIndex});
+            }
+        });
+    }
+
+    for (auto& thread : threads)
+        thread.join();
+
+    REQUIRE(callCount.load(std::memory_order_relaxed) == kThreadCount * kNotificationsPerThread);
+    manager->Unregister(token);
+}
+
+TEST_CASE("Parallel EventManager supports concurrent registration", "[EventManager][Parallel]")
+{
+    auto manager = EventManager::Make(ThreadingPolicy::parallel);
+    std::atomic<int> callCount{0};
+
+    constexpr int kThreadCount = 8;
+    constexpr int kRegistrationsPerThread = 32;
+    std::vector<std::thread> threads;
+    threads.reserve(kThreadCount);
+
+    for (int threadIndex = 0; threadIndex < kThreadCount; ++threadIndex)
+    {
+        threads.emplace_back([&manager, &callCount]
+        {
+            for (int registrationIndex = 0; registrationIndex < kRegistrationsPerThread; ++registrationIndex)
+            {
+                (void)manager->Register(
+                    EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+                    {
+                        callCount.fetch_add(1, std::memory_order_relaxed);
+                        return 0;
+                    }));
+            }
+        });
+    }
+
+    for (auto& thread : threads)
+        thread.join();
+
+    manager->Notify(sender, DamageEvent{});
+
+    REQUIRE(callCount.load(std::memory_order_relaxed) == kThreadCount * kRegistrationsPerThread);
 }
 
 // ============================================================================
