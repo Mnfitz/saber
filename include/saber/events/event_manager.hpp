@@ -8,8 +8,10 @@
 // std
 #include <algorithm>
 #include <any>
+#include <execution>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <tuple>
 #include <typeindex>
@@ -103,6 +105,10 @@ private:
 	CallbackType mInvoke{};
 };
 
+enum class ThreadingPolicy {
+	kSingle,
+	kParallel
+};
 
 // Using NVI pattern here
 class EventManager
@@ -111,7 +117,7 @@ public:
 	using Token = saber::TaggedType<std::uint64_t, EventManager>;
 
 public:
-	static std::unique_ptr<EventManager> Make();
+	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
 
 	virtual ~EventManager() = default;
 
@@ -284,13 +290,128 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
+
+
+
+class EventManagerParallelImpl final : public EventManager // EventManagerImpl is-a EventManager
+{
+public:
+	~EventManagerParallelImpl() override = default;
+
+private:
+	friend class EventManager; // allow Make() to construct it
+    EventManagerParallelImpl() = default;
+	auto& GetCallbackListOrCopy();
+
+private:
+	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
+	void OnUnregister(Token inToken) override;
+	void OnNotify(std::any inArgs) override;
+
+private:
+	std::atomic<std::uint64_t> mCounter{ 0 }; // Counter to generate unique tokens
+	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
+	using CallbackElement = CallbackList::value_type;
+	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+	std::mutex mMutex;
+
+
+}; // class EventManagerParallelImpl
+
+inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
+{
+	{
+		const bool isNotifying = (mCallbackList.use_count() > 1);
+		if (isNotifying)
+		{
+			// Copy-on-write: make copy of in-flight callbacklist...
+			// The use_count() of this new copy in mCallbackList becomes: "==1"
+			// The use_count() of the previous mCallback instance is now: "-=1"
+			mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+		}
+	}
+
+	return *mCallbackList;
+}
+
+inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
+{
+	Token token;
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		token = Token{++mCounter};
+		auto& callbackList = GetCallbackListOrCopy();
+		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
+	} 
+	return token;
+}
+
+inline void EventManagerParallelImpl::OnUnregister(Token inToken)
+{
+	{
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		auto& callbackList = GetCallbackListOrCopy();
+		auto element = std::find_if(callbackList.begin(), callbackList.end(),
+			[inToken](const CallbackElement& inElement)
+			{ 
+				const auto& [token, typeIndex, callback] = inElement;
+				return token == inToken; 
+			});
+		const bool wasFound = (element != callbackList.end());
+		if (wasFound)
+		{
+			// Fancy swap delete; overwrite iterator with last element in list then remove last elment
+			*element = std::move(callbackList.back());
+			callbackList.pop_back();
+		}
+	}
+}
+
+inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
+{
+    std::shared_ptr<CallbackList> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+
+        snapshot = mCallbackList; // now a synchronized read
+    }
+
+    const std::type_index targetType = inArgs.type();
+    auto findAllCallbacks = [&inArgs, &targetType](const auto& element)
+    {
+        const auto& [token, eventType, callback] = element;
+        if (eventType == targetType)
+        {
+            try { callback(inArgs); }
+            catch (...) { SABER_ASSERT(!"Unexpected exception"); }
+        }
+    };
+    std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), findAllCallbacks);
+}
+
 } // namespace detail
 
-inline /*static*/ std::unique_ptr<EventManager> EventManager::Make()
+inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
 {
-	std::unique_ptr<EventManager> result{new detail::EventManagerImpl()};
+	std::unique_ptr<EventManager> result{};
+	switch (inPolicy)
+	{
+	case ThreadingPolicy::kParallel:
+		result.reset(new detail::EventManagerParallelImpl());
+		break;
+	case ThreadingPolicy::kSingle:
+		result.reset(new detail::EventManagerImpl());
+		break;
+	// default:
+	// We don't use default here because there are only 2 enum values, 
+	// and we want the compiler to helpfully alert us if someone ever adds a 3rd enum
+	} 
+	
 	return result;
 }
 
 } // namespace saber::events
+
 #endif // SABER_EVENTS_EVENTMANAGER_HPP

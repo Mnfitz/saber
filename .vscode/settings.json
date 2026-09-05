@@ -83,4 +83,7 @@
 		"xutility": "cpp"
 	},
 	"editor.insertSpaces": false,
+	"chat.tools.terminal.autoApprove": {
+		"./build/win-vs2026/test/Debug/saber_unittest.exe": true
+	},
 }
