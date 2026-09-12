@@ -284,25 +284,25 @@ inline constexpr geometry::Size<T, Impl> Rectangle<T, Impl>::Size() const
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::X() const
 {
-	return mImpl.Get<0>();
+	return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Y() const
 {
-	return mImpl.Get<1>();
+	return mImpl.template Get<1>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Width() const
 {
-	return mImpl.Get<2>();
+	return mImpl.template Get<2>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Height() const
 {
-	return mImpl.Get<3>();
+	return mImpl.template Get<3>();
 }
 
 // Setters
@@ -321,25 +321,25 @@ inline constexpr void Rectangle<T, Impl>::Size(const geometry::Size<T, Impl>& in
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::X(T inX)
 {
-	mImpl.Get<0>() = inX;
+	mImpl.template Get<0>() = inX;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Y(T inY)
 {
-	mImpl.Get<1>() = inY;
+	mImpl.template Get<1>() = inY;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Width(T inWidth)
 {
-	mImpl.Get<2>() = inWidth;
+	mImpl.template Get<2>() = inWidth;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Height(T inHeight)
 {
-	mImpl.Get<3>() = inHeight;
+	mImpl.template Get<3>() = inHeight;
 }
 
 // Mutators

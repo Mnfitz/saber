@@ -85,7 +85,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # is available (i.e. >= C++20)
         # -Xclang -std=c++2a
         )
-else()
+elseif (MSVC)
     add_compile_options(
         # We want to be as conformant as possible, so tell MSVC to not be permissive (note that this has no effect on clang-cl)
         /permissive-

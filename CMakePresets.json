@@ -73,6 +73,19 @@
     },
 
     {
+      "name": "config-win-mingw-gcc",
+      "displayName": "Configure Windows using MinGW GCC",
+      "generator": "MinGW Makefiles",
+      "inherits": "config-default-win",
+      "binaryDir": "${sourceDir}/build/win-mingw-gcc",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_MAKE_PROGRAM": "mingw32-make.exe"
+      }
+    },
+
+    {
       "name": "config-default-apple",
       "hidden": true,
       "description": "Default build setting for saber/apple",
@@ -115,11 +128,6 @@
       "description": "Default build setting saber/Make",
       "generator": "Unix Makefiles",
       "inherits": "config-default",
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      },
       "architecture": {
         "value": "x64",
         "strategy": "external"
@@ -134,6 +142,17 @@
       "displayName": "Configure Linux using Make",
       "binaryDir": "${sourceDir}/build/linux-make",
       "inherits": "config-default-linux"
+    },
+
+    {
+      "name": "config-linux-gcc",
+      "displayName": "Configure Linux using GCC",
+      "binaryDir": "${sourceDir}/build/linux-gcc",
+      "inherits": "config-default-linux",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
     }
   ],
 
@@ -162,6 +181,13 @@
       "name": "build-win-vs2019",
       "configurePreset": "config-win-vs2019",
       "inherits": "build-default-win"
+    },
+
+    {
+      "name": "build-win-mingw-gcc",
+      "configurePreset": "config-win-mingw-gcc",
+      "jobs": 0,
+      "targets": [ "all" ]
     },
 
     {

@@ -79,6 +79,50 @@
     },
 
     {
+      "label": "generate-gcc",
+      "type": "shell",
+      "windows": {
+        "command": "cmake",
+        "args": [
+          "--preset", "config-win-mingw-gcc"
+        ]
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+
+    {
+      "label": "build-gcc",
+      "type": "shell",
+      "windows": {
+        "command": "cmake",
+        "args": [
+          "--build",
+          "--preset", "build-win-mingw-gcc"
+        ]
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "clean-gcc",
+      "type": "shell",
+      "windows": {
+        "command": "cmake --build --preset build-win-mingw-gcc --target clean"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+
+    {
       "label": "clean",
       "type": "shell",
       "windows": {
