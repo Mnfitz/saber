@@ -214,6 +214,7 @@
 	#define SABER_THROW(expr)
 
 // REVISIT jfitz 29apr2024: Add MinGW toolset support under windows?
+// This will allow support for posix-on-windows applications.
 // MinGW: the Linux-derived toolset that is installed along with git-bash.
 // Essentially, a GCC toolset, but running under Windows instead of Linux.
 // If so, maybe we'll need another case here. Something like:
@@ -340,6 +341,74 @@
 
 	#define SABER_DEBUG()	(!defined(NDEBUG))
 	#define SABER_DEBUG_BREAK()	__builtin_trap()
+	#define SABER_LOG(expr)
+	#define SABER_THROW(expr)
+
+#pragma endregion ()
+
+#elif defined(__GNUC__) && !defined(__clang__) && (defined(__MINGW32__) || defined(__MINGW64__)) // GCC when used on Windows
+// ------------------------------------------------------------------
+#pragma region Linux: Xcode toolset detection
+
+	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
+	// Not yet...
+	//#if defined(__ANDROID__)
+	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	1
+	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
+	//#else
+	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	0
+	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
+	//#endif
+
+	#define SABER_PRIVATE_PLATFORM_IOS(unused)		0
+	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
+	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	1
+
+	#if defined(__x86_64__)
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
+		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("int3"))
+
+	#elif defined(__i386__)
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	0
+		#define SABER_PRIVATE_CPU_X86(unused)	1
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
+		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("int3"))
+
+	#elif defined(__arm__)
+		#define SABER_PRIVATE_ARCH_32(unused)	1
+		#define SABER_PRIVATE_ARCH_64(unused)	0
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
+		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("brk #0"))
+
+	#elif defined(__aarch64__)
+		#define SABER_PRIVATE_ARCH_32(unused)	0
+		#define SABER_PRIVATE_ARCH_64(unused)	1
+		#define SABER_PRIVATE_CPU_ARM(unused)	1
+		#define SABER_PRIVATE_CPU_X86(unused)	0
+		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
+		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
+		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("brk #0"))
+
+	#else
+		#error "Unsupported architecture"
+	#endif
+
+	#define SABER_PRIVATE_COMPILER_CLANG(unused)	(defined(__clang__))
+	#define SABER_PRIVATE_COMPILER_GCC(unused)		1
+	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
+
+	#define SABER_DEBUG()	(!defined(NDEBUG))
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
