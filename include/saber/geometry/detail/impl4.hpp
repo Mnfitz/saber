@@ -85,37 +85,37 @@ struct Impl4 final
 
 		constexpr Scalar& operator+=(const Scalar& inRHS)
 		{
-			Get<0>() += inRHS.Get<0>();
-			Get<1>() += inRHS.Get<1>();
-			Get<2>() += inRHS.Get<2>();
-			Get<3>() += inRHS.Get<3>();
+			Get<0>() += inRHS.template Get<0>();
+			Get<1>() += inRHS.template Get<1>();
+			Get<2>() += inRHS.template Get<2>();
+			Get<3>() += inRHS.template Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator-=(const Scalar& inRHS)
 		{
-			Get<0>() -= inRHS.Get<0>();
-			Get<1>() -= inRHS.Get<1>();
-			Get<2>() -= inRHS.Get<2>();
-			Get<3>() -= inRHS.Get<3>();
+			Get<0>() -= inRHS.template Get<0>();
+			Get<1>() -= inRHS.template Get<1>();
+			Get<2>() -= inRHS.template Get<2>();
+			Get<3>() -= inRHS.template Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator*=(const Scalar& inRHS)
 		{
-			Get<0>() *= inRHS.Get<0>();
-			Get<1>() *= inRHS.Get<1>();
-			Get<2>() *= inRHS.Get<2>();
-			Get<3>() *= inRHS.Get<3>();
+			Get<0>() *= inRHS.template Get<0>();
+			Get<1>() *= inRHS.template Get<1>();
+			Get<2>() *= inRHS.template Get<2>();
+			Get<3>() *= inRHS.template Get<3>();
 			return *this;
 		}
 
 		constexpr Scalar& operator/=(const Scalar& inRHS)
 		{
-			Get<0>() /= inRHS.Get<0>();
-			Get<1>() /= inRHS.Get<1>();
-			Get<2>() /= inRHS.Get<2>();
-			Get<3>() /= inRHS.Get<3>();
+			Get<0>() /= inRHS.template Get<0>();
+			Get<1>() /= inRHS.template Get<1>();
+			Get<2>() /= inRHS.template Get<2>();
+			Get<3>() /= inRHS.template Get<3>();
 			return *this;
 		}
 
@@ -126,18 +126,18 @@ struct Impl4 final
 			if constexpr (std::is_floating_point_v<T>)
 			{   
 				// Floating point comparisons are always inexact within an epsilon
-				result = Inexact::IsEq(Get<0>(), inRHS.Get<0>()) 
-						&& Inexact::IsEq(Get<1>(), inRHS.Get<1>())
-						&& Inexact::IsEq(Get<2>(), inRHS.Get<2>())
-						&& Inexact::IsEq(Get<3>(), inRHS.Get<3>());
+				result = Inexact::IsEq(Get<0>(), inRHS.template Get<0>()) 
+						&& Inexact::IsEq(Get<1>(), inRHS.template Get<1>())
+						&& Inexact::IsEq(Get<2>(), inRHS.template Get<2>())
+						&& Inexact::IsEq(Get<3>(), inRHS.template Get<3>());
 			}
 			else
 			{
 				// Integer comparisons are always exact
-				result = (Get<0>() == inRHS.Get<0>()) 
-						&& (Get<1>() == inRHS.Get<1>())
-						&& (Get<2>() == inRHS.Get<2>())
-						&& (Get<3>() == inRHS.Get<3>());
+				result = (Get<0>() == inRHS.template Get<0>()) 
+						&& (Get<1>() == inRHS.template Get<1>())
+						&& (Get<2>() == inRHS.template Get<2>())
+						&& (Get<3>() == inRHS.template Get<3>());
 			}
 			return result;
 		}
@@ -195,12 +195,12 @@ struct Impl4 final
 			ToLTRB(ltrb);
 
 			// Figure out the top left of the union rectangle
-			Get<0>() = std::min(Get<0>(), ltrb.Get<0>()); // Min Left
-			Get<1>() = std::min(Get<1>(), ltrb.Get<1>()); // Min Top
+			Get<0>() = std::min(Get<0>(), ltrb.template Get<0>()); // Min Left
+			Get<1>() = std::min(Get<1>(), ltrb.template Get<1>()); // Min Top
 
 			// Figure out the bottom right of the union rectangle
-			Get<2>() = std::max(Get<2>(), ltrb.Get<2>()); // Max Right
-			Get<3>() = std::max(Get<3>(), ltrb.Get<3>()); // Max Bottom
+			Get<2>() = std::max(Get<2>(), ltrb.template Get<2>()); // Max Right
+			Get<3>() = std::max(Get<3>(), ltrb.template Get<3>()); // Max Bottom
 
 			// Remember to revert back to XYWH format
 			FromLTRB(*this);
@@ -219,12 +219,12 @@ struct Impl4 final
 			ToLTRB(rhs);
 
 			// Figure out the bottom right of the intersect rectangle
-			Get<0>() = std::max(Get<0>(), rhs.Get<0>());
-			Get<1>() = std::max(Get<1>(), rhs.Get<1>());
+			Get<0>() = std::max(Get<0>(), rhs.template Get<0>());
+			Get<1>() = std::max(Get<1>(), rhs.template Get<1>());
 
 			// Figure out the top left of the intersect rectangle
-			Get<2>() = std::min(Get<2>(), rhs.Get<2>());
-			Get<3>() = std::min(Get<3>(), rhs.Get<2>());
+			Get<2>() = std::min(Get<2>(), rhs.template Get<2>());
+			Get<3>() = std::min(Get<3>(), rhs.template Get<2>());
 
 			// Remember to revert back to XYWH format
 			FromLTRB(*this);
@@ -243,14 +243,14 @@ struct Impl4 final
 			do 
 			{
 				// Test the x and left component
-				if (inImpl2.template Get<0>() < ltrb.Get<0>()) // Not greater than or equal
+				if (inImpl2.template Get<0>() < ltrb.template Get<0>()) // Not greater than or equal
 				{
 					// Extra step needed for floating point equality
 					if constexpr(std::is_floating_point_v<T>)
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. x = 2.99999..., left = 3.0
-						if (!Inexact::IsEq(inImpl2.template Get<0>(), ltrb.Get<0>()))
+						if (!Inexact::IsEq(inImpl2.template Get<0>(), ltrb.template Get<0>()))
 						{
 							break;
 						}
@@ -264,14 +264,14 @@ struct Impl4 final
 				}
 
 				// Test the y and top component
-				if (inImpl2.template Get<1>() < ltrb.Get<1>()) // Not greater than or equal
+				if (inImpl2.template Get<1>() < ltrb.template Get<1>()) // Not greater than or equal
 				{
 					// Extra step needed for floating point equality
 					if constexpr(std::is_floating_point_v<T>)
 					{
 						// Approximately equal values are contained within the rectangle
 						// Eg. y = 2.99999..., top = 3.0
-						if (!Inexact::IsEq(inImpl2.template Get<1>(), ltrb.Get<1>()))
+						if (!Inexact::IsEq(inImpl2.template Get<1>(), ltrb.template Get<1>()))
 						{
 							break;
 						}
@@ -286,7 +286,7 @@ struct Impl4 final
 
 				{
 					// Test the x and right component
-					if (inImpl2.template Get<0>() >= ltrb.Get<2>()) // Not less than
+					if (inImpl2.template Get<0>() >= ltrb.template Get<2>()) // Not less than
 					{
 						break;
 					}
@@ -296,7 +296,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., right = 3.0
-						if (Inexact::IsEq(inImpl2.template Get<0>(), ltrb.Get<2>()))
+						if (Inexact::IsEq(inImpl2.template Get<0>(), ltrb.template Get<2>()))
 						{
 							break;
 						}
@@ -305,7 +305,7 @@ struct Impl4 final
 
 				{
 					// Test the y and bottom component
-					if (inImpl2.template Get<1>() >= ltrb.Get<3>()) // Not less than 
+					if (inImpl2.template Get<1>() >= ltrb.template Get<3>()) // Not less than 
 					{
 						break;
 					}
@@ -315,7 +315,7 @@ struct Impl4 final
 					{
 						// Approximately equal values are not contained within the rectangle
 						// Eg. y = 2.99999..., bottom = 3.0
-						if (Inexact::IsEq(inImpl2.template Get<1>(), ltrb.Get<3>()))
+						if (Inexact::IsEq(inImpl2.template Get<1>(), ltrb.template Get<3>()))
 						{
 							break;
 						}
@@ -342,14 +342,14 @@ struct Impl4 final
 		// TRICKY: There is no way to discern whether a Scalar is in LTRB or XYWH format, therefore methods are kept private
 		static constexpr void ToLTRB(Scalar& inXYWH)
 		{
-			inXYWH.Get<2>() += inXYWH.Get<0>();
-			inXYWH.Get<3>() += inXYWH.Get<1>();
+			inXYWH.template Get<2>() += inXYWH.template Get<0>();
+			inXYWH.template Get<3>() += inXYWH.template Get<1>();
 		}
 
 		static constexpr void FromLTRB(Scalar& inLTRB)
 		{
-			inLTRB.Get<2>() -= inLTRB.Get<0>();
-			inLTRB.Get<3>() -= inLTRB.Get<1>();
+			inLTRB.template Get<2>() -= inLTRB.template Get<0>();
+			inLTRB.template Get<3>() -= inLTRB.template Get<1>();
 		}
 
 		// Friend meaning free function (and always public)
@@ -359,7 +359,7 @@ struct Impl4 final
 			do
 			{
 				// check for "exact" width and height being zero or negative
-				isEmpty = (inScalar.Get<2>() <= 0) || (inScalar.Get<3>() <= 0);
+				isEmpty = (inScalar.template Get<2>() <= 0) || (inScalar.template Get<3>() <= 0);
 				if (isEmpty)
 				{
 					break;
@@ -368,8 +368,8 @@ struct Impl4 final
 				if constexpr(std::is_floating_point_v<T>)
 				{
 					// check for "inexact" width and height being zero
-					isEmpty = (Inexact::IsEq(inScalar.Get<2>(), static_cast<T>(0)) 
-							|| Inexact::IsEq(inScalar.Get<3>(), static_cast<T>(0)));
+					isEmpty = (Inexact::IsEq(inScalar.template Get<2>(), static_cast<T>(0)) 
+							|| Inexact::IsEq(inScalar.template Get<3>(), static_cast<T>(0)));
 				}
 
 			} while (false);
@@ -443,12 +443,12 @@ struct Impl4 final
 				{
 					// Delegate to Scalar Impl which is constexpr capable
 					Scalar lhs{Get<0>(), Get<1>(), Get<2>(), Get<3>()};
-					const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>(), inRHS.Get<2>(), inRHS.Get<3>()};
+					const Scalar rhs{inRHS.template Get<0>(), inRHS.template Get<1>(), inRHS.template Get<2>(), inRHS.template Get<3>()};
 					lhs += rhs;
-					Get<0>() = lhs.Get<0>();
-					Get<1>() = lhs.Get<1>(); 
-					Get<2>() = lhs.Get<2>();
-					Get<3>() = lhs.Get<3>(); 
+					Get<0>() = lhs.template Get<0>();
+					Get<1>() = lhs.template Get<1>(); 
+					Get<2>() = lhs.template Get<2>();
+					Get<3>() = lhs.template Get<3>(); 
 					break;
 				}
 #endif // __cpp_lib_is_constant_evaluated
@@ -457,7 +457,7 @@ struct Impl4 final
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&Get<0>());
-					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Add(lhs, rhs);
 					Simd128<T>::Store4(&Get<0>(), result);
 				}
@@ -465,12 +465,12 @@ struct Impl4 final
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&Get<0>());
-					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Add(lhs, rhs);
 					Simd128<T>::Store2(&Get<0>(), result);
 
 					lhs = Simd128<T>::Load2(&Get<2>());
-					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.template Get<2>());
 					result = Simd128<T>::Add(lhs, rhs);
 					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
@@ -494,12 +494,12 @@ struct Impl4 final
 				{
 					// Delegate to Scalar Impl which is constexpr capable
 					Scalar lhs{Get<0>(), Get<1>(), Get<2>(), Get<3>()};
-					const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>(), inRHS.Get<2>(), inRHS.Get<3>()};
+					const Scalar rhs{inRHS.template Get<0>(), inRHS.template Get<1>(), inRHS.template Get<2>(), inRHS.template Get<3>()};
 					lhs -= rhs;
-					Get<0>() = lhs.Get<0>();
-					Get<1>() = lhs.Get<1>();
-					Get<2>() = lhs.Get<2>();
-					Get<3>() = lhs.Get<3>();
+					Get<0>() = lhs.template Get<0>();
+					Get<1>() = lhs.template Get<1>();
+					Get<2>() = lhs.template Get<2>();
+					Get<3>() = lhs.template Get<3>();
 					break;
 				}
 #endif // __cpp_lib_is_constant_evaluated
@@ -508,7 +508,7 @@ struct Impl4 final
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&Get<0>());
-					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Sub(lhs, rhs);
 					Simd128<T>::Store4(&Get<0>(), result);
 				}
@@ -516,12 +516,12 @@ struct Impl4 final
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&Get<0>());
-					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Sub(lhs, rhs);
 					Simd128<T>::Store2(&Get<0>(), result);
 
 					lhs = Simd128<T>::Load2(&Get<2>());
-					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.template Get<2>());
 					result = Simd128<T>::Sub(lhs, rhs);
 					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
@@ -544,12 +544,12 @@ struct Impl4 final
 				{
 					// Delegate to Scalar Impl which is constexpr capable
 					Scalar lhs{Get<0>(), Get<1>(), Get<2>(), Get<3>()};
-					const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>(), inRHS.Get<2>(), inRHS.Get<3>()};
+					const Scalar rhs{inRHS.template Get<0>(), inRHS.template Get<1>(), inRHS.template Get<2>(), inRHS.template Get<3>()};
 					lhs *= rhs;
-					Get<0>() = lhs.Get<0>();
-					Get<1>() = lhs.Get<1>(); 
-					Get<2>() = lhs.Get<2>();
-					Get<3>() = lhs.Get<3>(); 
+					Get<0>() = lhs.template Get<0>();
+					Get<1>() = lhs.template Get<1>(); 
+					Get<2>() = lhs.template Get<2>();
+					Get<3>() = lhs.template Get<3>(); 
 					break;
 				}
 #endif // __cpp_lib_is_constant_evaluated
@@ -558,7 +558,7 @@ struct Impl4 final
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&Get<0>());
-					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Mul(lhs, rhs);
 					Simd128<T>::Store4(&Get<0>(), result);
 				}
@@ -566,12 +566,12 @@ struct Impl4 final
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&Get<0>());
-					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Mul(lhs, rhs);
 					Simd128<T>::Store2(&Get<0>(), result);
 
 					lhs = Simd128<T>::Load2(&Get<2>());
-					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.template Get<2>());
 					result = Simd128<T>::Mul(lhs, rhs);
 					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
@@ -594,12 +594,12 @@ struct Impl4 final
 				{
 					// Delegate to Scalar Impl which is constexpr capable
 					Scalar lhs{Get<0>(), Get<1>(), Get<2>(), Get<3>()};
-					const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>(), inRHS.Get<2>(), inRHS.Get<3>()};
+					const Scalar rhs{inRHS.template Get<0>(), inRHS.template Get<1>(), inRHS.template Get<2>(), inRHS.template Get<3>()};
 					lhs /= rhs;
-					Get<0>() = lhs.Get<0>();
-					Get<1>() = lhs.Get<1>();
-					Get<2>() = lhs.Get<2>();
-					Get<3>() = lhs.Get<3>();
+					Get<0>() = lhs.template Get<0>();
+					Get<1>() = lhs.template Get<1>();
+					Get<2>() = lhs.template Get<2>();
+					Get<3>() = lhs.template Get<3>();
 					break;
 				}
 #endif // __cpp_lib_is_constant_evaluated
@@ -608,7 +608,7 @@ struct Impl4 final
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&Get<0>());
-					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Div(lhs, rhs);
 					Simd128<T>::Store4(&Get<0>(), result);
 				}
@@ -616,12 +616,12 @@ struct Impl4 final
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&Get<0>());
-					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.template Get<0>());
 					auto result = Simd128<T>::Div(lhs, rhs);
 					Simd128<T>::Store2(&Get<0>(), result);
 
 					lhs = Simd128<T>::Load2(&Get<2>());
-					rhs = Simd128<T>::Load2(&inRHS.Get<2>());
+					rhs = Simd128<T>::Load2(&inRHS.template Get<2>());
 					result = Simd128<T>::Div(lhs, rhs);
 					Simd128<T>::Store2(&Get<2>(), result); // Store2 only sets the initial address and the one after; does not overwrite entire object
 				}
@@ -645,7 +645,7 @@ struct Impl4 final
 				{
 					// Delegate to Scalar Impl which is constexpr capable
 					Scalar lhs{Get<0>(), Get<1>(), Get<2>(), Get<3>()};
-					const Scalar rhs{inRHS.Get<0>(), inRHS.Get<1>(), inRHS.Get<2>(), inRHS.Get<3>()};
+					const Scalar rhs{inRHS.template Get<0>(), inRHS.template Get<1>(), inRHS.template Get<2>(), inRHS.template Get<3>()};
 					isEqual = lhs == rhs;
 					break;
 				}
@@ -655,20 +655,20 @@ struct Impl4 final
 				{
 					// 32 bits means 4 elements at a time
 					auto lhs = Simd128<T>::Load4(&Get<0>());
-					auto rhs = Simd128<T>::Load4(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load4(&inRHS.template Get<0>());
 					isEqual = Simd128<T>::IsEq(lhs, rhs);
 				}
 				else if constexpr (Is64BitDataType<T>()) // Double up to 64 bit data type
 				{
 					// 64 bits means 2 elements at a time
 					auto lhs = Simd128<T>::Load2(&Get<0>());
-					auto rhs = Simd128<T>::Load2(&inRHS.Get<0>());
+					auto rhs = Simd128<T>::Load2(&inRHS.template Get<0>());
 					isEqual = Simd128<T>::IsEq(lhs, rhs);
 
 					if (isEqual)
 					{
 						lhs = Simd128<T>::Load2(&Get<2>());
-						rhs = Simd128<T>::Load2(&inRHS.Get<2>());
+						rhs = Simd128<T>::Load2(&inRHS.template Get<2>());
 						//isEqual = isEqual && Simd128<T>::IsEq(lhs, rhs);
 						isEqual = Simd128<T>::IsEq(lhs, rhs);
 					}
@@ -880,7 +880,7 @@ struct Impl4 final
 				ToLTRB(ltrb);
 
 				auto lhs = Simd128<T>::Load4(&Get<0>());
-				auto rhs = Simd128<T>::Load4(&ltrb.Get<0>());
+				auto rhs = Simd128<T>::Load4(&ltrb.template Get<0>());
 				auto result = Simd128<T>::MinMax(lhs, rhs);
 				Simd128<T>::Store4(&Get<0>(), result);
 				FromLTRB(*this);
@@ -891,7 +891,7 @@ struct Impl4 final
 				Simd ltrb = inImpl4;
 
 				auto lt1 = Simd128<T>::Load2(&Get<0>());
-				auto lt2 = Simd128<T>::Load2(&ltrb.Get<0>());
+				auto lt2 = Simd128<T>::Load2(&ltrb.template Get<0>());
 				auto result = Simd128<T>::Min(lt1, lt2);
 				Simd128<T>::Store2(&Get<0>(), result);
 
@@ -900,7 +900,7 @@ struct Impl4 final
 				ToLTRB(*this);
 				ToLTRB(ltrb);
 				auto rb1 = Simd128<T>::Load2(&Get<2>());
-				auto rb2 = Simd128<T>::Load2(&ltrb.Get<2>());
+				auto rb2 = Simd128<T>::Load2(&ltrb.template Get<2>());
 				result = Simd128<T>::Max(rb1, rb2);
 
 				Simd128<T>::Store2(&Get<2>(), result);
@@ -924,7 +924,7 @@ struct Impl4 final
 				ToLTRB(ltrb);
 
 				auto lhs = Simd128<T>::Load4(&Get<0>());
-				auto rhs = Simd128<T>::Load4(&ltrb.Get<0>());
+				auto rhs = Simd128<T>::Load4(&ltrb.template Get<0>());
 				auto intersection = Simd128<T>::MaxMin(lhs, rhs);
 				Simd128<T>::Store4(&Get<0>(), intersection);
 				FromLTRB(*this);
@@ -934,7 +934,7 @@ struct Impl4 final
 				Simd ltrb = inImpl4;
 				// Find the maximum of the left and top values
 				auto lt1 = Simd128<T>::Load2(&Get<0>());
-				auto lt2 = Simd128<T>::Load2(&ltrb.Get<0>());
+				auto lt2 = Simd128<T>::Load2(&ltrb.template Get<0>());
 				auto intersectionLT = Simd128<T>::Max(lt1, lt2);
 
 				// Find the minimum of the right and bottom values
@@ -942,7 +942,7 @@ struct Impl4 final
 				ToLTRB(*this);
 				ToLTRB(ltrb);
 				auto rb1 = Simd128<T>::Load2(&Get<2>());
-				auto rb2 = Simd128<T>::Load2(&ltrb.Get<2>());
+				auto rb2 = Simd128<T>::Load2(&ltrb.template Get<2>());
 				auto intersectionRB = Simd128<T>::Min(rb1, rb2);
 
 				Simd128<T>::Store2(&Get<0>(), intersectionLT);
@@ -964,8 +964,8 @@ struct Impl4 final
 			Simd ltrb = *this;
 			ToLTRB(ltrb);
 
-			auto lt = Simd128<T>::Load2(&ltrb.Get<0>());
-			auto rb = Simd128<T>::Load2(&ltrb.Get<2>());
+			auto lt = Simd128<T>::Load2(&ltrb.template Get<0>());
+			auto rb = Simd128<T>::Load2(&ltrb.template Get<2>());
 
 			auto xy = inImpl2.GetSimdType(); // Get the underlying Simd value
 
@@ -1008,27 +1008,27 @@ struct Impl4 final
 	private:
 		static constexpr void ToLTRB(Simd& inXYWH)
 		{
-			auto lt = Simd128<T>::Load2(&inXYWH.Get<0>());
-			auto wh = Simd128<T>::Load2(&inXYWH.Get<2>());
+			auto lt = Simd128<T>::Load2(&inXYWH.template Get<0>());
+			auto wh = Simd128<T>::Load2(&inXYWH.template Get<2>());
 			auto rb = Simd128<T>::Add(lt, wh);
-			Simd128<T>::Store2(&inXYWH.Get<2>(), rb);
+			Simd128<T>::Store2(&inXYWH.template Get<2>(), rb);
 		}
 
 		static constexpr void FromLTRB(Simd& inLTRB)
 		{
-			auto lt = Simd128<T>::Load2(&inLTRB.Get<0>());
-			auto rb = Simd128<T>::Load2(&inLTRB.Get<2>());
+			auto lt = Simd128<T>::Load2(&inLTRB.template Get<0>());
+			auto rb = Simd128<T>::Load2(&inLTRB.template Get<2>());
 			auto wh = Simd128<T>::Sub(rb, lt);
-			Simd128<T>::Store2(&inLTRB.Get<2>(), wh);
+			Simd128<T>::Store2(&inLTRB.template Get<2>(), wh);
 		}
 
 		friend constexpr bool IsEmpty(const Simd& inSimd)
 		{
 			constexpr Simd kZero{};
-			auto width = Simd128<T>::Load1(&inSimd.Get<2>());
-			auto height = Simd128<T>::Load1(&inSimd.Get<3>());
+			auto width = Simd128<T>::Load1(&inSimd.template Get<2>());
+			auto height = Simd128<T>::Load1(&inSimd.template Get<3>());
 			auto min = Simd128<T>::Min(width, height);
-			auto zero = Simd128<T>::Load2(&kZero.Get<0>());
+			auto zero = Simd128<T>::Load2(&kZero.template Get<0>());
 
 			// TRICKY: IsLe() expects to compare Impl4 elements, but we pass in Impl2
 			// The logic works, since the empty zeroes will not affect the Le check

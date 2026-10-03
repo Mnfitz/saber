@@ -315,7 +315,7 @@ auto MatrixMul(typename Impl8<T>::Simd& ioLHS, const typename Impl8<T>::Simd& in
 }
 
 template<typename T>
-typename auto MatrixInv(typename Impl8<T>::Scalar& ioLHS)
+constexpr auto MatrixInv(typename Impl8<T>::Scalar& ioLHS)
 {
 	return MatrixHelper<T, ImplKind::kScalar>::MatrixInv(ioLHS);
 }

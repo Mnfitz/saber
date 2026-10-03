@@ -14,6 +14,12 @@
 
 namespace saber::geometry {
 
+template<typename T, ImplKind Impl>
+class Rectangle;
+
+template<typename T, ImplKind Impl>
+constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle);
+
 /// @brief Represents a rectangle in 2D space.
 /// @tparam T The type of the rectangle's coordinates (e.g., int, float).
 /// @tparam ImplType The implementation kind (e.g., scalar or SIMD).
@@ -232,8 +238,7 @@ private:
 	friend constexpr bool operator==<>(const Rectangle& inLHS, const Rectangle& inRHS);
 	friend constexpr bool operator!=<>(const Rectangle& inLHS, const Rectangle& inRHS);
 
-	template<typename T, ImplKind Impl>
-	friend constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle);
+	friend constexpr bool IsEmpty<T, Impl>(const Rectangle<T, Impl>& inRectangle);
 
 private:
 	using ImplType = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
@@ -284,25 +289,25 @@ inline constexpr geometry::Size<T, Impl> Rectangle<T, Impl>::Size() const
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::X() const
 {
-	return mImpl.Get<0>();
+	return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Y() const
 {
-	return mImpl.Get<1>();
+	return mImpl.template Get<1>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Width() const
 {
-	return mImpl.Get<2>();
+	return mImpl.template Get<2>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Rectangle<T, Impl>::Height() const
 {
-	return mImpl.Get<3>();
+	return mImpl.template Get<3>();
 }
 
 // Setters
@@ -321,25 +326,25 @@ inline constexpr void Rectangle<T, Impl>::Size(const geometry::Size<T, Impl>& in
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::X(T inX)
 {
-	mImpl.Get<0>() = inX;
+	mImpl.template Get<0>() = inX;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Y(T inY)
 {
-	mImpl.Get<1>() = inY;
+	mImpl.template Get<1>() = inY;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Width(T inWidth)
 {
-	mImpl.Get<2>() = inWidth;
+	mImpl.template Get<2>() = inWidth;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Rectangle<T, Impl>::Height(T inHeight)
 {
-	mImpl.Get<3>() = inHeight;
+	mImpl.template Get<3>() = inHeight;
 }
 
 // Mutators

@@ -166,26 +166,26 @@ inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Width() const
 {
-	return mImpl.Get<0>();
+	return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Height() const
 {
-	return mImpl.Get<1>();
+	return mImpl.template Get<1>();
 }
 
 // Setters
 template<typename T, ImplKind Impl>
 inline constexpr void Size<T, Impl>::Width(T inWidth)
 {
-	mImpl.Set<0>(inWidth);
+	mImpl.template Set<0>(inWidth);
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Size<T, Impl>::Height(T inHeight)
 {
-	mImpl.Set<1>(inHeight);
+	mImpl.template Set<1>(inHeight);
 }
 
 #pragma endregion
@@ -482,15 +482,17 @@ inline T get(const Size<T>& inSize)
 	return result;
 }
 
+}// namespace saber::geometry
+
 template<typename T>
-struct std::tuple_size<Size<T>> // Partial template specialization for: Size<T>
+struct std::tuple_size<saber::geometry::Size<T>> // Partial template specialization for: Size<T>
 {
 	// Number of elements in Size<T>'s structured binding
 	static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Size<T>> // Partial template specialization for: Size<T>
+struct std::tuple_element<Index, saber::geometry::Size<T>> // Partial template specialization for: Size<T>
 {
 	// Type of elements in Size<T>'s structured binding
 	using type = T;
@@ -498,7 +500,5 @@ struct std::tuple_element<Index, Size<T>> // Partial template specialization for
 
 #endif // __cpp_structured_bindings
 #pragma endregion
-
-}// namespace saber::geometry
 
 #endif // SABER_GEOMETRY_SIZE_HPP

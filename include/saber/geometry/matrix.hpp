@@ -15,6 +15,12 @@
 
 namespace saber::geometry {
 
+template<typename T, ImplKind Impl>
+class Matrix;
+
+template<typename T, ImplKind Impl>
+constexpr bool IsEmpty(const Matrix<T, Impl>& inMatrix);
+
 /// @brief Represents a 2x3 matrix in 2D space.
 /// @tparam T The type of the matrix's coordinates (e.g., float, double).
 /// @tparam ImplType The implementation kind (e.g., scalar or SIMD).
@@ -95,8 +101,7 @@ private:
 	friend constexpr bool operator== <Matrix>(const Matrix& inLHS, const Matrix& inRHS);
 	friend constexpr bool operator!= <Matrix>(const Matrix& inLHS, const Matrix& inRHS);
 
-	template<typename T, ImplKind Impl>
-	friend constexpr bool IsEmpty(const Matrix<T, Impl>& inMatrix);
+	friend constexpr bool IsEmpty<T, Impl>(const Matrix<T, Impl>& inMatrix);
 
 	// Data Members
 	ImplType mImpl{};
@@ -217,74 +222,74 @@ inline constexpr void Matrix<T, Impl>::Invert()
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M11() const
 {
-	return mImpl.Get<0>();
+	return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M12() const
 {
-	return mImpl.Get<1>();
+	return mImpl.template Get<1>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M13() const
 {
-	return mImpl.Get<2>();
+	return mImpl.template Get<2>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M21() const
 {
-	return mImpl.Get<3>();
+	return mImpl.template Get<3>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M22() const
 {
-	return mImpl.Get<4>();
+	return mImpl.template Get<4>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Matrix<T, Impl>::M23() const
 {
-	return mImpl.Get<5>();
+	return mImpl.template Get<5>();
 }
 
 // Setters
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M11(T inT)
 {
-	mImpl.Get<0>() = inT;
+	mImpl.template Get<0>() = inT;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M12(T inT)
 {
-	mImpl.Get<1>() = inT;
+	mImpl.template Get<1>() = inT;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M13(T inT)
 {
-	mImpl.Get<2>() = inT;
+	mImpl.template Get<2>() = inT;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M21(T inT)
 {
-	mImpl.Get<3>() = inT;
+	mImpl.template Get<3>() = inT;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M22(T inT)
 {
-	mImpl.Get<4>() = inT;
+	mImpl.template Get<4>() = inT;
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Matrix<T, Impl>::M23(T inT)
 {
-	mImpl.Get<5>() = inT;
+	mImpl.template Get<5>() = inT;
 }
 
 // ------------------------------------------------------------------

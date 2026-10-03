@@ -295,7 +295,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inRHS[i], inLHS[i]))
+				if (Inexact::IsEq(inRHS[i], inLHS[i]))
 				{
 					continue;
 				}
@@ -326,7 +326,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inRHS[i], inLHS[i]))
+				if (Inexact::IsEq(inRHS[i], inLHS[i]))
 				{
 					eqMask |= (1 << i);
 					continue;
@@ -350,7 +350,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				if (Inexact::IsEq(inLHS[i], inRHS[i]))
 				{
 					continue;
 				}
@@ -376,7 +376,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				if (Inexact::IsEq(inLHS[i], inRHS[i]))
 				{
 					geMask |= (1 << i);
 					continue;
@@ -403,7 +403,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				if (Inexact::IsEq(inLHS[i], inRHS[i]))
 				{
 					continue;
 				}
@@ -429,7 +429,7 @@ struct Simd128 :
 			// check for "inexact" equality for floating point types
 			if constexpr(std::is_floating_point_v<T>)
 			{
-				if (Inexact::Eq(inLHS[i], inRHS[i]))
+				if (Inexact::IsEq(inLHS[i], inRHS[i]))
 				{
 					leMask |= (1 << i);
 					continue;
@@ -463,6 +463,19 @@ struct Simd128 :
 		int geMask = GeMask(inRHS, inLHS);
 		int ltMask = geMask ^ ((1U << Simd128Traits<T>::kSize)-1);
 		return ltMask;
+	}
+
+	/// @brief Round all elements of SimdType toward the nearest whole number
+	/// @param inRound The SimdType to be rounded
+	/// @return Return the rounded result
+	static constexpr SimdType RoundNearest(SimdType inRound)
+	{
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; ++i)
+		{
+			const auto round = static_cast<T>(inRound[i] > 0 ? 0.5 : -0.5);
+			inRound[i] = std::trunc(inRound[i] + round);
+		}
+		return inRound;
 	}
 
 	/// @brief Round all elements of SimdType toward positive infinity 
@@ -501,6 +514,40 @@ struct Simd128 :
 		return inRound;
 	}
 
+	/// @brief Find the minimum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the minimum value for each pair of element of SimdType
+	static SimdType Min(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(((Simd128Traits<T>::kSize & 1) == 0), "Number of SimdType elements must be even");
+
+		SimdType min{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; i++)
+		{
+			min[i] = std::min(inLHS[i], inRHS[i]);
+		}
+		return min;
+	}
+
+	/// @brief Find the maximum value for each pair of element of SimdType
+	/// @param inLHS Left hand side vector term
+	/// @param inRHS Right hand side vector term
+	/// @return Return the maximum value for each pair of element of SimdType
+	static SimdType Max(SimdType inLHS, SimdType inRHS)
+	{
+		// Make sure the SimdType is even
+		static_assert(((Simd128Traits<T>::kSize & 1) == 0), "Number of SimdType elements must be even");
+
+		SimdType max{};
+		for (std::size_t i = 0; i < Simd128Traits<T>::kSize; i++)
+		{
+			max[i] = std::max(inLHS[i], inRHS[i]);
+		}
+		return max;
+	}
+
 	/// @brief Find the minimum/maximum values for each pair ofelement of SimdType
 	/// @param inLHS Left hand side vector term
 	/// @param inRHS Right hand side vector term
@@ -508,7 +555,7 @@ struct Simd128 :
 	static constexpr SimdType MinMax(SimdType inLHS, SimdType inRHS)
 	{
 		// Make sure the SimdType is even
-		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+		static_assert(((Simd128Traits<T>::kSize & 1) == 0), "Number of SimdType elements must be even");
 
 		constexpr auto kMin = 0;
 		constexpr auto kMax = Simd128Traits<T>::kSize/2;
@@ -528,7 +575,7 @@ struct Simd128 :
 	static constexpr SimdType MaxMin(SimdType inLHS, SimdType inRHS)
 	{
 		// Make sure the SimdType is even
-		static_assert(Simd128Traits<T>::kSize & 1 == 0, "Number of SimdType elements must be even");
+		static_assert(((Simd128Traits<T>::kSize & 1) == 0), "Number of SimdType elements must be even");
 
 		constexpr auto kMin = 0;
 		constexpr auto kMax = Simd128Traits<T>::kSize/2;
