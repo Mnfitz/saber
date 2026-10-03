@@ -281,11 +281,11 @@
 
 #pragma endregion ()
 
-#elif defined(__linux__) // Clang/GCC-specific preprocessor symbol announcing "Linux"
+#elif (defined(__GNUC__) && !defined(__clang__)) // GCC-specific 
 // ------------------------------------------------------------------
-#pragma region Linux: Xcode toolset detection
+#pragma region GCC toolset detection
 
-	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
+	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	(defined(__linux__))
 	// Not yet...
 	//#if defined(__ANDROID__)
 	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	1
@@ -297,7 +297,7 @@
 
 	#define SABER_PRIVATE_PLATFORM_IOS(unused)		0
 	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
-	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	0
+	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	(defined(_WIN32))
 
 	#if defined(__x86_64__)
 		#define SABER_PRIVATE_ARCH_32(unused)	0
@@ -340,75 +340,21 @@
 	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
 
 	#define SABER_DEBUG()	(!defined(NDEBUG))
-	#define SABER_DEBUG_BREAK()	__builtin_trap()
-	#define SABER_LOG(expr)
-	#define SABER_THROW(expr)
 
-#pragma endregion ()
-
-#elif defined(__GNUC__) && !defined(__clang__) && (defined(__MINGW32__) || defined(__MINGW64__)) // GCC when used on Windows
-// ------------------------------------------------------------------
-#pragma region Linux: Xcode toolset detection
-
-	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
-	// Not yet...
-	//#if defined(__ANDROID__)
-	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	1
-	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	0
-	//#else
-	//	#define SABER_PRIVATE_PLATFORM_ANDROID(unused)	0
-	//	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
-	//#endif
-
-	#define SABER_PRIVATE_PLATFORM_IOS(unused)		0
-	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
-	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	1
-
-	#if defined(__x86_64__)
-		#define SABER_PRIVATE_ARCH_32(unused)	0
-		#define SABER_PRIVATE_ARCH_64(unused)	1
-		#define SABER_PRIVATE_CPU_ARM(unused)	0
-		#define SABER_PRIVATE_CPU_X86(unused)	1
-		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
-		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
-		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("int3"))
-
-	#elif defined(__i386__)
-		#define SABER_PRIVATE_ARCH_32(unused)	1
-		#define SABER_PRIVATE_ARCH_64(unused)	0
-		#define SABER_PRIVATE_CPU_ARM(unused)	0
-		#define SABER_PRIVATE_CPU_X86(unused)	1
-		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
-		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
-		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("int3"))
-
+	#if defined(__i386__) || defined(__x86_64__)
+    	#define SABER_DEBUG_BREAK() \
+        	({ __asm__ volatile("int $3"); 0; })
 	#elif defined(__arm__)
-		#define SABER_PRIVATE_ARCH_32(unused)	1
-		#define SABER_PRIVATE_ARCH_64(unused)	0
-		#define SABER_PRIVATE_CPU_ARM(unused)	1
-		#define SABER_PRIVATE_CPU_X86(unused)	0
-		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
-		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
-		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("brk #0"))
-
+		#define SABER_DEBUG_BREAK() \
+			({ __asm__ volatile("bkpt #0"); 0; })
 	#elif defined(__aarch64__)
-		#define SABER_PRIVATE_ARCH_32(unused)	0
-		#define SABER_PRIVATE_ARCH_64(unused)	1
-		#define SABER_PRIVATE_CPU_ARM(unused)	1
-		#define SABER_PRIVATE_CPU_X86(unused)	0
-		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
-		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
-		#define SABER_DEBUG_BREAK() (__asm__ __volatile__("brk #0"))
-
+		#define SABER_DEBUG_BREAK() \
+			({ __asm__ volatile("brk #0"); 0; })
 	#else
-		#error "Unsupported architecture"
+		#define SABER_DEBUG_BREAK() \
+			({ __builtin_trap(); 0; })
 	#endif
 
-	#define SABER_PRIVATE_COMPILER_CLANG(unused)	(defined(__clang__))
-	#define SABER_PRIVATE_COMPILER_GCC(unused)		1
-	#define SABER_PRIVATE_COMPILER_MSVC(unused)		0
-
-	#define SABER_DEBUG()	(!defined(NDEBUG))
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
