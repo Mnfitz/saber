@@ -14,6 +14,12 @@
 
 namespace saber::geometry {
 
+template<typename T, ImplKind Impl>
+class Rectangle;
+
+template<typename T, ImplKind Impl>
+constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle);
+
 /// @brief Represents a rectangle in 2D space.
 /// @tparam T The type of the rectangle's coordinates (e.g., int, float).
 /// @tparam ImplType The implementation kind (e.g., scalar or SIMD).
@@ -232,8 +238,7 @@ private:
 	friend constexpr bool operator==<>(const Rectangle& inLHS, const Rectangle& inRHS);
 	friend constexpr bool operator!=<>(const Rectangle& inLHS, const Rectangle& inRHS);
 
-	template<typename T, ImplKind Impl>
-	friend constexpr bool IsEmpty(const Rectangle<T, Impl>& inRectangle);
+	friend constexpr bool IsEmpty<T, Impl>(const Rectangle<T, Impl>& inRectangle);
 
 private:
 	using ImplType = typename detail::Impl4Traits<T, Impl>::ImplType; // VOODOO: Nested template type requires `typename` prefix
