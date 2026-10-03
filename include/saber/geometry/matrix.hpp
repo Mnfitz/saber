@@ -15,6 +15,12 @@
 
 namespace saber::geometry {
 
+template<typename T, ImplKind Impl>
+class Matrix;
+
+template<typename T, ImplKind Impl>
+constexpr bool IsEmpty(const Matrix<T, Impl>& inMatrix);
+
 /// @brief Represents a 2x3 matrix in 2D space.
 /// @tparam T The type of the matrix's coordinates (e.g., float, double).
 /// @tparam ImplType The implementation kind (e.g., scalar or SIMD).
@@ -95,8 +101,7 @@ private:
 	friend constexpr bool operator== <Matrix>(const Matrix& inLHS, const Matrix& inRHS);
 	friend constexpr bool operator!= <Matrix>(const Matrix& inLHS, const Matrix& inRHS);
 
-	template<typename T, ImplKind Impl>
-	friend constexpr bool IsEmpty(const Matrix<T, Impl>& inMatrix);
+	friend constexpr bool IsEmpty<T, Impl>(const Matrix<T, Impl>& inMatrix);
 
 	// Data Members
 	ImplType mImpl{};
