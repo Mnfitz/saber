@@ -76,7 +76,7 @@
                 "MIMode": "lldb"
             },
             "linux": {
-                "program": "${workspaceFolder}/build/win-mingw-gcc/test/saber_unittest",  
+                "program": "${workspaceFolder}/build/win-mingw-gcc/test/saber_unittest",
                 "args": [], 
                 "cwd": "${workspaceFolder}/build/win-mingw-gcc/test", // Change this to the directory of your executable
                 "MIMode": "gdb"
@@ -84,7 +84,7 @@
             //"args": [], // No Args
             //"cwd": "${workspaceFolder}/lib/win-x64",
             "stopAtEntry": false, // Set to true to stop program execution at the first line of code
-            "preLaunchTask": "build", // tasks.json: {"label": "build"}
+            "preLaunchTask": "build-gcc", // tasks.json: {"label": "build"}
             // MIMode indicates to VSCode which debugger should be used.
             // Can only be gdb or lldb.
         }
