@@ -246,7 +246,9 @@ private:
 }; // class Rectangle<>
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Class Functions
+#endif
 
 // Ctors
 template<typename T, ImplKind Impl>
@@ -446,7 +448,9 @@ inline constexpr bool Rectangle<T, Impl>::IsOverlapping(const Rectangle& inRecta
 	return isOverlapping;
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr bool Rectangle<T, Impl>::IsEqual(const Rectangle& inRectangle) const
@@ -456,7 +460,9 @@ inline constexpr bool Rectangle<T, Impl>::IsEqual(const Rectangle& inRectangle) 
 }
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Rounding operations
+#endif
 
 template<typename T, ImplKind Impl>
 template<typename U, typename SFINAE>
@@ -490,9 +496,13 @@ inline constexpr Rectangle<T, Impl>& Rectangle<T, Impl>::RoundTrunc()
 	return *this;
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
+#if SABER_PRAGMA(REGION)
 #pragma region Free Functions
+#endif
 /// @brief Round to nearest even integer value; both origin and scale. Halfway cases round away from zero.
 /// @tparam T: Underlying `Rectangle<>` type
 /// @tparam ImplType: Optional underlying implementation type
@@ -723,12 +733,18 @@ inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Recta
 	return isOverlapping;
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 #if 0
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Structured Bindings
+#endif
 
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
@@ -770,7 +786,9 @@ using type = T;
 };
 
 #endif //__cpp_structured_bindings
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 #endif // #if 0
 } // namespace saber::geometry
 

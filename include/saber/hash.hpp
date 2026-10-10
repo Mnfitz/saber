@@ -106,7 +106,9 @@ namespace saber {
 #endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region struct detail::Fnv1a<>
+#endif
 
 namespace detail {
 
@@ -209,14 +211,18 @@ public:
 
 } // namespace detail
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 #if SABER_DEBUG
 namespace detail {
 #endif // SABER_DEBUG
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region struct HashValue<>
+#endif
 
 /// @brief Traits class that encapsulates implementation details of HashValue<>.
 ///
@@ -342,7 +348,9 @@ private:
 	ValueType mValue{};
 }; // class HashValue<>
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 #if SABER_DEBUG
 } // namespace detail
@@ -350,7 +358,9 @@ private:
 
 #if SABER_DEBUG
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region struct debug::HashValue<>
+#endif
 
 inline namespace debug { // "inline", meaning: also "using namespace debug;"
 
@@ -451,7 +461,9 @@ private:
 } // namespace debug
 #endif // SABER_DEBUG
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 using Hash   = HashValue<8*sizeof(std::size_t)>;
 using Hash32 = HashValue<32>;
@@ -462,7 +474,9 @@ using Hash64 = HashValue<64>;
 } // namespace saber
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region std::unordered_map<saber::HashValue<>, Value> support
+#endif
 
 /// @brief `std::hash` specialization for `saber::HashValue`
 ///
@@ -479,6 +493,8 @@ struct std::hash<saber::HashValue<BitLength>>
 	}
 }; // struct std::hash<saber::HashValue<BitLength>>
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 #endif // SABER_HASH_HPP

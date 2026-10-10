@@ -81,7 +81,8 @@ if(SABER_BUILD_UNITTESTS)
 		# Set saber_unittest target as the `startup project` for the generated .sln file
 		set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT saber_unittest)
 
-		endif() # WIN32
+	endif() # WIN32
+
 endif() # SABER_BUILD_UNITTESTS
 
 if(SABER_BUILD_BENCHMARKS)
@@ -151,6 +152,7 @@ if(SABER_BUILD_BENCHMARKS)
 			FILES ${HEADER_FILES})
 
 	endif() # WIN32
+	
 #
 #	add_executable(saber_baseline benchmark_baseline.cpp benchmark_common.h)
 #	add_test(NAME saber_baseline COMMAND test)

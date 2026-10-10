@@ -979,8 +979,6 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
     SECTION("ImplKind::kScalar")
     {
         using R = Rectangle<TestType, ImplKind::kScalar>;
-        using P = Point<TestType, ImplKind::kScalar>;
-        using S = Size<TestType, ImplKind::kScalar>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
@@ -992,8 +990,6 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle rounding works correctly - impl 
     SECTION("ImplKind::kSimd")
     {
         using R = Rectangle<TestType, ImplKind::kSimd>;
-        using P = Point<TestType, ImplKind::kSimd>;
-        using S = Size<TestType, ImplKind::kSimd>;
         REQUIRE(R{1.5f,2.5f,3.5f,4.5f}.RoundNearest() == R{2,3,4,5});
         REQUIRE(R{1.1f,2.1f,3.1f,4.1f}.RoundNearest() == R{1,2,3,4});
         REQUIRE(R{-1.5f,-2.5f,-3.5f,-4.5f}.RoundNearest() == R{-2,-3,-4,-5});
