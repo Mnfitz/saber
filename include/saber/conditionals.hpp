@@ -73,13 +73,8 @@
 //	};
 
 // ------------------------------------------------------------------
-#pragma region public SABER_MACROS
+// SABER_MACROS
 
-// Sizeof cpu processor architecture (in bits)
-// (arch) := (32|64)
-#define SABER_ARCH(arch) (SABER_PRIVATE_ARCH_##arch(arch))
-
-// Type of cpu processor architecture
 // (cpu) := (ARM|X86)
 #define SABER_CPU(cpu) (SABER_PRIVATE_CPU_##cpu(cpu))
 
@@ -97,12 +92,14 @@
 
 // The current endian byte ordering for this platform
 // (endian) := (BIG|LITTLE)
-#define SABER_ENDIANORDER(endian) (SABER_PRIVATE_ENDIANORDER_##endian(endian)) 
+#define SABER_ENDIANORDER(endian) (SABER_PRIVATE_ENDIANORDER_##endian(endian))
 
-#pragma endregion ()
+// Determine if pragma is supported for this compiler toolset
+// (pragma) := (REGION|MARK)
+#define SABER_PRAGMA(pragma) (SABER_PRIVATE_PRAGMA_##pragma(pragma))
 
 // ------------------------------------------------------------------
-#pragma region private (do not use)! SABER_MACROS
+// SABER_MACROS
 
 // TRICKY j3fitz 28apr2024: "Sorta private" saber macros w/ unused dummy parameter...
 // The following #undef's serve no actual purpose other than as a preview-hint
@@ -149,11 +146,12 @@
 #undef SABER_PRIVATE_ENDIANORDER_BIG
 #undef SABER_PRIVATE_ENDIANORDER_LITTLE
 
-#pragma endregion ()
+#undef SABER_PRIVATE_PRAGMA_REGION
+#undef SABER_PRIVATE_PRAGMA_MARK
 
 #if defined(_MSC_VER) // MSVC-specific preprocessor symbol announcing "Microsoft" toolset
 // ------------------------------------------------------------------
-#pragma region WIN32: Visual Studio toolset detection
+// WIN32: Visual Studio toolset detection
 
 	#include <intrin.h> // for __debugbreak()
 	#include <winapifamily.h>
@@ -171,6 +169,9 @@
 	#define SABER_PRIVATE_COMPILER_CLANG(unused)	0
 	#define SABER_PRIVATE_COMPILER_GCC(unused)		0
 	#define SABER_PRIVATE_COMPILER_MSVC(unused)		1
+
+	#define SABER_PRIVATE_PRAGMA_REGION(unused)		1
+	#define SABER_PRIVATE_PRAGMA_MARK(unused)		0
 
 	#if defined(_M_IX86) // x86 32bit
 		#define SABER_PRIVATE_ARCH_32(unused)	1
@@ -225,11 +226,9 @@
 //		#define SABER_PRIVATE_PLATFORM_LINUX(unused)	1
 //		// etc...
 
-#pragma endregion ()
-
 #elif defined(__APPLE__) && defined(__MACH__) // Xcode-specific preprocessor symbols announcing "Apple"
 // ------------------------------------------------------------------
-#pragma region OSX/IOS: Xcode toolset detection
+// Xcode toolset detection
 
 	#include <TargetConditionals.h>
 	#if TARGET_OS_MAC // OSX
@@ -242,6 +241,9 @@
 		#define SABER_PRIVATE_CPU_X86(unused)	(defined(__x86_64__))
 		#define SABER_PRIVATE_ENDIANORDER_BIG(unused) 	 0
 		#define SABER_PRIVATE_ENDIANORDER_LITTLE(unused) 1
+
+		#define SABER_PRIVATE_PRAGMA_REGION(unused)		0
+		#define SABER_PRIVATE_PRAGMA_MARK(unused)		1
 
 	#elif TARGET_OS_IPHONE // IOS
 		#define SABER_PRIVATE_PLATFORM_IOS(unused)	1
@@ -279,11 +281,11 @@
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
 
-#pragma endregion ()
 
 #elif (defined(__GNUC__) && !defined(__clang__)) // GCC-specific 
 // ------------------------------------------------------------------
-#pragma region GCC toolset detection
+//GCC toolset detection
+
 
 	#define SABER_PRIVATE_PLATFORM_LINUX(unused)	(defined(__linux__))
 	// Not yet...
@@ -299,6 +301,9 @@
 	#define SABER_PRIVATE_PLATFORM_OSX(unused)		0
 	#define SABER_PRIVATE_PLATFORM_WIN32(unused)	(defined(_WIN32))
 
+	#define SABER_PRIVATE_PRAGMA_REGION(unused)		0
+	#define SABER_PRIVATE_PRAGMA_MARK(unused)		0
+	
 	#if defined(__x86_64__)
 		#define SABER_PRIVATE_ARCH_32(unused)	0
 		#define SABER_PRIVATE_ARCH_64(unused)	1
@@ -357,8 +362,6 @@
 
 	#define SABER_LOG(expr)
 	#define SABER_THROW(expr)
-
-#pragma endregion ()
 
 #else
 #error "Unsupported toolset"

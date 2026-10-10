@@ -7,7 +7,9 @@
 namespace saber::geometry::detail {
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region SimdTraits<NBits, T>
+#endif
 
 /// @brief Traits struct defining platform-specific SIMD types.
 ///
@@ -30,10 +32,14 @@ struct Simd128Traits
 
 }; // struct SimdTraits<>
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Simd128<T>
+#endif
 
 template<typename T> // Primary template definition
 struct Simd128;
@@ -590,7 +596,9 @@ struct Simd128 :
 
 }; // struct Simd128<T>
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 } // namespace saber::geometry::detail
 

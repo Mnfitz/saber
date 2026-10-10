@@ -83,10 +83,6 @@ if(SABER_BUILD_UNITTESTS)
 
 	endif() # WIN32
 
-	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    	add_compile_options(-Wno-unknown-pragmas -Wno-error=unknown-pragmas)
-	endif()
-
 endif() # SABER_BUILD_UNITTESTS
 
 if(SABER_BUILD_BENCHMARKS)
@@ -156,10 +152,7 @@ if(SABER_BUILD_BENCHMARKS)
 			FILES ${HEADER_FILES})
 
 	endif() # WIN32
-
-	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    	add_compile_options(-Wno-unknown-pragmas -Wno-error=unknown-pragmas)
-	endif()
+	
 #
 #	add_executable(saber_baseline benchmark_baseline.cpp benchmark_common.h)
 #	add_test(NAME saber_baseline COMMAND test)

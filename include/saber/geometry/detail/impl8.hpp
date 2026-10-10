@@ -420,7 +420,9 @@ struct Impl8 final
 
 }; // struct Impl8<>
 
+#if SABER_PRAGMA(REGION)
 #pragma region struct Impl8Traits
+#endif
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl8Traits;
 
@@ -436,7 +438,9 @@ struct Impl8Traits<T, ImplKind::kSimd>
 	using ImplType = typename Impl8<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 } // namespace saber::geometry::detail
 
