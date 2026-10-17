@@ -38,6 +38,7 @@
 
     {
       "name": "config-win-vs2026",
+	  "hidden": true,
       "displayName": "Configure Win VS2026",
       "generator": "Visual Studio 18 2026",
       "inherits": "config-default-win",
@@ -48,8 +49,31 @@
       }
     },
 
+	{
+      "name": "config-win-vs2026-arm64",
+      "displayName": "Configure Win VS2026 ARM64",
+      "inherits": "config-win-vs2026",
+      "binaryDir": "${sourceDir}/build/win-vs2026-arm64",
+	  "architecture": {
+        "value": "arm64",
+	    "strategy": "set"
+	  }
+    },
+
+	{
+      "name": "config-win-vs2026-x64",
+      "displayName": "Configure Win VS2026 x64",
+      "inherits": "config-win-vs2026",
+      "binaryDir": "${sourceDir}/build/win-vs2026-x64",
+      "architecture": {
+	    "value": "x64",
+	    "strategy": "set"
+	  }
+    },
+
     {
       "name": "config-win-vs2022",
+	  "hidden": true,
       "displayName": "Configure Win VS2022",
       "generator": "Visual Studio 17 2022",
       "inherits": "config-default-win",
@@ -60,16 +84,28 @@
       }
     },
 
-    {
-      "name": "config-win-vs2019",
-      "displayName": "Configure Win VS2019",
-      "generator": "Visual Studio 16 2019",
-      "inherits": "config-default-win",
-      "binaryDir": "${sourceDir}/build/win-vs2019",
-      "toolset": {
-        "value": "v142",
-        "strategy": "external"
-      }
+	 {
+      "name": "config-win-vs2022-arm64",
+      "displayName": "Configure Win VS2022",
+      "generator": "Visual Studio 17 2022",
+      "inherits": "config-win-vs2022",
+      "binaryDir": "${sourceDir}/build/win-vs2022",
+	  "architecture": {
+	    "value": "arm64",
+	    "strategy": "set"
+	  }
+    },
+
+	 {
+      "name": "config-win-vs2022-x64",
+      "displayName": "Configure Win VS2022",
+      "generator": "Visual Studio 17 2022",
+      "inherits": "config-win-vs2022",
+      "binaryDir": "${sourceDir}/build/win-vs2022",
+	  "architecture": {
+	    "value": "x64",
+	    "strategy": "set"
+	  }
     },
 
     {
@@ -174,12 +210,6 @@
     {
       "name": "build-win-vs2022",
       "configurePreset": "config-win-vs2022",
-      "inherits": "build-default-win"
-    },
-
-    {
-      "name": "build-win-vs2019",
-      "configurePreset": "config-win-vs2019",
       "inherits": "build-default-win"
     },
 
