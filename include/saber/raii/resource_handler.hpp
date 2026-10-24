@@ -107,8 +107,9 @@ inline ResourceHandler<T, DeleterType>&
 	// Moving to self is a NOP
 	if (this != &ioMove)
 	{
-		mDeleter = std::move(ioMove.mDeleter);
+		Reset();
 		mResource = std::move(ioMove.mResource);
+		mDeleter = std::move(ioMove.mDeleter);
 	}
 	return *this;
 }
@@ -124,12 +125,14 @@ template<typename T, typename DeleterType>
 inline ResourceHandler<T, DeleterType>::ResourceHandler(T&& ioResource, DeleterType&& ioDeleter) :
 	mDeleter{std::move(ioDeleter)}
 {
+	Reset(); // Reset to ensure no resource is currently held before taking ownership of the new resource
 	mResource = std::move(ioResource);
 }
 
 template<typename T, typename DeleterType>
 inline ResourceHandler<T, DeleterType>& ResourceHandler<T, DeleterType>::operator=(T&& ioResource) noexcept
 {
+	Reset(); // Reset to ensure no resource is currently held before taking ownership of the new resource
 	mResource = std::move(ioResource);
 	mDeleter = DeleterType{};
 	return *this;
