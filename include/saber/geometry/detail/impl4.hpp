@@ -14,7 +14,9 @@
 namespace saber::geometry::detail {
 
 // Helpers
+#if SABER_PRAGMA(REGION)
 #pragma region
+#endif
 
 template<typename T>
 constexpr bool Is32BitDataType() 
@@ -30,7 +32,9 @@ constexpr bool Is64BitDataType()
 	return kIs64Bit;
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 template<typename T>
 struct Impl4 final
@@ -1041,7 +1045,9 @@ struct Impl4 final
 	}; // class Simd
 }; // struct Impl4<>
 
+#if SABER_PRAGMA(REGION)
 #pragma region struct Impl4Traits
+#endif
 template<typename T, ImplKind Impl> // Primary template declaration
 struct Impl4Traits;
 
@@ -1057,7 +1063,9 @@ struct Impl4Traits<T, ImplKind::kSimd>
 	using ImplType = typename Impl4<T>::Simd; // VOODOO: Nested template type requires `typename` prefix
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 } // namespace saber::geometry::detail
 

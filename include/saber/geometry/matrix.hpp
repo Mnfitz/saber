@@ -108,7 +108,9 @@ private:
 }; // class Matrix<>
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Class Functions
+#endif
 
 // Ctors
 template<typename T, ImplKind Impl>

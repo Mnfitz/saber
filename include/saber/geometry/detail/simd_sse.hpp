@@ -11,7 +11,9 @@
 namespace saber::geometry::detail {
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region SimdTraits<> SSE specializations
+#endif
 
 // Platform-specific SIMD definitions for SSE...
 
@@ -60,10 +62,14 @@ struct Simd128Traits<double>
 
 }; // struct SimdTraits<>
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Simd128<int> SSE specialization
+#endif
 
 template<>
 struct Simd128<int> :
@@ -303,10 +309,14 @@ struct Simd128<int> :
 	}
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Simd128<float> SSE specialization
+#endif
 
 template<>
 struct Simd128<float> :
@@ -674,10 +684,14 @@ struct Simd128<float> :
 	}
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Simd128<double> SSE specialization
+#endif
 
 template<>
 struct Simd128<double> :
@@ -995,7 +1009,9 @@ struct Simd128<double> :
 	}
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 } // namespace saber::geometry::detail
 

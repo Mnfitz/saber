@@ -1,5 +1,3 @@
-
-
 # This is unfortunately still needed to disable exceptions/RTTI since modern CMake still has no builtin support...
 # E.g. replace_cxx_flag("/EHsc", "/EHs-c-")
 macro(replace_cxx_flag pattern text)
@@ -105,4 +103,10 @@ elseif (MSVC)
         # NOTE: Temporary workaround while https://github.com/microsoft/wil/issues/102 is being investigated
         /d2FH4-
         )
+endif()
+
+if (MSVC)
+    add_compile_options(/arch:AVX)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-msse4.1)
 endif()

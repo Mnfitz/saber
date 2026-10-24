@@ -70,12 +70,12 @@ set(CMAKE_CXX_STANDARD 17)
 # Don't require internet connectivity if FetchContent_XXX targets have already downloaded
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON)
 
-if (WIN32)
+if (MSVC)
 	add_link_options(/NATVIS:${CMAKE_SOURCE_DIR}/natvis/${PROJECT_NAME}.natvis)
 	# Include any .natvis (custom formatter for types viewed in the debugger) files
 	target_sources(${PROJECT_NAME} INTERFACE
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/natvis/${PROJECT_NAME}.natvis>")
-endif() # WIN32
+endif() # MSVC
 
 # Install Package Configuration
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
