@@ -19,14 +19,16 @@
 #define SABER_RAII_RESOURCEHANDLER_HPP
 
 //std
+#include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace saber::raii {
 
 template<typename T>
 struct ResourceDeleter
 {
-	void operator()(const T& inDelete) const noexcept
+	void operator()(T& inDelete) const noexcept
 	{
 		// TRICKY mnfitz 18may2024: Lambda wrapper for static_assert()
 		// Disallow use of this primary template definition... 
@@ -72,8 +74,8 @@ public:
 
 	operator bool() const noexcept;
 
-	T& Get();
-	const T& Get() const;
+	std::optional<T>& Get();
+	const std::optional<T>& Get() const;
 
 	void Reset() noexcept;
 
@@ -93,7 +95,7 @@ inline ResourceHandler<T, DeleterType>::~ResourceHandler()
 template<typename T, typename DeleterType>
 inline ResourceHandler<T, DeleterType>::ResourceHandler(ResourceHandler&& ioMove) noexcept :
 	mDeleter{std::move(ioMove.mDeleter)},
-	mResource{std::move(ioMove.Resource)}
+	mResource{std::move(ioMove.mResource)}
 {
 	// This space intentionally blank
 }
@@ -106,7 +108,7 @@ inline ResourceHandler<T, DeleterType>&
 	if (this != &ioMove)
 	{
 		mDeleter = std::move(ioMove.mDeleter);
-		mResource = std::move(ioMove.Resource);
+		mResource = std::move(ioMove.mResource);
 	}
 	return *this;
 }
@@ -122,13 +124,14 @@ template<typename T, typename DeleterType>
 inline ResourceHandler<T, DeleterType>::ResourceHandler(T&& ioResource, DeleterType&& ioDeleter) :
 	mDeleter{std::move(ioDeleter)}
 {
-	mResource.reset(std::move(ioResource));
+	mResource = std::move(ioResource);
 }
 
 template<typename T, typename DeleterType>
 inline ResourceHandler<T, DeleterType>& ResourceHandler<T, DeleterType>::operator=(T&& ioResource) noexcept
 {
-	mResource = std::move(ioResource.mResource);
+	mResource = std::move(ioResource);
+	mDeleter = DeleterType{};
 	return *this;
 }
 
@@ -139,15 +142,15 @@ inline ResourceHandler<T, DeleterType>::operator bool() const noexcept
 }
 
 template<typename T, typename DeleterType>
-inline T& ResourceHandler<T, DeleterType>::Get()
+inline std::optional<T>& ResourceHandler<T, DeleterType>::Get()
 {
-	return mResource.value();
+	return mResource;
 }
 
 template<typename T, typename DeleterType>
-inline const T& ResourceHandler<T, DeleterType>::Get() const
+inline const std::optional<T>& ResourceHandler<T, DeleterType>::Get() const
 {
-	return mResource.value();
+	return mResource;
 }
 
 template<typename T, typename DeleterType>
