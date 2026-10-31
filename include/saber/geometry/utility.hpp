@@ -26,7 +26,9 @@
 
 namespace saber {
 
+#if SABER_PRAGMA(REGION)
 #pragma region ConvertTraits for Geometry Types
+#endif
 
 // ConvertTo expects all its ConvertTraits to reside in saber namespace level
 
@@ -92,7 +94,9 @@ struct ConvertTraits<geometry::Point<T, geometry::ImplKind::kScalar>, geometry::
     }
 };
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 namespace geometry {
 // geometry specific utilities go here

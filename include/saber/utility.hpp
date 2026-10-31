@@ -24,7 +24,9 @@
 namespace saber {
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region struct ConvertTraits<>/ConvertTo<>
+#endif
 
 /// @name TypeConversion
 /// Convert from one type to another with a standardized API
@@ -108,10 +110,14 @@ inline ToType ConvertTo(const FromType& inValue)
 
 /// @}
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region class TaggedType<>
+#endif
 
 /// @name StrongTyping
 ///
@@ -234,7 +240,9 @@ private:
 
 /// @}
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion {}
+#endif
 
 } // namepsace saber
 

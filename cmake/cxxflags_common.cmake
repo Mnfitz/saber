@@ -1,5 +1,3 @@
-
-
 # This is unfortunately still needed to disable exceptions/RTTI since modern CMake still has no builtin support...
 # E.g. replace_cxx_flag("/EHsc", "/EHs-c-")
 macro(replace_cxx_flag pattern text)
@@ -85,7 +83,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # is available (i.e. >= C++20)
         # -Xclang -std=c++2a
         )
-else()
+elseif (MSVC)
     add_compile_options(
         # We want to be as conformant as possible, so tell MSVC to not be permissive (note that this has no effect on clang-cl)
         /permissive-
@@ -105,4 +103,10 @@ else()
         # NOTE: Temporary workaround while https://github.com/microsoft/wil/issues/102 is being investigated
         /d2FH4-
         )
+endif()
+
+if (MSVC)
+    add_compile_options(/arch:AVX)
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-msse4.1)
 endif()

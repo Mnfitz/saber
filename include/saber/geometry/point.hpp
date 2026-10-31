@@ -157,7 +157,9 @@ private:
 }; // class Point<>
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Class Functions
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl>::Point(T inX, T inY) :
@@ -170,32 +172,36 @@ inline constexpr Point<T, Impl>::Point(T inX, T inY) :
 template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::X() const
 {
-    return mImpl.Get<0>();
+    return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Point<T, Impl>::Y() const
 {
-    return mImpl.Get<1>();
+    return mImpl.template Get<1>();
 }
 
 // Setters
 template<typename T, ImplKind Impl>
 inline constexpr void Point<T, Impl>::X(T inX)
 {
-	mImpl.Set<0>(inX);
+	mImpl.template Set<0>(inX);
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Point<T, Impl>::Y(T inY)
 {
-	mImpl.Set<1>(inY);
+	mImpl.template Set<1>(inY);
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Mathematical operations
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl>& Point<T, Impl>::operator+=(const Point& inPoint)
@@ -305,10 +311,14 @@ inline constexpr Point<T, Impl>& Point<T, Impl>::Scale(T inXY)
 	return Scale(inXY, inXY);
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Free Functions
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr Point<T, Impl> Translate(const Point<T, Impl>& inPoint, const Point<T, Impl>& inTranslate)
@@ -412,10 +422,14 @@ inline constexpr Point<T, Impl> RoundFloor(const Point<T, Impl>& inPoint)
 	return result.RoundFloor(); // RVO should apply here
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Structured Bindings
+#endif
 
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
@@ -442,23 +456,25 @@ inline T get(const Point<T>& inPoint)
     return result;
 }
 
+}// namespace saber::geometry
+
 template<typename T>
-struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T, Impl>
+struct std::tuple_size<saber::geometry::Point<T>> // Partial template specialization for: Point<T, Impl>
 {
     // Number of elements in Point<T, Impl>'s structured binding
     static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T, Impl>
+struct std::tuple_element<Index, saber::geometry::Point<T>> // Partial template specialization for: Point<T, Impl>
 {
     // Type of elements in Point<T, Impl`>'s structured
     using type = T;
 };
 
 #endif //__cpp_structured_bindings
+#if SABER_PRAGMA(REGION)
 #pragma endregion
-
-}// namespace saber::geometry
+#endif
 
 #endif // SABER_GEOMETRY_POINT_HPP

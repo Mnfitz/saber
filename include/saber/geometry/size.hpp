@@ -153,7 +153,9 @@ private:
 }; // class Size
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Class Functions
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
@@ -166,32 +168,36 @@ inline constexpr Size<T, Impl>::Size(T inWidth, T inHeight) :
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Width() const
 {
-	return mImpl.Get<0>();
+	return mImpl.template Get<0>();
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr T Size<T, Impl>::Height() const
 {
-	return mImpl.Get<1>();
+	return mImpl.template Get<1>();
 }
 
 // Setters
 template<typename T, ImplKind Impl>
 inline constexpr void Size<T, Impl>::Width(T inWidth)
 {
-	mImpl.Set<0>(inWidth);
+	mImpl.template Set<0>(inWidth);
 }
 
 template<typename T, ImplKind Impl>
 inline constexpr void Size<T, Impl>::Height(T inHeight)
 {
-	mImpl.Set<1>(inHeight);
+	mImpl.template Set<1>(inHeight);
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Inline Mathematical operations
+#endif
 
 template<typename T, ImplKind Impl>
 inline constexpr Size<T, Impl>& Size<T, Impl>::operator+=(const Size& inSize)
@@ -302,10 +308,14 @@ inline constexpr Size<T, Impl>& Size<T, Impl>::Scale(T inWH)
 	return Scale(inWH, inWH);
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Free Functions
+#endif
 
 /// @brief Enlarge a `Size<>` using another `Size<>`
 /// @tparam T: Underlying `Size<>` type
@@ -455,10 +465,14 @@ inline constexpr bool IsEmpty(const Size<T, Impl>& inSize)
 	return isEmpty;
 }
 
+#if SABER_PRAGMA(REGION)
 #pragma endregion 
+#endif
 
 // ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
 #pragma region Structured Bindings
+#endif
 
 // TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
 #ifdef __cpp_structured_bindings
@@ -482,23 +496,25 @@ inline T get(const Size<T>& inSize)
 	return result;
 }
 
+}// namespace saber::geometry
+
 template<typename T>
-struct std::tuple_size<Size<T>> // Partial template specialization for: Size<T>
+struct std::tuple_size<saber::geometry::Size<T>> // Partial template specialization for: Size<T>
 {
 	// Number of elements in Size<T>'s structured binding
 	static constexpr std::size_t value = 2;
 };
 
 template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Size<T>> // Partial template specialization for: Size<T>
+struct std::tuple_element<Index, saber::geometry::Size<T>> // Partial template specialization for: Size<T>
 {
 	// Type of elements in Size<T>'s structured binding
 	using type = T;
 };
 
 #endif // __cpp_structured_bindings
+#if SABER_PRAGMA(REGION)
 #pragma endregion
-
-}// namespace saber::geometry
+#endif
 
 #endif // SABER_GEOMETRY_SIZE_HPP

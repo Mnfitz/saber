@@ -17,8 +17,7 @@
       "windows": {
         "command": "cmake",
         "args": [
-          "--preset", "config-win-${input:configGeneratorWin}",
-          "-A", "${input:buildPlatform}"
+          "--preset", "config-win-${input:configGeneratorWin}"
         ]
       },
       "osx": {
@@ -50,7 +49,6 @@
         "args": [
           "--build",
           "--preset", "build-win-${input:configGeneratorWin}",
-          "-A", "${input:buildPlatform}",
           "--config", "${input:buildConfig}"
         ]
       },
@@ -112,8 +110,8 @@
       "id": "configGeneratorWin",
       "type": "pickString",
       "description": "Choose VS config generator [vs2022]",
-      "options": [ "vs2022", "vs2026" ],
-      "default": "vs2022"
+      "options": [ "vs2022-arm64", "vs2022-x64", "vs2026-arm64", "vs2026-x64", "mingw-gcc" ],
+      "default": "vs2026-x64"
     },
 
     {
