@@ -4,6 +4,7 @@
 // saber
 #include "saber/config.hpp"
 #include "saber/utility.hpp"
+#include "saber/raii/reference_handler.hpp"
 
 // std
 #include <algorithm>
@@ -13,10 +14,128 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <optional>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
+#include <type_traits>
 #include <vector>
+
+
+// --- 1. Proper forward declarations, in the real namespace ---
+namespace saber::events {
+    class EventManager;
+    using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
+} // namespace saber::events
+
+// --- 2. Deleter specialization: declare only, don't define the body yet ---
+namespace saber::raii::detail {
+
+// SABER-76: "Create RAII handler for EventManager::Register"
+// An EventToken is a value, not a pointer, so there is nothing for ReferenceHandler
+// to hold a `EventToken*` to. Instead we hand ReferenceHandler a custom handle type
+// via the nested `pointer` typedef below; ReferenceHandler (really std::unique_ptr)
+// then stores that handle *by value*, so the token needs no heap allocation.
+template<>
+struct Deleter<saber::events::EventToken>
+{
+public:
+    /// @brief Nullable handle that ReferenceHandler stores in place of `EventToken*`.
+    /// Satisfies the standard NullablePointer requirements so that it can be used as
+    /// a std::unique_ptr stored handle.
+    class pointer
+    {
+    public:
+        // The default constructed (i.e. empty) handle *is* the null handle
+        constexpr pointer() noexcept = default;
+
+        // TRICKY: Deliberately not explicit. unique_ptr constructs, assigns and
+        // compares its stored handle against nullptr, and needs the conversion.
+        constexpr pointer(std::nullptr_t) noexcept
+        {
+            // Do nothing: an empty mToken is the null handle
+        }
+
+        constexpr explicit pointer(saber::events::EventToken inToken) noexcept :
+            mToken{inToken}
+        {
+            // Do nothing
+        }
+
+        /// @brief Return boolean sense of this handle
+        /// @return true, if this handle holds a token; otherwise false
+        constexpr explicit operator bool() const noexcept
+        {
+            return mToken.has_value();
+        }
+
+        /// @brief Access the held token. Only valid when this handle is non-null.
+        /// @return Copy of the held token
+        saber::events::EventToken operator*() const noexcept
+        {
+            return *mToken;
+        }
+
+        // --- friend functions
+
+        friend bool operator==(pointer inLhs, pointer inRhs) noexcept
+        {
+            return inLhs.mToken == inRhs.mToken;
+        }
+
+        friend bool operator!=(pointer inLhs, pointer inRhs) noexcept
+        {
+            return !(inLhs == inRhs);
+        }
+
+        friend bool operator==(pointer inLhs, std::nullptr_t) noexcept
+        {
+            return !inLhs.mToken.has_value();
+        }
+
+        friend bool operator!=(pointer inLhs, std::nullptr_t) noexcept
+        {
+            return inLhs.mToken.has_value();
+        }
+
+        friend bool operator==(std::nullptr_t, pointer inRhs) noexcept
+        {
+            return !inRhs.mToken.has_value();
+        }
+
+        friend bool operator!=(std::nullptr_t, pointer inRhs) noexcept
+        {
+            return inRhs.mToken.has_value();
+        }
+
+    private:
+        // NOTE: std::optional, rather than a reserved sentinel value, so that
+        // EventManagerImpl remains free to hand out any token value it likes
+        std::optional<saber::events::EventToken> mToken{};
+    }; // class pointer
+
+public:
+    // A default constructed Deleter has no EventManager, and so does nothing.
+    // This is what makes a default constructed (empty) TokenHandler possible.
+    constexpr Deleter() noexcept = default;
+
+    explicit Deleter(saber::events::EventManager& inEventManager) noexcept :
+        mEventManager{&inEventManager}
+    {
+    }
+
+    // Declaration only — EventManager is still incomplete here, which is fine
+    // because we aren't calling any of its members yet.
+    void operator()(pointer inToken) const noexcept;
+
+private:
+    // TRICKY: A pointer, and not a reference, to an (here incomplete) EventManager.
+    // A class with a reference member is neither move assignable nor swappable, and
+    // std::unique_ptr requires its deleter to be both in order to be move assigned.
+    saber::events::EventManager* mEventManager{};
+};
+
+} // namespace saber::raii::detail
 
 namespace saber::events {
 
@@ -24,6 +143,8 @@ template<typename SenderType, typename EventType>
 using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
 class EventManager; // forward declaration
+
+using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
 
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
@@ -105,6 +226,9 @@ private:
 	CallbackType mInvoke{};
 };
 
+// Marker type for RAII usage
+struct UsingRAII{};
+
 enum class ThreadingPolicy {
 	kSingle,
 	kParallel
@@ -114,7 +238,8 @@ enum class ThreadingPolicy {
 class EventManager
 {
 public:
-	using Token = saber::TaggedType<std::uint64_t, EventManager>;
+	using Token = EventToken;
+	using TokenHandler = saber::raii::ReferenceHandler<Token, raii::detail::Deleter<Token>>; // RAII handler for EventManager::Token
 
 public:
 	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
@@ -122,9 +247,11 @@ public:
 	virtual ~EventManager() = default;
 
 public:
-	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
+	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback); // Consume
 
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
+
+	[[nodiscard]] Token Register(EventCallback&& ioCallback);
 
 	void Unregister(Token inToken);
 
@@ -143,22 +270,28 @@ private:
 
 }; // class EventManager
 
+inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallback&& ioCallback) // Consume
+{
+	// SABER-76: Token is a value and not a pointer, so TokenHandler stores it inline in
+	// TokenDeleter::pointer; there is no heap allocation here. TokenDeleter is stateful
+	// (it must know which EventManager to Unregister() from), so it is passed explicitly.
+	using TokenPointer = TokenHandler::pointer;
+	using TokenDeleter = raii::detail::Deleter<Token>;
+	return TokenHandler{TokenPointer{Register(std::move(ioCallback))}, TokenDeleter{*this}}; // RAII handler for the token
+}
+
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
+inline EventManager::Token EventManager::Register(const EventCallback& inCallback)
+{
+	return Register(EventCallback{inCallback});
+}
+
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
 	std::type_index eventType = ioCallback.GetTypeIndex(); // use the template params
 	return OnRegister(eventType, std::move(ioCallback));
-}
-
-inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
-{
-	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
-	// to allow us to find callbacks of a certain type from the callback list
-	EventCallback copy{inCallback}; // explicit copy
-	std::type_index eventType = inCallback.GetTypeIndex(); // use the template params
-    return OnRegister(eventType, std::move(copy));
 }
 
 inline void EventManager::Unregister(Token inToken)
@@ -220,6 +353,7 @@ private:
 
 inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
+	// SABER-76: "Create RAII handler for EventManager::Register"
 	Token newToken{ mCounter++ }; // Create a unique token
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
@@ -413,5 +547,17 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPoli
 }
 
 } // namespace saber::events
+
+namespace saber::raii::detail {
+
+inline void Deleter<saber::events::EventToken>::operator()(pointer inToken) const noexcept
+{
+    if (inToken && (mEventManager != nullptr))
+    {
+        mEventManager->Unregister(*inToken); // OK now — EventManager is complete
+    }
+}
+
+} // namespace saber::raii::detail
 
 #endif // SABER_EVENTS_EVENTMANAGER_HPP
