@@ -203,14 +203,40 @@
 
     {
       "name": "build-win-vs2026",
+	  "hidden": true,
       "configurePreset": "config-win-vs2026",
       "inherits": "build-default-win"
     },
 
+	{
+      "name": "build-win-vs2026-x64",
+      "configurePreset": "config-win-vs2026-x64",
+      "inherits": "build-win-vs2026"
+    },
+
+	{
+      "name": "build-win-vs2026-arm64",
+      "configurePreset": "config-win-vs2026-arm64",
+      "inherits": "build-win-vs2026"
+    },
+
     {
       "name": "build-win-vs2022",
+	  "hidden": true,
       "configurePreset": "config-win-vs2022",
       "inherits": "build-default-win"
+    },
+
+	{
+      "name": "build-win-vs2022-x64",
+      "configurePreset": "config-win-vs2022-x64",
+      "inherits": "build-win-vs2022"
+    },
+
+	{
+      "name": "build-win-vs2022-arm64",
+      "configurePreset": "config-win-vs2022-arm64",
+      "inherits": "build-win-vs2022"
     },
 
     {
