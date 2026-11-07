@@ -225,8 +225,7 @@ public:
 	///     }
 	/// };
 	///
-	/// using Handler = saber::raii::ResourceHandler<
-	///     std::unique_ptr<int>, ResetDeleter>;
+	/// using Handler = saber::raii::ResourceHandler<std::unique_ptr<int>, ResetDeleter>;
 	/// Handler handler{std::make_unique<int>(42), ResetDeleter{}};
 	/// int value = *handler.Get();
 	/// @endcode
