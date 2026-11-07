@@ -18,30 +18,42 @@
 #ifndef SABER_RAII_RESOURCEHANDLER_HPP
 #define SABER_RAII_RESOURCEHANDLER_HPP
 
-//std
+// saber
+#include "saber/config.hpp"
+#include "saber/exception.hpp"
+
+// std
 #include <optional>
 #include <type_traits>
 #include <utility>
 
 namespace saber::raii {
 
+/// @brief Primary deleter template used by `ResourceHandler`
+///
+/// The default implementation intentionally triggers a static_assert
+/// so that users must provide a specialization for each resource type
+/// they wish to manage.  This ensures the deletion logic is explicit.
+///
 template<typename T>
 struct ResourceDeleter
 {
+	/// @brief Invokes the deleter on `inDelete`.
+	///
+	/// This primary template should never be instantiated; attempting to do so
+	/// will result in a compile‑time error, forcing the user to supply
+	/// a specialization.
+	///
+	/// @param inDelete Reference to the resource to delete.
 	void operator()(T& inDelete) const noexcept
 	{
-		// TRICKY mnfitz 18may2024: Lambda wrapper for static_assert()
-		// Disallow use of this primary template definition... 
-		// and enforce use of "specializations only".
-		// Note dummy use of `std::is_same_v<>` which causes evaulation of the
-		// static_assert() only when the primary template is instanciated/used.
-		//
-		// as opposed to: static_assert(false, ...) which triggers when merely
-		// encountered by the compiler even if not instanciated/used.
-		constexpr bool kIsSpecialization = (std::is_same_v<T, void> && !std::is_same_v<T, void>);
-		static_assert(kIsSpecialization, "You must provide your own Deleter<T> specialization when using ResourceHandler");
+		constexpr bool kIsSpecialization =
+			(std::is_same_v<T, void> && !std::is_same_v<T, void>);
+		static_assert(kIsSpecialization,
+					  "You must provide your own Deleter<T> specialization "
+					  "when using ResourceHandler");
 	}
-}; // struct ResourceDeleter<>
+}; // struct ResourceDeleter
 
 // #include <cstdio>
 //
@@ -49,40 +61,99 @@ struct ResourceDeleter
 // template<> // NOTE: no typename T
 // struct ResourceDeleter<std::FILE*> // specialization!
 // {
-// 	  void operator()(std::FILE* inFile) const noexcept
-// 	  {
-// 	      std::fclose(inFile);
-// 	  }
+//       void operator()(std::FILE* inFile) const noexcept
+//       {
+//           std::fclose(inFile);
+//       }
 // }
 
+/// @brief RAII handler that manages the lifetime of a resource.
+///
+/// `ResourceHandler` owns an optional resource of type `T`.  When the
+/// handler goes out of scope or is reset, it automatically invokes a
+/// deleter (defaulting to `ResourceDeleter<T>`) to release the resource.
+/// The class is move‑constructible and move‑assignable but not copyable.
+///
+/// @tparam T            Type of the managed resource.
+/// @tparam DeleterType  Callable type that implements `operator()(T&)`
+///                      Defaults to `ResourceDeleter<T>`.
+//------------------------------------------------------------------------------
 template<typename T, typename DeleterType = ResourceDeleter<T>>
 class ResourceHandler
 {
 public:
+	/// @brief Default constructs an empty handler.
+	///
+	/// The resulting object holds no resource and is considered invalid.
 	ResourceHandler() = default;
+
+	/// @brief Destructor that releases the owned resource if present.
 	~ResourceHandler();
 
+	// Copy operations are deleted to enforce unique ownership.
 	ResourceHandler(const ResourceHandler& inCopy) = delete;
 	ResourceHandler& operator=(const ResourceHandler& inCopy) = delete;
 
+	/// @brief Move constructor that transfers ownership from another handler.
+	///
+	/// The source handler becomes empty after the move.
+	/// @param ioMove Source handler to move from.
 	ResourceHandler(ResourceHandler&& ioMove) noexcept;
+
+	/// @brief Move assignment operator.
+	///
+	/// Releases any currently owned resource before acquiring the new one.
+	/// @param ioMove Source handler to assign from.
+	/// @return Reference to this handler.
 	ResourceHandler& operator=(ResourceHandler&& ioMove) noexcept;
 
+	/// @brief Constructs a handler that takes ownership of `ioResource`.
+	///
+	/// The default deleter (`DeleterType{}`) is used.
+	/// @param ioResource Resource to manage.
 	ResourceHandler(T&& ioResource);
+
+	/// @brief Constructs a handler with an explicit deleter.
+	///
+	/// @param ioResource Resource to manage.
+	/// @param ioDeleter  Deleter responsible for destroying the resource.
 	ResourceHandler(T&& ioResource, DeleterType&& ioDeleter);
+
+	/// @brief Assigns a new resource to the handler.
+	///
+	/// Any previously owned resource is destroyed before taking ownership
+	/// of `ioResource` and resetting the deleter to the default.
+	/// @param ioResource Resource to assign.
+	/// @return Reference to this handler.
 	ResourceHandler& operator=(T&& ioResource) noexcept;
 
+	/// @brief Boolean conversion indicating if a resource is currently owned.
+	///
+	/// @return `true` if the handler holds a value; otherwise `false`.
 	operator bool() const noexcept;
 
-	std::optional<T>& Get();
-	const std::optional<T>& Get() const;
+	/// @brief Provides mutable access to the underlying resource.
+	///
+	/// This allows callers to inspect or modify the held value directly.
+	/// @return Mutable reference to the resource.
+	/// @throws saber::RequireException if the handler does not own a resource.
+	T& Get();
 
+	/// @brief Const overload of `Get()` providing read‑only access.
+	///
+	/// @return Const reference to the resource.
+	/// @throws saber::RequireException if the handler does not own a resource.
+	const T& Get() const;
+
+	/// @brief Releases the owned resource, if any.
+	///
+	/// The deleter is invoked on the stored value and the optional is reset.
 	void Reset() noexcept;
 
 private:
 	DeleterType mDeleter{};
 	std::optional<T> mResource{};
-}; // class ResourceHandler<>
+}; // class ResourceHandler
 
 /// inlines
 
@@ -145,15 +216,17 @@ inline ResourceHandler<T, DeleterType>::operator bool() const noexcept
 }
 
 template<typename T, typename DeleterType>
-inline std::optional<T>& ResourceHandler<T, DeleterType>::Get()
+inline T& ResourceHandler<T, DeleterType>::Get()
 {
-	return mResource;
+	SABER_REQUIRE(mResource.has_value(), "ResourceHandler does not hold a value");
+	return mResource.value();
 }
 
 template<typename T, typename DeleterType>
-inline const std::optional<T>& ResourceHandler<T, DeleterType>::Get() const
+inline const T& ResourceHandler<T, DeleterType>::Get() const
 {
-	return mResource;
+	SABER_REQUIRE(mResource.has_value(), "ResourceHandler does not hold a value");
+	return mResource.value();
 }
 
 template<typename T, typename DeleterType>
