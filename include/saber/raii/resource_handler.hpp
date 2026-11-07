@@ -68,12 +68,13 @@ struct ResourceDeleter
 /// must not throw, because it is invoked by `Reset()` and destruction, which
 /// are `noexcept`.
 ///
-/// The handler's boolean conversion reports whether its optional contains a
-/// value. For pointer-valued `T`, this does not test whether the stored pointer
-/// is non-null; check both the handler and the pointer when null is invalid.
-///
-/// @tparam T The stored resource type. If `T` is a pointer, the handler's
-///           engagement is independent of whether that pointer is null.
+/// The handler is considered valid (engaged) when its `std::optional<T>`
+/// contains a value. Its boolean conversion tests only this engagement state;
+/// it does not determine whether the contained resource is usable. In
+/// particular, a handler containing a null pointer is engaged and converts to
+/// `true`. If a non-null pointer is required, first check the handler, then
+/// check the pointer returned by `Get()`.
+/// @tparam T The stored resource type.
 /// @tparam DeleterType Callable accepting `T&`; defaults to `ResourceDeleter<T>`.
 ///
 /// @warning A moved-from handler remains engaged. Its resource and deleter
@@ -110,9 +111,12 @@ template<typename T, typename DeleterType = ResourceDeleter<T>>
 class ResourceHandler
 {
 public:
-	/// @brief Default constructs an empty handler.
+	/// @brief Default constructs an empty (disengaged) handler.
 	///
-	/// The resulting object holds no resource and is considered invalid.
+	/// The handler's optional contains no value, so its boolean conversion is
+	/// `false` and `Get()` throws `saber::RequireException`. Here, invalid means
+	/// only that the handler is disengaged; it does not describe the semantic
+	/// validity of a stored resource.
 	ResourceHandler() = default;
 
 	/// @brief Destructor that releases the owned resource if present.
@@ -165,30 +169,98 @@ public:
 	/// @return Reference to this handler.
 	ResourceHandler& operator=(T&& ioResource) noexcept;
 
-	/// @brief Tests whether the handler's optional contains a value.
+	/// @brief Tests whether the handler is engaged (contains a `T` value).
 	///
-	/// For pointer-valued `T`, `true` only means the optional is engaged; the
-	/// stored pointer may still be null. Check `Get() != nullptr` separately when
-	/// a non-null pointer is required, after confirming the handler is engaged.
-	/// @return `true` if a `T` value is stored; otherwise `false`.
+	/// This reports `std::optional<T>::has_value()`; it does not test whether
+	/// the stored resource is semantically valid or usable. For pointer-valued
+	/// `T`, a stored `nullptr` still makes this conversion return `true`. When
+	/// non-null is required, first test the handler, then test `handler.Get()`
+	/// against `nullptr`.
+	/// @return `true` if the optional contains a value, including a null pointer;
+	///         otherwise `false`.
 	operator bool() const noexcept;
 
 	/// @brief Provides mutable access to the underlying resource.
 	///
-	/// This allows callers to inspect or modify the held value directly.
+	/// Check the handler's boolean conversion before calling `Get()` when it
+	/// may be empty. For pointer-valued resources, also check that the returned
+	/// pointer is non-null if required. The custom-deleter example below shows
+	/// that `Get()` accesses the stored resource; it does not invoke the deleter.
 	/// @return Mutable reference to the resource.
-	/// @throws saber::RequireException if the handler does not own a resource.
+	/// @throws `saber::RequireException` if the handler does not own a resource.
+	///
+	/// @par Check before access and handle an empty handler
+	/// @code{.cpp}
+	/// struct NoopDeleter
+	/// {
+	///     void operator()(int&) const noexcept {}
+	/// };
+	/// using Handler = saber::raii::ResourceHandler<int, NoopDeleter>;
+	/// Handler handler;
+	/// if (handler)
+	/// {
+	///     int& resource = handler.Get();
+	///     (void)resource;
+	/// }
+	///
+	/// try
+	/// {
+	///     (void)handler.Get();
+	/// }
+	/// catch (const saber::RequireException&)
+	/// {
+	///     // Handle access to an empty handler.
+	/// }
+	/// @endcode
+	///
+	/// @par Access with a custom deleter
+	/// @code{.cpp}
+	/// #include <memory>
+	///
+	/// struct ResetDeleter
+	/// {
+	///     void operator()(std::unique_ptr<int>& resource) const noexcept
+	///     {
+	///         resource.reset();
+	///     }
+	/// };
+	///
+	/// using Handler = saber::raii::ResourceHandler<
+	///     std::unique_ptr<int>, ResetDeleter>;
+	/// Handler handler{std::make_unique<int>(42), ResetDeleter{}};
+	/// int value = *handler.Get();
+	/// @endcode
 	T& Get();
 
-	/// @brief Const overload of `Get()` providing read‑only access.
+	/// @brief Const overload of `Get()` providing read-only access.
 	///
+	/// Check the handler's boolean conversion before calling `Get()` when it
+	/// may be empty. For pointer-valued resources, also check that the returned
+	/// pointer is non-null if required.
 	/// @return Const reference to the resource.
 	/// @throws saber::RequireException if the handler does not own a resource.
 	const T& Get() const;
 
-	/// @brief Releases the owned resource, if any.
+	/// @brief Releases the current resource and leaves the handler empty.
 	///
-	/// The deleter is invoked on the stored value and the optional is reset.
+	/// If a resource is present, invokes the current deleter on it, then clears
+	/// the stored value. If the handler is already empty, this has no effect.
+	/// `Reset()` does not replace the resource or reset the deleter to its
+	/// default. To replace the resource, use `operator=(T&&)`; this releases
+	/// the current resource, stores the new rvalue resource, and resets the
+	/// deleter to a default-constructed `DeleterType`.
+	///
+	/// @par Example
+	/// @code{.cpp}
+	/// struct NoopDeleter
+	/// {
+	///     void operator()(int&) const noexcept {}
+	/// };
+	/// using Handler = saber::raii::ResourceHandler<int, NoopDeleter>;
+	/// Handler handler{42, NoopDeleter{}};
+	/// handler.Reset(); // releases the current value and leaves the handler empty
+	/// handler = 7;      // replaces the value; this is not what Reset() does
+	/// @endcode
 	void Reset() noexcept;
 
 private:
