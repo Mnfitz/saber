@@ -3,12 +3,15 @@
 
 // saber
 #include "saber/config.hpp"
+#include "saber/exception.hpp"
 #include "saber/utility.hpp"
 #include "saber/raii/reference_handler.hpp"
 
 // std
 #include <algorithm>
 #include <any>
+#include <atomic>
+#include <cstdint>
 #include <execution>
 #include <iostream>
 #include <memory>
@@ -308,6 +311,12 @@ inline void EventManager::Notify(SenderType& inSender, const EventType& inEvent)
 
 namespace detail {
 
+inline EventToken GenerateToken()
+{
+	static std::atomic<std::uint64_t> counter{0};
+	return EventToken{counter.fetch_add(1, std::memory_order_relaxed)};
+}
+
 class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
 public:
@@ -325,8 +334,6 @@ private:
 	void OnNotify(std::any inArgs) override;
 
 private:
-	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
-
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
@@ -354,7 +361,7 @@ private:
 inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
 	// SABER-76: "Create RAII handler for EventManager::Register"
-	Token newToken{ mCounter++ }; // Create a unique token
+	Token newToken = GenerateToken();
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
 	return newToken;
@@ -374,17 +381,16 @@ inline void EventManagerImpl::OnUnregister(Token inToken)
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
 	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), isTargetToken);
 
-	if (didFind != callbackList.end())
-	{
-		// REVISIT: Move assign might throw an exception?
-		// If so, we might have to do something like this:
-		//		std::iter_swap(didFind, std::prev(callbackList.end()));
-		//		callbackList.pop_back();
+	SABER_REQUIRE(didFind != callbackList.end());
 
-		// Use an optimal O(1) removal for performance; note that list order is not considered important
-		*didFind = std::move(callbackList.back());
-		callbackList.pop_back(); // Remove the last element
-	}
+	// REVISIT: Move assign might throw an exception?
+	// If so, we might have to do something like this:
+	//		std::iter_swap(didFind, std::prev(callbackList.end()));
+	//		callbackList.pop_back();
+
+	// Use an optimal O(1) removal for performance; note that list order is not considered important
+	*didFind = std::move(callbackList.back());
+	callbackList.pop_back(); // Remove the last element
 }
 
 inline void EventManagerImpl::OnNotify(std::any inArgs)
@@ -424,9 +430,6 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
-
-
-
 class EventManagerParallelImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
 public:
@@ -443,7 +446,6 @@ private:
 	void OnNotify(std::any inArgs) override;
 
 private:
-	std::atomic<std::uint64_t> mCounter{ 0 }; // Counter to generate unique tokens
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
@@ -474,7 +476,7 @@ inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index 
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		
-		token = Token{++mCounter};
+		token = GenerateToken();
 		auto& callbackList = GetCallbackListOrCopy();
 		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
 	} 
@@ -493,13 +495,11 @@ inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 				const auto& [token, typeIndex, callback] = inElement;
 				return token == inToken; 
 			});
-		const bool wasFound = (element != callbackList.end());
-		if (wasFound)
-		{
-			// Fancy swap delete; overwrite iterator with last element in list then remove last elment
-			*element = std::move(callbackList.back());
-			callbackList.pop_back();
-		}
+		SABER_REQUIRE(element != callbackList.end());
+
+		// Fancy swap delete; overwrite iterator with last element in list then remove last element
+		*element = std::move(callbackList.back());
+		callbackList.pop_back();
 	}
 }
 

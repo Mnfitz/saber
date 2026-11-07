@@ -176,6 +176,38 @@ TEST_CASE("EventManager::Make returns independent instances", "[EventManager]")
     REQUIRE(m1 != m2);
 }
 
+TEST_CASE("Event tokens are globally unique across event managers", "[EventManager][Token]")
+{
+    auto singleManager = EventManager::Make();
+    auto parallelManager = EventManager::Make(ThreadingPolicy::kParallel);
+    std::vector<int> log;
+
+    const auto singleToken = singleManager->Register(MakeLoggingCallback<DamageEvent>(log));
+    const auto parallelToken = parallelManager->Register(MakeLoggingCallback<DamageEvent>(log));
+
+    REQUIRE(singleToken != parallelToken);
+
+    singleManager->Unregister(singleToken);
+    parallelManager->Unregister(parallelToken);
+}
+
+TEST_CASE("Unregister rejects tokens not owned by the event manager", "[EventManager][Token]")
+{
+    auto manager = EventManager::Make();
+    auto parallelManager = EventManager::Make(ThreadingPolicy::kParallel);
+    std::vector<int> log;
+    const auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
+
+    REQUIRE_THROWS_AS(parallelManager->Unregister(token), saber::Exception);
+
+    manager->Unregister(token);
+    REQUIRE_THROWS_AS(manager->Unregister(token), saber::Exception);
+
+    const auto parallelToken = parallelManager->Register(MakeLoggingCallback<DamageEvent>(log));
+    parallelManager->Unregister(parallelToken);
+    REQUIRE_THROWS_AS(parallelManager->Unregister(parallelToken), saber::Exception);
+}
+
 TEST_CASE("Parallel EventManager dispatches concurrent notifications", "[EventManager][Parallel]")
 {
     auto manager = EventManager::Make(ThreadingPolicy::kParallel);
@@ -507,7 +539,7 @@ TEST_CASE("Unregister of the only remaining callback leaves manager in clean not
     REQUIRE(log.empty());
 }
 
-TEST_CASE("Unregister is a no-op for an already-removed token (double unregister safety)", "[Unregister]")
+TEST_CASE("Unregister throws for an already-removed token", "[Unregister]")
 {
     auto manager = EventManager::Make();
     std::vector<int> log;
@@ -515,7 +547,7 @@ TEST_CASE("Unregister is a no-op for an already-removed token (double unregister
     auto token = manager->Register(MakeLoggingCallback<DamageEvent>(log));
     manager->Unregister(token);
 
-    REQUIRE_NOTHROW(manager->Unregister(token));
+    REQUIRE_THROWS_AS(manager->Unregister(token), saber::Exception);
 }
 
 TEST_CASE("Unregister middle element — remaining callbacks still fire", "[Unregister]")
