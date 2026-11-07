@@ -55,28 +55,56 @@ struct ResourceDeleter
 	}
 }; // struct ResourceDeleter
 
-// #include <cstdio>
-//
-// Template specialization of deleter for type std::FILE
-// template<> // NOTE: no typename T
-// struct ResourceDeleter<std::FILE*> // specialization!
-// {
-//       void operator()(std::FILE* inFile) const noexcept
-//       {
-//           std::fclose(inFile);
-//       }
-// }
-
 /// @brief RAII handler that manages the lifetime of a resource.
 ///
-/// `ResourceHandler` owns an optional resource of type `T`.  When the
-/// handler goes out of scope or is reset, it automatically invokes a
-/// deleter (defaulting to `ResourceDeleter<T>`) to release the resource.
-/// The class is move‑constructible and move‑assignable but not copyable.
+/// `saber::raii::ResourceHandler<T, DeleterType>` stores an optional `T` and
+/// invokes its deleter when a stored value is reset or the handler is destroyed.
+/// It is movable but not copyable. Resource construction and assignment take
+/// `T&&`, so pass an rvalue (for example, `std::move(resource)`).
 ///
-/// @tparam T            Type of the managed resource.
-/// @tparam DeleterType  Callable type that implements `operator()(T&)`
-///                      Defaults to `ResourceDeleter<T>`.
+/// The default `DeleterType` is `ResourceDeleter<T>`, whose primary template
+/// intentionally fails to compile; provide a `ResourceDeleter<T>` specialization
+/// or supply an explicit deleter. The deleter must be callable with `T&` and
+/// must not throw, because it is invoked by `Reset()` and destruction, which
+/// are `noexcept`.
+///
+/// The handler's boolean conversion reports whether its optional contains a
+/// value. For pointer-valued `T`, this does not test whether the stored pointer
+/// is non-null; check both the handler and the pointer when null is invalid.
+///
+/// @tparam T The stored resource type. If `T` is a pointer, the handler's
+///           engagement is independent of whether that pointer is null.
+/// @tparam DeleterType Callable accepting `T&`; defaults to `ResourceDeleter<T>`.
+///
+/// @warning A moved-from handler remains engaged. Its resource and deleter
+///          are moved-from, so the deleter must safely accept that state when
+///          the source handler is reset or destroyed.
+///
+/// @par Move usage example
+/// This example uses `std::unique_ptr`, whose moved-from state is empty, and a
+/// deleter that safely resets either an owning or empty pointer:
+/// @code{.cpp}
+/// #include <memory>
+/// #include <utility>
+/// #include "saber/raii/resource_handler.hpp"
+///
+/// struct ResetDeleter
+/// {
+///     void operator()(std::unique_ptr<int>& resource) const noexcept
+///     {
+///         resource.reset();
+///     }
+/// };
+///
+/// using Handler = saber::raii::ResourceHandler<
+///     std::unique_ptr<int>, ResetDeleter>;
+///
+/// Handler source{std::make_unique<int>(42), ResetDeleter{}};
+/// Handler moved{std::move(source)}; // source remains engaged, but its pointer is empty
+///
+/// Handler destination{std::make_unique<int>(7), ResetDeleter{}};
+/// destination = std::move(moved);   // moved remains engaged with an empty pointer
+/// @endcode
 //------------------------------------------------------------------------------
 template<typename T, typename DeleterType = ResourceDeleter<T>>
 class ResourceHandler
@@ -94,42 +122,55 @@ public:
 	ResourceHandler(const ResourceHandler& inCopy) = delete;
 	ResourceHandler& operator=(const ResourceHandler& inCopy) = delete;
 
-	/// @brief Move constructor that transfers ownership from another handler.
+	/// @brief Move-constructs this handler from another handler.
 	///
-	/// The source handler becomes empty after the move.
+	/// The resource and deleter are move-constructed from `ioMove`, but the
+	/// source handler remains engaged with a moved-from resource. Its later
+	/// reset or destruction will invoke its moved-from deleter on that resource.
 	/// @param ioMove Source handler to move from.
 	ResourceHandler(ResourceHandler&& ioMove) noexcept;
 
 	/// @brief Move assignment operator.
 	///
-	/// Releases any currently owned resource before acquiring the new one.
+	/// Releases this handler's current resource, then moves the resource and
+	/// deleter from `ioMove`. The source remains engaged with a moved-from
+	/// resource; its later reset or destruction will invoke its moved-from
+	/// deleter on that resource.
 	/// @param ioMove Source handler to assign from.
 	/// @return Reference to this handler.
 	ResourceHandler& operator=(ResourceHandler&& ioMove) noexcept;
 
-	/// @brief Constructs a handler that takes ownership of `ioResource`.
+	/// @brief Constructs a handler from an rvalue resource.
 	///
-	/// The default deleter (`DeleterType{}`) is used.
-	/// @param ioResource Resource to manage.
+	/// Moves `ioResource` into the handler and default-constructs its deleter.
+	/// Use `std::move(resource)` when transferring a named resource.
+	/// @param ioResource Rvalue resource to manage.
 	ResourceHandler(T&& ioResource);
 
-	/// @brief Constructs a handler with an explicit deleter.
+	/// @brief Constructs a handler from an rvalue resource and an explicit deleter.
 	///
-	/// @param ioResource Resource to manage.
-	/// @param ioDeleter  Deleter responsible for destroying the resource.
+	/// Moves both arguments into the handler. The deleter must accept `T&` and
+	/// must not throw when invoked by `Reset()` or destruction.
+	/// @param ioResource Rvalue resource to manage; use `std::move` for a named value.
+	/// @param ioDeleter Rvalue deleter to invoke when releasing the resource.
 	ResourceHandler(T&& ioResource, DeleterType&& ioDeleter);
 
-	/// @brief Assigns a new resource to the handler.
+	/// @brief Replaces the resource with an rvalue resource.
 	///
-	/// Any previously owned resource is destroyed before taking ownership
-	/// of `ioResource` and resetting the deleter to the default.
-	/// @param ioResource Resource to assign.
+	/// Releases the current resource, moves `ioResource` into the handler, and
+	/// replaces the current deleter with a default-constructed `DeleterType`.
+	/// This operation therefore requires `DeleterType` to be default-constructible
+	/// and move-assignable. Use `std::move(resource)` for a named resource.
+	/// @param ioResource Rvalue resource to take ownership of.
 	/// @return Reference to this handler.
 	ResourceHandler& operator=(T&& ioResource) noexcept;
 
-	/// @brief Boolean conversion indicating if a resource is currently owned.
+	/// @brief Tests whether the handler's optional contains a value.
 	///
-	/// @return `true` if the handler holds a value; otherwise `false`.
+	/// For pointer-valued `T`, `true` only means the optional is engaged; the
+	/// stored pointer may still be null. Check `Get() != nullptr` separately when
+	/// a non-null pointer is required, after confirming the handler is engaged.
+	/// @return `true` if a `T` value is stored; otherwise `false`.
 	operator bool() const noexcept;
 
 	/// @brief Provides mutable access to the underlying resource.
