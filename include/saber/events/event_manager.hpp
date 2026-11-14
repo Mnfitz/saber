@@ -5,7 +5,7 @@
 #include "saber/config.hpp"
 #include "saber/exception.hpp"
 #include "saber/utility.hpp"
-#include "saber/raii/reference_handler.hpp"
+#include "saber/raii/resource_handler.hpp"
 
 // std
 #include <algorithm>
@@ -32,7 +32,7 @@ namespace saber::events {
 } // namespace saber::events
 
 // --- 2. Deleter specialization: declare only, don't define the body yet ---
-namespace saber::raii::detail {
+namespace saber::raii {
 
 // SABER-76: "Create RAII handler for EventManager::Register"
 // An EventToken is a value, not a pointer, so there is nothing for ReferenceHandler
@@ -40,105 +40,27 @@ namespace saber::raii::detail {
 // via the nested `pointer` typedef below; ReferenceHandler (really std::unique_ptr)
 // then stores that handle *by value*, so the token needs no heap allocation.
 template<>
-struct Deleter<saber::events::EventToken>
+struct ResourceDeleter<saber::events::EventToken>
 {
-public:
-    /// @brief Nullable handle that ReferenceHandler stores in place of `EventToken*`.
-    /// Satisfies the standard NullablePointer requirements so that it can be used as
-    /// a std::unique_ptr stored handle.
-    class pointer
-    {
-    public:
-        // The default constructed (i.e. empty) handle *is* the null handle
-        constexpr pointer() noexcept = default;
-
-        // TRICKY: Deliberately not explicit. unique_ptr constructs, assigns and
-        // compares its stored handle against nullptr, and needs the conversion.
-        constexpr pointer(std::nullptr_t) noexcept
-        {
-            // Do nothing: an empty mToken is the null handle
-        }
-
-        constexpr explicit pointer(saber::events::EventToken inToken) noexcept :
-            mToken{inToken}
-        {
-            // Do nothing
-        }
-
-        /// @brief Return boolean sense of this handle
-        /// @return true, if this handle holds a token; otherwise false
-        constexpr explicit operator bool() const noexcept
-        {
-            return mToken.has_value();
-        }
-
-        /// @brief Access the held token. Only valid when this handle is non-null.
-        /// @return Copy of the held token
-        saber::events::EventToken operator*() const noexcept
-        {
-            return *mToken;
-        }
-
-        // --- friend functions
-
-        friend bool operator==(pointer inLhs, pointer inRhs) noexcept
-        {
-            return inLhs.mToken == inRhs.mToken;
-        }
-
-        friend bool operator!=(pointer inLhs, pointer inRhs) noexcept
-        {
-            return !(inLhs == inRhs);
-        }
-
-        friend bool operator==(pointer inLhs, std::nullptr_t) noexcept
-        {
-            return !inLhs.mToken.has_value();
-        }
-
-        friend bool operator!=(pointer inLhs, std::nullptr_t) noexcept
-        {
-            return inLhs.mToken.has_value();
-        }
-
-        friend bool operator==(std::nullptr_t, pointer inRhs) noexcept
-        {
-            return !inRhs.mToken.has_value();
-        }
-
-        friend bool operator!=(std::nullptr_t, pointer inRhs) noexcept
-        {
-            return inRhs.mToken.has_value();
-        }
-
-    private:
-        // NOTE: std::optional, rather than a reserved sentinel value, so that
-        // EventManagerImpl remains free to hand out any token value it likes
-        std::optional<saber::events::EventToken> mToken{};
-    }; // class pointer
-
 public:
     // A default constructed Deleter has no EventManager, and so does nothing.
     // This is what makes a default constructed (empty) TokenHandler possible.
-    constexpr Deleter() noexcept = default;
+    constexpr ResourceDeleter() noexcept = default;
 
-    explicit Deleter(saber::events::EventManager& inEventManager) noexcept :
-        mEventManager{&inEventManager}
+    explicit ResourceDeleter(std::weak_ptr<saber::events::EventManager>&& inEventManager) noexcept :
+        mEventManager{std::move(inEventManager)}
     {
     }
 
     // Declaration only — EventManager is still incomplete here, which is fine
     // because we aren't calling any of its members yet.
-    void operator()(pointer inToken) const noexcept;
+    void operator()(saber::events::EventToken& inEventToken) const noexcept;
 
 private:
-    // TRICKY: A pointer, and not a reference, to an (here incomplete) EventManager.
-    // A class with a reference member is neither move assignable nor swappable, and
-    // std::unique_ptr requires its deleter to be both in order to be move assigned.
-    saber::events::EventManager* mEventManager{};
-};
+    std::weak_ptr<saber::events::EventManager> mEventManager{};
+}; // struct ResourceDeleter
 
-} // namespace saber::raii::detail
+} // namespace saber::raii
 
 namespace saber::events {
 
@@ -238,14 +160,15 @@ enum class ThreadingPolicy {
 };
 
 // Using NVI pattern here
-class EventManager
+class EventManager : public std::enable_shared_from_this<EventManager>
 {
 public:
 	using Token = EventToken;
-	using TokenHandler = saber::raii::ReferenceHandler<Token, raii::detail::Deleter<Token>>; // RAII handler for EventManager::Token
+	using TokenHandler = saber::raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>; // RAII handler for EventManager::Token
 
 public:
-	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
+	// By default we make this unique, until it needs to be shared
+	static std::shared_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
 
 	virtual ~EventManager() = default;
 
@@ -278,9 +201,8 @@ inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallbac
 	// SABER-76: Token is a value and not a pointer, so TokenHandler stores it inline in
 	// TokenDeleter::pointer; there is no heap allocation here. TokenDeleter is stateful
 	// (it must know which EventManager to Unregister() from), so it is passed explicitly.
-	using TokenPointer = TokenHandler::pointer;
-	using TokenDeleter = raii::detail::Deleter<Token>;
-	return TokenHandler{TokenPointer{Register(std::move(ioCallback))}, TokenDeleter{*this}}; // RAII handler for the token
+	using TokenDeleter = raii::ResourceDeleter<Token>;
+	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{weak_from_this()}}; // RAII handler for the token
 }
 
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
@@ -313,8 +235,8 @@ namespace detail {
 
 inline EventToken GenerateToken()
 {
-	static std::atomic<std::uint64_t> counter{0};
-	return EventToken{counter.fetch_add(1, std::memory_order_relaxed)};
+	static std::atomic<std::uint64_t> sCounter{0};
+	return EventToken{sCounter.fetch_add(1, std::memory_order_relaxed)};
 }
 
 class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
@@ -527,9 +449,9 @@ inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
 
 } // namespace detail
 
-inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
+inline /*static*/ std::shared_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
 {
-	std::unique_ptr<EventManager> result{};
+	std::shared_ptr<EventManager> result{};
 	switch (inPolicy)
 	{
 	case ThreadingPolicy::kParallel:
@@ -548,16 +470,21 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPoli
 
 } // namespace saber::events
 
-namespace saber::raii::detail {
+namespace saber::raii {
 
-inline void Deleter<saber::events::EventToken>::operator()(pointer inToken) const noexcept
+inline void ResourceDeleter<saber::events::EventToken>::operator()(saber::events::EventToken& inEventToken) const noexcept
 {
-    if (inToken && (mEventManager != nullptr))
+	// Check whether the token and Event Manager exists
+    if (inEventToken)
     {
-        mEventManager->Unregister(*inToken); // OK now — EventManager is complete
+		auto eventManager = mEventManager.lock();
+		if (eventManager)
+		{
+			eventManager->Unregister(inEventToken); // OK now — EventManager is complete
+		}
     }
 }
 
-} // namespace saber::raii::detail
+} // namespace saber::raii
 
 #endif // SABER_EVENTS_EVENTMANAGER_HPP

@@ -210,7 +210,7 @@ public:
 	/// @brief Return boolean sense of this `TaggedType<>`
 	constexpr explicit operator bool() const noexcept
 	{
-		return mValue.operator bool();
+		return static_cast<bool>(mValue);
 	}
 
 	// --- friend functions

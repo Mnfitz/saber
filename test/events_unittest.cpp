@@ -724,7 +724,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
 
         handler.Reset();
         REQUIRE(!static_cast<bool>(handler));
-        REQUIRE(handler.Get() == nullptr);
+        REQUIRE_FALSE(handler.Get().has_value());
 
         handler.Reset(); // Second Reset() must be a NOP
         manager->Notify(sender, DamageEvent{9});
@@ -749,7 +749,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
         const auto token = *handler.Get();
 
         auto moved = std::move(handler);
-        REQUIRE(handler.Get() == nullptr);
+        REQUIRE_FALSE(handler.Get().has_value());
         REQUIRE(*moved.Get() == token);
 
         manager->Notify(sender, DamageEvent{1});
@@ -763,7 +763,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
         auto second = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(otherLog));
 
         first = std::move(second); // `first`'s registration is dropped here
-        REQUIRE(second.Get() == nullptr);
+        REQUIRE_FALSE(second.Get().has_value());
 
         manager->Notify(sender, DamageEvent{5});
         REQUIRE(log.empty());
@@ -774,7 +774,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
     {
         EventManager::TokenHandler handler{};
         REQUIRE(!static_cast<bool>(handler));
-        REQUIRE(handler.Get() == nullptr);
+        REQUIRE_FALSE(handler.Get().has_value());
 
         handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
         REQUIRE(static_cast<bool>(handler));
