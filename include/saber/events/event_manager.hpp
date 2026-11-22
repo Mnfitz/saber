@@ -3,20 +3,64 @@
 
 // saber
 #include "saber/config.hpp"
+#include "saber/exception.hpp"
 #include "saber/utility.hpp"
+#include "saber/raii/resource_handler.hpp"
 
 // std
 #include <algorithm>
 #include <any>
+#include <atomic>
+#include <cstdint>
 #include <execution>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <optional>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
+#include <type_traits>
 #include <vector>
+
+
+// --- 1. Proper forward declarations, in the real namespace ---
+namespace saber::events {
+    class EventManager;
+    using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
+} // namespace saber::events
+
+// --- 2. Deleter specialization: declare only, don't define the body yet ---
+namespace saber::raii {
+
+// SABER-76: "Create RAII handler for EventManager::Register"
+// An EventToken is a value, not a pointer, so there is nothing for ReferenceHandler
+// to hold a `EventToken*` to. Instead we hand ReferenceHandler a custom handle type
+// via the nested `pointer` typedef below; ReferenceHandler (really std::unique_ptr)
+// then stores that handle *by value*, so the token needs no heap allocation.
+template<>
+struct ResourceDeleter<saber::events::EventToken>
+{
+public:
+    // A default constructed Deleter has no EventManager, and so does nothing.
+    // This is what makes a default constructed (empty) TokenHandler possible.
+    constexpr ResourceDeleter() noexcept = default;
+
+    explicit ResourceDeleter(std::weak_ptr<saber::events::EventManager>&& inEventManager) noexcept :
+        mWeakManager{std::move(inEventManager)}
+    {
+    }
+
+    // Declaration only — EventManager is still incomplete here, which is fine
+    // because we aren't calling any of its members yet.
+    void operator()(saber::events::EventToken& inEventToken) const noexcept;
+
+private:
+    std::weak_ptr<saber::events::EventManager> mWeakManager{};
+}; // struct ResourceDeleter
+
+} // namespace saber::raii
 
 namespace saber::events {
 
@@ -24,6 +68,8 @@ template<typename SenderType, typename EventType>
 using EventArgsType = std::tuple<const SenderType&, const EventType&>;
 
 class EventManager; // forward declaration
+
+using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
 
 // The `EventCallback` class type-erases a user-provided callable (e.g., a
 // lambda) and provides a uniform `int operator()(std::any)` entry point that
@@ -105,26 +151,34 @@ private:
 	CallbackType mInvoke{};
 };
 
+// Marker type for RAII usage
+struct UsingRAII{};
+
 enum class ThreadingPolicy {
 	kSingle,
 	kParallel
 };
 
 // Using NVI pattern here
-class EventManager
+class EventManager : public std::enable_shared_from_this<EventManager> // is-a: enable_shared_from_this
 {
 public:
-	using Token = saber::TaggedType<std::uint64_t, EventManager>;
+	using Token = EventToken;
+	using TokenHandler = saber::raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>; // RAII handler for EventManager::Token
 
 public:
-	static std::unique_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
+	// By default we make this unique, until it needs to be shared
+	static std::shared_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
 
 	virtual ~EventManager() = default;
 
 public:
-	[[nodiscard]] Token Register(EventCallback&& ioCallback); // Consume
+	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback); // Consume
 
+	// TODO: Remove non-RAII Register functions- prefer returning TokenHandler over raw Token
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
+
+	[[nodiscard]] Token Register(EventCallback&& ioCallback);
 
 	void Unregister(Token inToken);
 
@@ -143,22 +197,27 @@ private:
 
 }; // class EventManager
 
+inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallback&& ioCallback) // Consume
+{
+	// SABER-76: Token is a value and not a pointer, so TokenHandler stores it inline in
+	// TokenDeleter::pointer; there is no heap allocation here. TokenDeleter is stateful
+	// (it must know which EventManager to Unregister() from), so it is passed explicitly.
+	using TokenDeleter = raii::ResourceDeleter<Token>;
+	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{this->weak_from_this()}}; // RAII handler for the token
+}
+
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
+inline EventManager::Token EventManager::Register(const EventCallback& inCallback)
+{
+	return Register(EventCallback{inCallback});
+}
+
 inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
 	std::type_index eventType = ioCallback.GetTypeIndex(); // use the template params
 	return OnRegister(eventType, std::move(ioCallback));
-}
-
-inline EventManager::Token EventManager::Register(const EventCallback& inCallback) // Observe
-{
-	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
-	// to allow us to find callbacks of a certain type from the callback list
-	EventCallback copy{inCallback}; // explicit copy
-	std::type_index eventType = inCallback.GetTypeIndex(); // use the template params
-    return OnRegister(eventType, std::move(copy));
 }
 
 inline void EventManager::Unregister(Token inToken)
@@ -174,6 +233,12 @@ inline void EventManager::Notify(SenderType& inSender, const EventType& inEvent)
 }
 
 namespace detail {
+
+inline EventToken GenerateToken()
+{
+	static std::atomic<std::uint64_t> sCounter{0};
+	return EventToken{sCounter.fetch_add(1, std::memory_order_relaxed)};
+}
 
 class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
@@ -192,8 +257,6 @@ private:
 	void OnNotify(std::any inArgs) override;
 
 private:
-	std::uint64_t mCounter{ 0 }; // Counter to generate unique tokens
-
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
@@ -220,7 +283,8 @@ private:
 
 inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
-	Token newToken{ mCounter++ }; // Create a unique token
+	// SABER-76: "Create RAII handler for EventManager::Register"
+	Token newToken = GenerateToken();
 	auto& callbackList = GetCallbackListOrCopy();
 	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
 	return newToken;
@@ -240,17 +304,16 @@ inline void EventManagerImpl::OnUnregister(Token inToken)
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
 	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), isTargetToken);
 
-	if (didFind != callbackList.end())
-	{
-		// REVISIT: Move assign might throw an exception?
-		// If so, we might have to do something like this:
-		//		std::iter_swap(didFind, std::prev(callbackList.end()));
-		//		callbackList.pop_back();
+	SABER_REQUIRE(didFind != callbackList.end());
 
-		// Use an optimal O(1) removal for performance; note that list order is not considered important
-		*didFind = std::move(callbackList.back());
-		callbackList.pop_back(); // Remove the last element
-	}
+	// REVISIT: Move assign might throw an exception?
+	// If so, we might have to do something like this:
+	//		std::iter_swap(didFind, std::prev(callbackList.end()));
+	//		callbackList.pop_back();
+
+	// Use an optimal O(1) removal for performance; note that list order is not considered important
+	*didFind = std::move(callbackList.back());
+	callbackList.pop_back(); // Remove the last element
 }
 
 inline void EventManagerImpl::OnNotify(std::any inArgs)
@@ -290,9 +353,6 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
-
-
-
 class EventManagerParallelImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
 public:
@@ -309,7 +369,6 @@ private:
 	void OnNotify(std::any inArgs) override;
 
 private:
-	std::atomic<std::uint64_t> mCounter{ 0 }; // Counter to generate unique tokens
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
@@ -340,7 +399,7 @@ inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index 
 	{
 		std::lock_guard<std::mutex> lock(mMutex);
 		
-		token = Token{++mCounter};
+		token = GenerateToken();
 		auto& callbackList = GetCallbackListOrCopy();
 		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
 	} 
@@ -359,13 +418,11 @@ inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 				const auto& [token, typeIndex, callback] = inElement;
 				return token == inToken; 
 			});
-		const bool wasFound = (element != callbackList.end());
-		if (wasFound)
-		{
-			// Fancy swap delete; overwrite iterator with last element in list then remove last elment
-			*element = std::move(callbackList.back());
-			callbackList.pop_back();
-		}
+		SABER_REQUIRE(element != callbackList.end());
+
+		// Fancy swap delete; overwrite iterator with last element in list then remove last element
+		*element = std::move(callbackList.back());
+		callbackList.pop_back();
 	}
 }
 
@@ -393,9 +450,9 @@ inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
 
 } // namespace detail
 
-inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
+inline /*static*/ std::shared_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
 {
-	std::unique_ptr<EventManager> result{};
+	std::shared_ptr<EventManager> result{};
 	switch (inPolicy)
 	{
 	case ThreadingPolicy::kParallel:
@@ -413,5 +470,22 @@ inline /*static*/ std::unique_ptr<EventManager> EventManager::Make(ThreadingPoli
 }
 
 } // namespace saber::events
+
+namespace saber::raii {
+
+inline void ResourceDeleter<saber::events::EventToken>::operator()(saber::events::EventToken& inEventToken) const noexcept
+{
+	// Check whether the token and Event Manager exists
+    if (inEventToken)
+    {
+		auto eventManager = mWeakManager.lock();
+		if (eventManager)
+		{
+			eventManager->Unregister(inEventToken); // OK now — EventManager is complete
+		}
+    }
+}
+
+} // namespace saber::raii
 
 #endif // SABER_EVENTS_EVENTMANAGER_HPP
