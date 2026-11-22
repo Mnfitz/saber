@@ -765,6 +765,16 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle::ctor() works correctly - impl v
             REQUIRE(copy.X() == cr.X());
         }
 
+        SECTION("Structured Binding")
+        {
+            const R rect{1,2,3,4};
+            const auto [x,y,width,height] = rect;
+            REQUIRE(x == rect.X());
+            REQUIRE(y == rect.Y());
+            REQUIRE(width == rect.Width());
+            REQUIRE(height == rect.Height());
+        }
+
         SECTION("Translate(Rectangle)")
         {
             R r0{P{2,1}};
@@ -877,6 +887,16 @@ TEMPLATE_TEST_CASE( "saber::geometry::Rectangle::ctor() works correctly - impl v
             REQUIRE(r2.Y() == 2);
             REQUIRE(r2.Width() == 3);
             REQUIRE(r2.Height() == 4);
+        }
+
+        SECTION("Structured Binding")
+        {
+            const R rect{1,2,3,4};
+            const auto [x,y,width,height] = rect;
+            REQUIRE(x == rect.X());
+            REQUIRE(y == rect.Y());
+            REQUIRE(width == rect.Width());
+            REQUIRE(height == rect.Height());
         }
 
         SECTION("Translate(Rectangle)")

@@ -10,6 +10,7 @@
 #include "saber/geometry/utility.hpp"
 
 // std
+#include <tuple>
 #include <utility>
 
 namespace saber::geometry {
@@ -740,56 +741,56 @@ inline constexpr bool IsOverlapping(const Rectangle<T, Impl>& inLHS, const Recta
 #pragma endregion
 #endif
 
-#if 0
-// ------------------------------------------------------------------
 #if SABER_PRAGMA(REGION)
 #pragma region Structured Bindings
 #endif
 
-// TRICKY mnfitz 14oct2024: Turn on structured binging support for C++17 or later
+// TRICKY mnfitz 14oct2024: Turn on structured binding support for C++17 or later
 #ifdef __cpp_structured_bindings
 
-// Structured Binding Support 
-
-// Prefer free function over class method
-template<std::size_t Index, typename T>
-inline T get(const Point<T>& inPoint)
+template<std::size_t Index, typename T, ImplKind Impl>
+inline T get(const Rectangle<T, Impl>& inRectangle)
 {
-static_assert(2 == std::tuple_size_v<Point<T>>); // Use own std::tuple_size<> specialization
-static_assert(Index < 2, "Unexpected Index for Point<T, Impl>");
+	static_assert(Index < std::tuple_size_v<Rectangle<T, Impl>>, "Unexpected index for Rectangle<T, Impl>");
 
-T result{};
-if constexpr (Index == 0)
-{
-result = inPoint.X();
+	if constexpr (Index == 0)
+	{
+		return inRectangle.X();
+	}
+	else if constexpr (Index == 1)
+	{
+		return inRectangle.Y();
+	}
+	else if constexpr (Index == 2)
+	{
+		return inRectangle.Width();
+	}
+	else
+	{
+		return inRectangle.Height();
+	}
 }
-else if constexpr (Index == 1)
-{
-result = inPoint.Y();
-}
+#endif // __cpp_structured_bindings
 
-return result;
-}
+} // namespace saber::geometry
 
-template<typename T>
-struct std::tuple_size<Point<T>> // Partial template specialization for: Point<T, Impl>
+#ifdef __cpp_structured_bindings
+template<typename T, saber::geometry::ImplKind Impl>
+struct std::tuple_size<saber::geometry::Rectangle<T, Impl>>
 {
-// Number of elements in Point<T, Impl>'s structured binding
-static constexpr std::size_t value = 2;
+	static constexpr std::size_t value = 4;
 };
 
-template<std::size_t Index, typename T>
-struct std::tuple_element<Index, Point<T>> // Partial template specialization for: Point<T, Impl>
+template<std::size_t Index, typename T, saber::geometry::ImplKind Impl>
+struct std::tuple_element<Index, saber::geometry::Rectangle<T, Impl>>
 {
-// Type of elements in Point<T, Impl`>'s structured
-using type = T;
+	static_assert(Index < 4, "Unexpected index for Rectangle<T, Impl>");
+	using type = T;
 };
+#endif // __cpp_structured_bindings
 
-#endif //__cpp_structured_bindings
 #if SABER_PRAGMA(REGION)
 #pragma endregion
 #endif
-#endif // #if 0
-} // namespace saber::geometry
 
 #endif // SABER_GEOMETRY_RECTANGLE_HPP
