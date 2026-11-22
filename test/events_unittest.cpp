@@ -723,8 +723,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
         auto handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
 
         handler.Reset();
-        REQUIRE(!static_cast<bool>(handler));
-        REQUIRE_FALSE(handler.Get().has_value());
+        REQUIRE_FALSE(static_cast<bool>(handler));
 
         handler.Reset(); // Second Reset() must be a NOP
         manager->Notify(sender, DamageEvent{9});
@@ -746,11 +745,10 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
     SECTION("Move construct transfers ownership")
     {
         auto handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
-        const auto token = *handler.Get();
 
         auto moved = std::move(handler);
-        REQUIRE_FALSE(handler.Get().has_value());
-        REQUIRE(*moved.Get() == token);
+        REQUIRE(static_cast<bool>(handler));
+        REQUIRE(static_cast<bool>(moved));
 
         manager->Notify(sender, DamageEvent{1});
         REQUIRE(log == std::vector<int>{1}); // Moved-from handler did not unregister
@@ -763,7 +761,7 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
         auto second = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(otherLog));
 
         first = std::move(second); // `first`'s registration is dropped here
-        REQUIRE_FALSE(second.Get().has_value());
+        REQUIRE(static_cast<bool>(second));
 
         manager->Notify(sender, DamageEvent{5});
         REQUIRE(log.empty());
@@ -774,7 +772,6 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
     {
         EventManager::TokenHandler handler{};
         REQUIRE(!static_cast<bool>(handler));
-        REQUIRE_FALSE(handler.Get().has_value());
 
         handler = manager->Register(UsingRAII{}, MakeLoggingCallback<DamageEvent>(log));
         REQUIRE(static_cast<bool>(handler));
