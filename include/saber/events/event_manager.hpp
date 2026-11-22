@@ -48,7 +48,7 @@ public:
     constexpr ResourceDeleter() noexcept = default;
 
     explicit ResourceDeleter(std::weak_ptr<saber::events::EventManager>&& inEventManager) noexcept :
-        mEventManager{std::move(inEventManager)}
+        mWeakManager{std::move(inEventManager)}
     {
     }
 
@@ -57,7 +57,7 @@ public:
     void operator()(saber::events::EventToken& inEventToken) const noexcept;
 
 private:
-    std::weak_ptr<saber::events::EventManager> mEventManager{};
+    std::weak_ptr<saber::events::EventManager> mWeakManager{};
 }; // struct ResourceDeleter
 
 } // namespace saber::raii
@@ -160,7 +160,7 @@ enum class ThreadingPolicy {
 };
 
 // Using NVI pattern here
-class EventManager : public std::enable_shared_from_this<EventManager>
+class EventManager : public std::enable_shared_from_this<EventManager> // is-a: enable_shared_from_this
 {
 public:
 	using Token = EventToken;
@@ -175,6 +175,7 @@ public:
 public:
 	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback); // Consume
 
+	// TODO: Remove non-RAII Register functions- prefer returning TokenHandler over raw Token
 	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
 
 	[[nodiscard]] Token Register(EventCallback&& ioCallback);
@@ -202,7 +203,7 @@ inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallbac
 	// TokenDeleter::pointer; there is no heap allocation here. TokenDeleter is stateful
 	// (it must know which EventManager to Unregister() from), so it is passed explicitly.
 	using TokenDeleter = raii::ResourceDeleter<Token>;
-	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{weak_from_this()}}; // RAII handler for the token
+	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{this->weak_from_this()}}; // RAII handler for the token
 }
 
 // TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
@@ -477,7 +478,7 @@ inline void ResourceDeleter<saber::events::EventToken>::operator()(saber::events
 	// Check whether the token and Event Manager exists
     if (inEventToken)
     {
-		auto eventManager = mEventManager.lock();
+		auto eventManager = mWeakManager.lock();
 		if (eventManager)
 		{
 			eventManager->Unregister(inEventToken); // OK now — EventManager is complete
