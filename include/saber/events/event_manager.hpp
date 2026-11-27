@@ -176,9 +176,9 @@ public:
 	{
 		// Deduce the argument types of the input ioLambda
 		using LambdaType = std::decay_t<Lambda>;
-		using CallbackTraits = detail::LambdaTraits<decltype(&LambdaType::operator())>;
-		using SenderType = typename CallbackTraits::Arg1Type;
-		using EventType = typename CallbackTraits::Arg2Type;
+		using AutoDeduceTraits = detail::LambdaTraits<decltype(&LambdaType::operator())>;
+		using SenderType = typename AutoDeduceTraits::Arg1Type;
+		using EventType = typename AutoDeduceTraits::Arg2Type;
 
 		using ArgsTraits = detail::EventArgsTraits<SenderType, EventType>;
 
