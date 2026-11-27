@@ -20,18 +20,31 @@
 #include <optional>
 #include <tuple>
 #include <typeindex>
-#include <typeinfo>
 #include <type_traits>
 #include <vector>
 
 
-// --- 1. Proper forward declarations, in the real namespace ---
-namespace saber::events {
-    class EventManager;
-    using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
-} // namespace saber::events
+// --- forward declarations, in the real namespace ---
+namespace saber {
 
-// --- 2. Deleter specialization: declare only, don't define the body yet ---
+// Marker type for RAII usage
+struct UsingRAII {};
+
+enum class ThreadingPolicy
+{
+	kSingle,
+	kParallel
+};
+
+namespace events {
+
+class EventManager;
+using EventToken = TaggedType<uint64_t, EventManager>;
+
+} // namespace events
+} // namespace saber
+
+// --- Deleter specialization: declare only, don't define the body yet ---
 namespace saber::raii {
 
 // SABER-76: "Create RAII handler for EventManager::Register"
@@ -40,131 +53,189 @@ namespace saber::raii {
 // via the nested `pointer` typedef below; ReferenceHandler (really std::unique_ptr)
 // then stores that handle *by value*, so the token needs no heap allocation.
 template<>
-struct ResourceDeleter<saber::events::EventToken>
+struct ResourceDeleter<events::EventToken>
 {
 public:
     // A default constructed Deleter has no EventManager, and so does nothing.
     // This is what makes a default constructed (empty) TokenHandler possible.
     constexpr ResourceDeleter() noexcept = default;
 
-    explicit ResourceDeleter(std::weak_ptr<saber::events::EventManager>&& inEventManager) noexcept :
+    explicit ResourceDeleter(std::weak_ptr<events::EventManager>&& inEventManager) noexcept :
         mWeakManager{std::move(inEventManager)}
     {
     }
 
     // Declaration only — EventManager is still incomplete here, which is fine
     // because we aren't calling any of its members yet.
-    void operator()(saber::events::EventToken& inEventToken) const noexcept;
+    void operator()(events::EventToken& inEventToken) const noexcept;
 
 private:
-    std::weak_ptr<saber::events::EventManager> mWeakManager{};
+    std::weak_ptr<events::EventManager> mWeakManager{};
 }; // struct ResourceDeleter
 
 } // namespace saber::raii
 
 namespace saber::events {
+namespace detail {
 
-template<typename SenderType, typename EventType>
-using EventArgsType = std::tuple<const SenderType&, const EventType&>;
+template<typename ...Args>
+struct EventArgsTraits
+{
+	using ValueType = std::tuple<Args...>;
+	inline static const std::type_index kTypeIndex = typeid(ValueType);
+}; // struct EventArgsTraits<>
 
-class EventManager; // forward declaration
+template<typename T>
+struct LambdaTraits : public LambdaTraits<decltype(&T::operator())>
+{
+	// This primary template is never instantiated;
+	// Only used to deduce the argument types of a
+	// lambda by forwarding to the specialization for
+	// its operator().
+}; // struct LambdaTraits<>
 
-using EventToken = saber::TaggedType<std::uint64_t, EventManager>;
+template<typename C, typename R, typename A1, typename A2>
+struct LambdaTraits<R(C::*)(A1, A2) const> // For most lambdas: `auto l = [/*const*/]() {};` by default "const capture"
+{
+	using Arg1Type = std::decay_t<A1>;
+	using Arg2Type = std::decay_t<A2>;
+	using ResultType = std::decay_t<R>;
+}; // struct LambdaTraits<const>
 
-// The `EventCallback` class type-erases a user-provided callable (e.g., a
-// lambda) and provides a uniform `int operator()(std::any)` entry point that
-// can be invoked by the event system regardless of the concrete event type.
+template<typename C, typename R, typename A1, typename A2>
+struct LambdaTraits<R(C::*)(A1, A2)> // For mutable lambdas: `auto l = [/*mutable*/]() mutable {};`
+{
+	using Arg1Type = std::decay_t<A1>;
+	using Arg2Type = std::decay_t<A2>;
+	using ResultType = std::decay_t<R>;
+}; // struct LambdaTraits<mutable>
 
-class EventCallback 
+inline EventToken GenerateToken()
+{
+	static std::atomic<std::uint64_t> sCounter{0};
+	return EventToken{sCounter.fetch_add(1, std::memory_order_relaxed)};
+}
+
+} // namespace detail
+
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventCallback
+#endif
+
+class EventCallback
 {
 public:
-	template<typename SenderType, typename EventType, typename Lambda>
-	static EventCallback Make(Lambda&& ioLambda)
+	template<typename Function>
+	EventCallback(Function* inFunction) :
+		EventCallback{[=](auto&&... inArgs) { inFunction(inArgs...); }}
 	{
-		// Use it like this:
-		//     struct MyEvent{int mHitpointsRemaining{};};
-		//     auto myCallback = EventCallback::Make<SenderType, MyEvent>([](const SenderType&, const MyEvent&){return 0;});
-		static_assert(std::is_invocable_r_v<int, Lambda, const SenderType&, const EventType&>);
-		return EventCallback(SenderTypeTag<SenderType>{}, EventTypeTag<EventType>{}, std::forward<Lambda>(ioLambda));
+		// This space intentionally blank
 	}
 
-	// Expose a uniform call operator that accepts the event as `std::any`.
-	// This forwards the erased event and callable into the trampoline.
-	int operator()(const std::any& inArg) const
+	template<typename Object, typename Method>
+	EventCallback(Object* inObject, Method inMethod) :
+		EventCallback{[=](auto&&... inArgs) { (inObject->*inMethod)(inArgs...); }}
 	{
-		return mInvoke(mCallback, inArg);
+		// This space intentionally blank
 	}
 
-private:
-	friend class EventManager; // allow EventManager to construct it
-
-	// Phantom tag so the constructor can deduce EventType without explicit
-	// template arguments (constructors cannot have explicit template args in C++17).
-	template<typename T> struct EventTypeTag {};
-	template<typename T> struct SenderTypeTag {};
-
-	std::type_index GetTypeIndex() const
+	template<typename Object, typename Method>
+	EventCallback(std::shared_ptr<Object>&& ioObject, Method inMethod) :
+		EventCallback{[object = std::move(ioObject), inMethod](auto&&... inArgs) { (object->*inMethod)(inArgs...); }}
 	{
-		return mTypeIndex;
+		// This space intentionally blank
 	}
 
-	// Constructor template: capture any callable `Lambda` that accepts
-	// `(const SenderType&, const EventType&)` and returns `int`. We store the
-	// callable in `mCallback` (as `std::any`) and create a small trampoline
-	// function (`mInvoke`) that knows how to cast the `std::any` values back to
-	// the original `Lambda` and event tuple and call the callable.
-	template<typename SenderType, typename EventType, typename Lambda>
-	EventCallback(SenderTypeTag<SenderType>, EventTypeTag<EventType>, Lambda inLambda) :
-
-		// store the user-provided callable (type-erased)
-		mCallback{std::move(inLambda)}, // Consume the input lambda; no need to make a copy
-
-		mTypeIndex{typeid(EventArgsType<SenderType, EventType>)}, // store the type_index of the event args
-
-		// trampoline: casts the erased callable and erased event back to
-		// their concrete types and invokes the callable.
-		mInvoke{+[](const std::any& inCallback, const std::any& inArgs)
+	template<typename Object, typename MethodOrLambda>
+	EventCallback(std::weak_ptr<Object>&& ioObject, MethodOrLambda&& ioMethodOrLambda) :
+		EventCallback{[weakObject = std::move(ioObject), methodOrLambda = std::forward<MethodOrLambda>(ioMethodOrLambda)](auto&&... inArgs)
 		{
-			// Recover the original callable (Lambda) from the std::any.
-			auto& callback = std::any_cast<const Lambda&>(inCallback);
-			// Recover the concrete sender/event values from the std::any.
-			auto& args = std::any_cast<const EventArgsType<SenderType, EventType>&>(inArgs);
-			auto [senderRef, eventRef] = args;
-			// Call the original callback using its sender and event.
-			return callback(senderRef, eventRef);
+			if (auto object = weakObject.lock())
+			{
+				constexpr bool isMethod = std::is_member_function_pointer_v<MethodOrLambda>;
+				if constexpr (isMethod)
+				{
+					auto& method = methodOrLambda;
+					(object->*method)(inArgs...);
+				}
+				else // isLambda
+				{
+					auto& lambda = methodOrLambda;
+					lambda(inArgs...);
+				}
+			}
 		}}
 	{
+		// This space intentionally blank
 	}
 
-	// Trampoline function type: takes the erased callable and the erased
-	// event value and returns an `int` result.
-	using CallbackType = int(*)(const std::any& inCallback, const std::any& inArgs);
+	template<typename Lambda>
+	EventCallback(Lambda&& ioLambda) :
+		mAnyCallback{std::forward<Lambda>(ioLambda)}
+	{
+		// Deduce the argument types of the input ioLambda
+		using LambdaType = std::decay_t<Lambda>;
+		using CallbackTraits = detail::LambdaTraits<decltype(&LambdaType::operator())>;
+		using SenderType = typename CallbackTraits::Arg1Type;
+		using EventType = typename CallbackTraits::Arg2Type;
+
+		using ArgsTraits = detail::EventArgsTraits<SenderType, EventType>;
+
+		mInvoker = +[](std::any& inCallback, const std::any& inArgs)
+		{
+			using ArgsType = typename ArgsTraits::ValueType;
+			const auto& args = std::any_cast<const ArgsType&>(inArgs);
+			const auto& [sender, event] = args;
+
+			auto& callback = std::any_cast<Lambda&>(inCallback);
+			callback(sender, event);
+		};
+		mEventKind = ArgsTraits::kTypeIndex;
+
+		static_assert(std::is_invocable_v<Lambda, SenderType&, const EventType&>,
+					  "Must be invocable as: ioLambda(SenderType&, const EventType&) -> void");
+	}
+
+	std::type_index GetEventKind() const
+	{
+		return mEventKind;
+	}
 
 private:
+	// Only EventManager is allowed to invoke operator(), since it's the
+	// only class that knows the correct contained-types to use for `inAnyArgs`
+	friend class EventManager;
+	void operator()(const std::any& inAnyArgs) const
+	{
+		mInvoker(mAnyCallback, inAnyArgs);
+	}
+
+private:
+	using InvokerType = void(*)(std::any&, const std::any&);
+
 	// The original callable stored with type-erasure so many different
 	// callable types can be stored in the same container.
-	std::any mCallback{};
-	// Stores the type_index of the EventArgsType<SenderType, EventType>
-	std::type_index mTypeIndex{typeid(void)}; 
-	// Pointer to the trampoline function that knows how to cast and
-	// invoke `mCallback` for the correct `EventType`.
-	CallbackType mInvoke{};
-};
+	mutable std::any mAnyCallback{};
+	InvokerType mInvoker{};
+	std::type_index mEventKind{typeid(void)};
+}; // class EventCallback<>
 
-// Marker type for RAII usage
-struct UsingRAII{};
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
 
-enum class ThreadingPolicy {
-	kSingle,
-	kParallel
-};
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventManager
+#endif
 
-// Using NVI pattern here
-class EventManager : public std::enable_shared_from_this<EventManager> // is-a: enable_shared_from_this
+class EventManager :
+	public std::enable_shared_from_this<EventManager> // is-a: enable_shared_from_this
 {
 public:
 	using Token = EventToken;
-	using TokenHandler = saber::raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>; // RAII handler for EventManager::Token
+	using TokenHandler = raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>; // RAII handler for EventManager::Token
 
 public:
 	// By default we make this unique, until it needs to be shared
@@ -173,10 +244,11 @@ public:
 	virtual ~EventManager() = default;
 
 public:
-	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback); // Consume
+	[[nodiscard]] TokenHandler Register(UsingRAII, const EventCallback& inCallback);
 
-	// TODO: Remove non-RAII Register functions- prefer returning TokenHandler over raw Token
-	[[nodiscard]] Token Register(const EventCallback& inCallback); // Observe
+	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback);
+
+	[[nodiscard]] Token Register(const EventCallback& inCallback);
 
 	[[nodiscard]] Token Register(EventCallback&& ioCallback);
 
@@ -188,36 +260,46 @@ public:
 protected:
 	EventManager() = default;
 
+	static void Invoke(const EventCallback& inCallback, const std::any& inAnyArgs);
+
 private:
-	virtual Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) = 0;
+	virtual Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) = 0;
 
 	virtual void OnUnregister(Token inToken) = 0;
 
-	virtual void OnNotify(std::any inArgs) = 0;
+	virtual void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) = 0;
 
 }; // class EventManager
 
-inline EventManager::TokenHandler EventManager::Register(UsingRAII, EventCallback&& ioCallback) // Consume
+inline EventManager::TokenHandler
+	EventManager::Register(UsingRAII, const EventCallback& inCallback)
+{
+	return Register(UsingRAII{}, EventCallback{inCallback});
+}
+
+inline EventManager::TokenHandler
+	EventManager::Register(UsingRAII, EventCallback&& ioCallback)
 {
 	// SABER-76: Token is a value and not a pointer, so TokenHandler stores it inline in
 	// TokenDeleter::pointer; there is no heap allocation here. TokenDeleter is stateful
 	// (it must know which EventManager to Unregister() from), so it is passed explicitly.
 	using TokenDeleter = raii::ResourceDeleter<Token>;
-	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{this->weak_from_this()}}; // RAII handler for the token
+	return TokenHandler{Register(std::move(ioCallback)), TokenDeleter{weak_from_this()}}; // RAII handler for the token
 }
 
-// TODO: Investigate sink parameter pattern(pass by value to avoid making addtl copies via const&) here
-inline EventManager::Token EventManager::Register(const EventCallback& inCallback)
+inline EventManager::Token
+	EventManager::Register(const EventCallback& inCallback)
 {
 	return Register(EventCallback{inCallback});
 }
 
-inline EventManager::Token EventManager::Register(EventCallback&& ioCallback) // Consume
+inline EventManager::Token
+	EventManager::Register(EventCallback&& ioCallback)
 {
 	// TRICKY: virtuals are unable to accept template types, so use typeid and std::type_index
 	// to allow us to find callbacks of a certain type from the callback list
-	std::type_index eventType = ioCallback.GetTypeIndex(); // use the template params
-	return OnRegister(eventType, std::move(ioCallback));
+	const auto kind = ioCallback.GetEventKind();
+	return OnRegister(kind, std::move(ioCallback));
 }
 
 inline void EventManager::Unregister(Token inToken)
@@ -228,17 +310,29 @@ inline void EventManager::Unregister(Token inToken)
 template<typename SenderType, typename EventType>
 inline void EventManager::Notify(SenderType& inSender, const EventType& inEvent)
 {
-	EventArgsType<SenderType, EventType> args{inSender, inEvent};
-	OnNotify(std::any{args}); // Explicit copy
+	using ArgsTraits = detail::EventArgsTraits<SenderType, EventType>;
+	using ArgsType = typename ArgsTraits::ValueType;
+
+	const auto kEventKind = ArgsTraits::kTypeIndex;
+	ArgsType args{inSender, inEvent};
+	OnNotify(kEventKind, std::any{args}); // Explicit copy
 }
+
+inline /*static*/ void EventManager::Invoke(const EventCallback& inCallback, const std::any& inAnyArgs)
+{
+	inCallback(inAnyArgs);
+}
+
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
 
 namespace detail {
 
-inline EventToken GenerateToken()
-{
-	static std::atomic<std::uint64_t> sCounter{0};
-	return EventToken{sCounter.fetch_add(1, std::memory_order_relaxed)};
-}
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventManagerImpl
+#endif
 
 class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
 {
@@ -250,11 +344,11 @@ private:
     EventManagerImpl() = default;
 
 private:
-	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
+	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
 
 	void OnUnregister(Token inToken) override;
 
-	void OnNotify(std::any inArgs) override;
+	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
 
 private:
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
@@ -281,28 +375,29 @@ private:
 
 }; // class EventManagerImpl
 
-inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
+inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inEventKind, EventCallback&& ioCallback)
 {
 	// SABER-76: "Create RAII handler for EventManager::Register"
-	Token newToken = GenerateToken();
+	Token token = GenerateToken();
 	auto& callbackList = GetCallbackListOrCopy();
-	callbackList.emplace_back(newToken, inArgsType, std::move(ioCallback));
-	return newToken;
+	callbackList.emplace_back(token, inEventKind, std::move(ioCallback));
+	return token;
 }
 
 inline void EventManagerImpl::OnUnregister(Token inToken)
 {
 	// Search for the token in list and remove it
 	auto& callbackList = GetCallbackListOrCopy();
-	auto isTargetToken = [inToken](const CallbackElement& element)
+	auto findToken = [inToken](const CallbackElement& inElement)
 	{
-		const bool isTarget = std::get<0>(element) == inToken;
-		return isTarget;
+		const auto& token = std::get<0>(inElement); // <0> is `Token` in the tuple
+		const bool wasFound = (token == inToken);
+		return wasFound;
 	};
 
 	// There will only ever be one matching token, therefore, we can use std::find_if to
 	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
-	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), isTargetToken);
+	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), findToken);
 
 	SABER_REQUIRE(didFind != callbackList.end());
 
@@ -316,23 +411,22 @@ inline void EventManagerImpl::OnUnregister(Token inToken)
 	callbackList.pop_back(); // Remove the last element
 }
 
-inline void EventManagerImpl::OnNotify(std::any inArgs)
+inline void EventManagerImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
 {
     // "snapshot" the current state of the mCallbackList...
     // This protects against modification of mCallbackList due to
     // re-entrant Register/Unregister calls during OnNotify()
 
-	const std::type_index targetType = inArgs.type();
 	auto snapshot = mCallbackList;
-	auto findAllCallbacks = [&inArgs, &targetType](const auto& element) -> void
+	auto findAllCallbacks = [&inAnyArgs, &inEventKind](const auto& inElement) -> void
 	{
-		const auto& [token, eventType, callback] = element;
-		if (eventType == targetType)
+		const auto& [token, kind, callback] = inElement;
+		if (inEventKind == kind)
 		{
 			// Stop exceptions from propogating to top level with try/catch
 			try
 			{
-				callback(inArgs); // Reference operator(): invoke the callback
+				EventManager::Invoke(callback, inAnyArgs); // Reference operator(): invoke the callback
 			}
 			catch (...)
 			{
@@ -353,7 +447,17 @@ inline void EventManagerImpl::OnNotify(std::any inArgs)
 	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
 }
 
-class EventManagerParallelImpl final : public EventManager // EventManagerImpl is-a EventManager
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
+
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventManagerParallelImpl
+#endif
+
+class EventManagerParallelImpl final :
+	public EventManager // is-a: EventManager
 {
 public:
 	~EventManagerParallelImpl() override = default;
@@ -364,9 +468,9 @@ private:
 	auto& GetCallbackListOrCopy();
 
 private:
-	Token OnRegister(std::type_index inArgsType, EventCallback&& ioCallback) override;
+	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
 	void OnUnregister(Token inToken) override;
-	void OnNotify(std::any inArgs) override;
+	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
 
 private:
 	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
@@ -416,7 +520,8 @@ inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 			[inToken](const CallbackElement& inElement)
 			{ 
 				const auto& [token, typeIndex, callback] = inElement;
-				return token == inToken; 
+				const bool wasFound = (token == inToken);
+				return wasFound; 
 			});
 		SABER_REQUIRE(element != callbackList.end());
 
@@ -426,7 +531,7 @@ inline void EventManagerParallelImpl::OnUnregister(Token inToken)
 	}
 }
 
-inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
+inline void EventManagerParallelImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
 {
     std::shared_ptr<CallbackList> snapshot;
     {
@@ -435,17 +540,21 @@ inline void EventManagerParallelImpl::OnNotify(std::any inArgs)
         snapshot = mCallbackList; // now a synchronized read
     }
 
-    const std::type_index targetType = inArgs.type();
-    auto findAllCallbacks = [&inArgs, &targetType](const auto& element)
+    auto invokeMatchingCallbacks = [inEventKind, &inAnyArgs](const auto& inElement)
     {
-        const auto& [token, eventType, callback] = element;
-        if (eventType == targetType)
+        const auto& [token, kind, callback] = inElement;
+        if (inEventKind == kind)
         {
-            try { callback(inArgs); }
-            catch (...) { SABER_ASSERT(!"Unexpected exception"); }
+            try {
+				EventManager::Invoke(callback, inAnyArgs);
+			}
+            catch (...)
+			{
+				SABER_ASSERT(!"Unexpected exception");
+			}
         }
     };
-    std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), findAllCallbacks);
+    std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), invokeMatchingCallbacks);
 }
 
 } // namespace detail
