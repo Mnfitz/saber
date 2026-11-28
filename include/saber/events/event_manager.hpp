@@ -27,12 +27,15 @@
 // --- forward declarations, in the real namespace ---
 namespace saber {
 
-// Marker type for RAII usage
+/// @brief Tag selecting the RAII-returning EventManager::Register overload.
 struct UsingRAII {};
 
+/// @brief Controls how an EventManager dispatches matching callbacks.
 enum class ThreadingPolicy
 {
+	/// @brief Invoke callbacks sequentially; concurrent manager access is not supported.
 	kSingle,
+	/// @brief Invoke matching callbacks in parallel; callback order is unspecified and callback state must be synchronized.
 	kParallel
 };
 
@@ -95,7 +98,7 @@ struct LambdaTraits : public LambdaTraits<decltype(&T::operator())>
 }; // struct LambdaTraits<>
 
 template<typename C, typename R, typename A1, typename A2>
-struct LambdaTraits<R(C::*)(A1, A2) const> // For most lambdas: `auto l = [/*const*/]() {};` by default "const capture"
+struct LambdaTraits<R(C::*)(A1, A2) const> // For most (const) lambdas: `auto l = [/*const*/]() {};` by default "const capture"
 {
 	using Arg1Type = std::decay_t<A1>;
 	using Arg2Type = std::decay_t<A2>;
@@ -123,9 +126,26 @@ inline EventToken GenerateToken()
 #pragma region class EventCallback
 #endif
 
+/// @brief Type-erases a callback for one sender and event type so it can be stored and dispatched by an EventManager.
+///
+/// @details
+/// Construct an EventCallback from a callable invocable as `(SenderType&, const EventType&)`. The sender and event
+/// types are inferred from the callable's two parameters; they identify the event kind used when the manager routes
+/// notifications. The callable's return value is discarded, so `void` is the intended return type. The wrapper owns
+/// its stored callable, subject to the callable's own capture semantics. Copying the wrapper copies that callable;
+/// moving transfers it. Captured references and raw pointers remain non-owning and must remain valid for every dispatch.
+///
+/// EventCallback does not expose a public invocation operation. Register it with an EventManager, which supplies
+/// the matching sender and event during notification. A parallel EventManager may invoke the same callback
+/// concurrently; mutable state accessed by a callback must therefore be synchronized by the callback or its owner.
+/// Constructors that bind an object document their distinct ownership and expiration behavior below.
 class EventCallback
 {
 public:
+	/// @brief Wraps a free function pointer as an event callback.
+	/// @tparam Function Function type pointed to by `inFunction`.
+	/// @param inFunction Function to invoke for each matching notification; it must accept the inferred sender and event arguments.
+	/// @details The pointer is copied into the wrapper; the function is not owned. Its return value, if any, is ignored.
 	template<typename Function>
 	EventCallback(Function* inFunction) :
 		EventCallback{[=](auto&&... inArgs) { inFunction(inArgs...); }}
@@ -133,6 +153,13 @@ public:
 		// This space intentionally blank
 	}
 
+	/// @brief Wraps a member function bound to a non-owning object pointer.
+	/// @tparam Object Type of the object receiving the member-function call.
+	/// @tparam Method Member-function pointer type.
+	/// @param inObject Object on which to invoke `inMethod`; it must remain alive through every dispatch.
+	/// @param inMethod Member function to invoke for each matching notification.
+	/// @details The object and method pointers are copied; the object is not owned. The member function must accept
+	///          the inferred sender and event arguments. Its return value, if any, is ignored.
 	template<typename Object, typename Method>
 	EventCallback(Object* inObject, Method inMethod) :
 		EventCallback{[=](auto&&... inArgs) { (inObject->*inMethod)(inArgs...); }}
@@ -140,6 +167,14 @@ public:
 		// This space intentionally blank
 	}
 
+	/// @brief Wraps a member function bound to a shared object and takes ownership of the supplied shared pointer.
+	/// @tparam Object Type of the object receiving the member-function call.
+	/// @tparam Method Member-function pointer type.
+	/// @param ioObject Rvalue shared pointer whose ownership is moved into the callback.
+	/// @param inMethod Member function to invoke for each matching notification.
+	/// @details The callback keeps the object alive as long as this wrapper or a copy retaining the captured shared
+	///          pointer exists. The member function must accept the inferred sender and event arguments; its return
+	///          value, if any, is ignored.
 	template<typename Object, typename Method>
 	EventCallback(std::shared_ptr<Object>&& ioObject, Method inMethod) :
 		EventCallback{[object = std::move(ioObject), inMethod](auto&&... inArgs) { (object->*inMethod)(inArgs...); }}
@@ -147,6 +182,15 @@ public:
 		// This space intentionally blank
 	}
 
+	/// @brief Wraps a callback gated by the lifetime of a weakly referenced object.
+	/// @tparam Object Type of the weakly referenced object.
+	/// @tparam MethodOrLambda Member-function pointer or callable type.
+	/// @param ioObject Rvalue weak pointer used to check whether the object is alive at dispatch time.
+	/// @param ioMethodOrLambda Member function to invoke on the locked object, or a callable to invoke while the
+	///        object is alive. The value is forwarded into the wrapper.
+	/// @details If the weak pointer has expired, dispatch is skipped. A member function is called on the locked
+	///          object; a callable is invoked with the event arguments and does not receive the object itself. Any
+	///          return value is ignored. This wrapper does not keep the object alive between notifications.
 	template<typename Object, typename MethodOrLambda>
 	EventCallback(std::weak_ptr<Object>&& ioObject, MethodOrLambda&& ioMethodOrLambda) :
 		EventCallback{[weakObject = std::move(ioObject), methodOrLambda = std::forward<MethodOrLambda>(ioMethodOrLambda)](auto&&... inArgs)
@@ -170,6 +214,12 @@ public:
 		// This space intentionally blank
 	}
 
+	/// @brief Wraps a callable whose sender and event argument types determine this callback's event kind.
+	/// @tparam Lambda Callable type with a non-overloaded, non-generic call operator accepting the sender and event.
+	/// @param ioLambda Callable to store; it is forwarded into the wrapper and may be moved when passed as an rvalue.
+	/// @details The callable must be invocable as `(SenderType&, const EventType&)`. Its argument types are deduced
+	///          and used for event matching. The callable's return value is ignored; `void` is the intended return
+	///          type. Captures follow their normal C++ copy, move, and lifetime semantics.
 	template<typename Lambda>
 	EventCallback(Lambda&& ioLambda) :
 		mAnyCallback{std::forward<Lambda>(ioLambda)}
@@ -182,6 +232,8 @@ public:
 
 		using ArgsTraits = detail::EventArgsTraits<SenderType, EventType>;
 
+		// Store static function ptr* to routine taht knows how
+		// to invoke the lambda using the correct argument types
 		mInvoker = +[](std::any& inCallback, const std::any& inArgs)
 		{
 			using ArgsType = typename ArgsTraits::ValueType;
@@ -191,12 +243,16 @@ public:
 			auto& callback = std::any_cast<Lambda&>(inCallback);
 			callback(sender, event);
 		};
+		// Store "id" that describes the sender/event args suitable for this callback
 		mEventKind = ArgsTraits::kTypeIndex;
 
 		static_assert(std::is_invocable_v<Lambda, SenderType&, const EventType&>,
 					  "Must be invocable as: ioLambda(SenderType&, const EventType&) -> void");
 	}
 
+	/// @brief Gets the type key used by EventManager to match notifications to this callback.
+	/// @return The `std::type_index` for the tuple of the deduced sender and event types.
+	/// @details The key identifies a sender/event type pair; it does not expose or invoke the stored callable.
 	std::type_index GetEventKind() const
 	{
 		return mEventKind;
@@ -230,30 +286,105 @@ private:
 #pragma region class EventManager
 #endif
 
+/// @brief Registers event callbacks and dispatches notifications to callbacks of the matching event kind.
+///
+/// @details
+/// An EventManager maintains registrations as state. Each registration has a unique Token that can be used to
+/// unregister it, or a TokenHandler that unregisters it automatically when the handler is reset or destroyed.
+/// Registering an lvalue EventCallback copies it; registering an rvalue transfers it. Multiple registrations may
+/// use copies of the same callback and each registration is dispatched independently. Unregistering a token removes
+/// only its registration; a token must belong to this manager and must not already have been unregistered.
+///
+/// Notify matches the exact sender/event type pair inferred by EventCallback. It dispatches only to registrations
+/// present in the notification's callback-list snapshot; changes made during a notification affect later snapshots.
+/// With `ThreadingPolicy::kSingle`, dispatch is sequential and the manager is not intended for concurrent access.
+/// With `ThreadingPolicy::kParallel`, matching callbacks may run concurrently and without a defined order; callers
+/// must synchronize mutable callback state and any objects accessed concurrently. Do not destroy the manager while
+/// another thread is using it.
+///
+/// @par Example
+/// @code
+/// struct Sender {};
+/// struct Changed { int value; };
+/// Sender sender{};
+/// auto manager = saber::events::EventManager::Make();
+/// auto registration = manager->Register(saber::UsingRAII{},
+///     saber::events::EventCallback([](Sender&, const Changed& event) {
+///         (void)event.value;
+///     }));
+/// manager->Notify(sender, Changed{42});
+/// @endcode
 class EventManager :
 	public std::enable_shared_from_this<EventManager> // is-a: enable_shared_from_this
 {
 public:
+	/// @brief Registration token type used to identify one callback registration.
+	/// @details Tokens are generated uniquely and are valid only for the EventManager that created them.
 	using Token = EventToken;
-	using TokenHandler = raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>; // RAII handler for EventManager::Token
+
+	/// @brief Move-only RAII owner of a registration token.
+	/// @details Destroying or resetting a valid handler unregisters its callback. The handler must not outlive its
+	///          manager if automatic unregistration is required; if the manager has already been destroyed, cleanup
+	///          safely does nothing.
+	using TokenHandler = raii::ResourceHandler<Token, raii::ResourceDeleter<Token>>;
 
 public:
-	// By default we make this unique, until it needs to be shared
+	/// @brief Creates a manager with the requested dispatch policy.
+	/// @param inPolicy `kSingle` dispatches sequentially; `kParallel` may invoke matching callbacks concurrently.
+	/// @return A shared pointer to the newly created manager.
+	/// @details The default policy is `ThreadingPolicy::kSingle`. Use shared ownership because RAII registration
+	///          handlers keep a weak reference to the manager for automatic unregistration.
 	static std::shared_ptr<EventManager> Make(ThreadingPolicy inPolicy = ThreadingPolicy::kSingle);
 
+	/// @brief Destroys the manager and releases its registrations.
+	/// @details Outstanding TokenHandlers become harmless when destroyed after the manager; they cannot unregister
+	///          from a manager that no longer exists.
 	virtual ~EventManager() = default;
 
 public:
+	/// @brief Registers a copy of a callback and returns an RAII registration handle.
+	/// @param inCallback Callback to copy and register; the original remains unchanged and may be reused.
+	/// @return Move-only handler that unregisters this registration when reset or destroyed.
+	/// @details Each call creates an independent registration, even when passed the same callback. The handler must
+	///          not be discarded if the registration should remain active.
 	[[nodiscard]] TokenHandler Register(UsingRAII, const EventCallback& inCallback);
 
+	/// @brief Registers a callback by moving it and returns an RAII registration handle.
+	/// @param ioCallback Callback whose stored callable is moved into the manager.
+	/// @return Move-only handler that unregisters this registration when reset or destroyed.
+	/// @details The source callback is consumed. The handler must not be discarded if the registration should remain active.
 	[[nodiscard]] TokenHandler Register(UsingRAII, EventCallback&& ioCallback);
 
+	/// @brief Registers a copy of a callback and returns its token.
+	/// @param inCallback Callback to copy and register; the original remains unchanged and may be reused.
+	/// @return Token identifying this registration; retain it to unregister the callback.
+	/// @details Each call creates an independent registration. Unlike the UsingRAII overload, this registration remains
+	///          active until Unregister is called or the manager is destroyed.
 	[[nodiscard]] Token Register(const EventCallback& inCallback);
 
+	/// @brief Registers a callback by moving it and returns its token.
+	/// @param ioCallback Callback whose stored callable is moved into the manager.
+	/// @return Token identifying this registration; retain it to unregister the callback.
+	/// @details The source callback is consumed. The registration remains active until Unregister is called or the
+	///          manager is destroyed.
 	[[nodiscard]] Token Register(EventCallback&& ioCallback);
 
+	/// @brief Removes a callback registration from this manager.
+	/// @param inToken Token returned by Register for this manager.
+	/// @details The token must identify an active registration owned by this manager. Passing a foreign or already
+	///          removed token violates the precondition and triggers the library's requirement failure. A callback
+	///          already included in an in-progress notification snapshot may still finish dispatching.
 	void Unregister(Token inToken);
 
+	/// @brief Dispatches an event to all registered callbacks with the matching sender and event types.
+	/// @tparam SenderType Concrete sender type, deduced from `inSender`.
+	/// @tparam EventType Concrete event type, deduced from `inEvent`.
+	/// @param inSender Mutable reference to the event sender, passed to callbacks as `SenderType&`.
+	/// @param inEvent Event data, passed to callbacks as `const EventType&`.
+	/// @details Only registrations with the same inferred sender/event type pair are invoked. The callback collection
+	///          is snapshotted for dispatch: registration changes during notification are observed by later calls,
+	///          while callbacks already in the current snapshot may still run. Under `kParallel`, matching callbacks
+	///          may execute concurrently and in unspecified order. Callback exceptions do not propagate to the caller.
 	template<typename SenderType, typename EventType>
 	void Notify(SenderType& inSender, const EventType& inEvent);
 
@@ -263,13 +394,35 @@ protected:
 	static void Invoke(const EventCallback& inCallback, const std::any& inAnyArgs);
 
 private:
+	/// @brief NVI hook that stores a callback and returns its manager-owned registration token.
+	/// @param inEventKind Exact sender/event type key obtained from the callback.
+	/// @param ioCallback Callback to move into the manager's registration state.
+	/// @return A token unique to this registration and owned by this manager.
+	/// @details This private pure virtual is the implementation point behind the public Register overloads. Derived
+	///          managers must store the callback together with its event-kind key so OnNotify can later find it, and
+	///          must ensure OnUnregister can remove the returned token. The base class handles lvalue copying, rvalue
+	///          forwarding, and construction of optional RAII handlers before reaching this hook.
 	virtual Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) = 0;
 
+	/// @brief NVI hook that removes one previously registered callback from manager state.
+	/// @param inToken Token returned by this manager's OnRegister implementation.
+	/// @details Implementations must reject tokens that are not active registrations belonging to this manager.
+	///          A notification already using a snapshot may still hold and invoke the removed callback until that
+	///          dispatch completes; new notification snapshots must not include it.
 	virtual void OnUnregister(Token inToken) = 0;
 
+	/// @brief NVI hook that dispatches type-erased event arguments to matching registered callbacks.
+	/// @param inEventKind Exact sender/event type key corresponding to `inAnyArgs`.
+	/// @param inAnyArgs Type-erased tuple containing a sender reference and a const event reference.
+	/// @details Implementations compare `inEventKind` with each registration's key and invoke only matches through
+	///          EventManager::Invoke. The erased argument value must remain alive and unmodified for all invocations.
+	///          In a parallel manager, accesses to registration state must be synchronized, callbacks may run
+	///          concurrently, and exceptions must not escape Notify's public boundary.
 	virtual void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) = 0;
 
 }; // class EventManager
+
+// --- inlines ---
 
 inline EventManager::TokenHandler
 	EventManager::Register(UsingRAII, const EventCallback& inCallback)
@@ -334,7 +487,8 @@ namespace detail {
 #pragma region class EventManagerImpl
 #endif
 
-class EventManagerImpl final : public EventManager // EventManagerImpl is-a EventManager
+class EventManagerImpl final :
+	public EventManager // EventManagerImpl is-a EventManager
 {
 public:
 	~EventManagerImpl() override = default;
@@ -345,9 +499,7 @@ private:
 
 private:
 	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
-
 	void OnUnregister(Token inToken) override;
-
 	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
 
 private:
@@ -369,13 +521,13 @@ private:
 				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
 			}
 		}
-
 		return *mCallbackList;
 	}
 
 }; // class EventManagerImpl
 
-inline EventManager::Token EventManagerImpl::OnRegister(std::type_index inEventKind, EventCallback&& ioCallback)
+inline EventManager::Token
+	EventManagerImpl::OnRegister(std::type_index inEventKind, EventCallback&& ioCallback)
 {
 	// SABER-76: "Create RAII handler for EventManager::Register"
 	Token token = GenerateToken();
@@ -477,8 +629,6 @@ private:
 	using CallbackElement = CallbackList::value_type;
 	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
 	std::mutex mMutex;
-
-
 }; // class EventManagerParallelImpl
 
 inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
@@ -493,11 +643,11 @@ inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
 			mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
 		}
 	}
-
 	return *mCallbackList;
 }
 
-inline EventManager::Token EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
+inline EventManager::Token
+	EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
 {
 	Token token;
 	{
@@ -559,7 +709,8 @@ inline void EventManagerParallelImpl::OnNotify(std::type_index inEventKind, std:
 
 } // namespace detail
 
-inline /*static*/ std::shared_ptr<EventManager> EventManager::Make(ThreadingPolicy inPolicy)
+inline /*static*/ std::shared_ptr<EventManager>
+	EventManager::Make(ThreadingPolicy inPolicy)
 {
 	std::shared_ptr<EventManager> result{};
 	switch (inPolicy)
