@@ -1,7 +1,7 @@
 // ============================================================================
 // test_events.cpp
 // Unit tests for saber::event public API
-//   - EventCallback::Make<>()
+//   - EventCallback construction and event-kind deduction
 //   - EventManager::Make()
 //   - EventManager::Register<>() (consume + observe overloads)
 //   - EventManager::Unregister()
@@ -17,7 +17,12 @@
 
 #include <atomic>
 #include <thread>
+#include <tuple>
+#include <typeindex>
+#include <utility>
 #include <vector>
+
+namespace events_unittest {
 
 // ============================================================================
 // Test event types
@@ -43,6 +48,7 @@ struct TestSender
 static TestSender sender{};
 
 // Convenience alias
+using namespace saber;
 using namespace saber::events;
 
 // ============================================================================
@@ -50,18 +56,11 @@ using namespace saber::events;
 // ============================================================================
 
 template<typename EventType>
-std::any MakeEventArgs(const TestSender& inSender, const EventType& inEvent)
-{
-    return std::any{std::tuple<const TestSender&, const EventType&>{inSender, inEvent}};
-}
-
-template<typename EventType>
 EventCallback MakeLoggingCallback(std::vector<int>& outLog)
 {
-    return EventCallback::Make<TestSender, EventType>([&outLog](const TestSender&, const EventType& inEvent) -> int
+    return EventCallback([&outLog](const TestSender&, const EventType& inEvent)
     {
         outLog.push_back(inEvent.mAmount);
-        return 0;
     });
 }
 
@@ -69,93 +68,95 @@ EventCallback MakeLoggingCallback(std::vector<int>& outLog)
 // SECTION: EventCallback
 // ============================================================================
 
-TEST_CASE("EventCallback: Make produces a callable wrapper", "[EventCallback]")
+TEST_CASE("EventCallback wraps callbacks for EventManager dispatch", "[EventCallback]")
 {
     SECTION("Callback invoked with correct event value")
     {
+        auto manager = EventManager::Make();
         int received = -1;
-        auto cb = EventCallback::Make<TestSender, DamageEvent>([&received](const TestSender&, const DamageEvent& e) -> int
+        auto token = manager->Register(EventCallback([&received](const TestSender&, const DamageEvent& e)
         {
             received = e.mAmount;
-            return 0;
-        });
+        }));
 
-        DamageEvent ev{42};
-        cb(MakeEventArgs(sender, ev));
+        manager->Notify(sender, DamageEvent{42});
 
         REQUIRE(received == 42);
+        manager->Unregister(token);
     }
 
-    SECTION("Return value from lambda is forwarded through operator()")
+    SECTION("Event kind is deduced from the callback arguments")
     {
-        auto cb = EventCallback::Make<TestSender, DamageEvent>([](const TestSender&, const DamageEvent&) -> int
-        {
-            return 99;
-        });
+        const auto callback = EventCallback([](const TestSender&, const DamageEvent&) {});
 
-        DamageEvent ev{0};
-        const int result = cb(MakeEventArgs(sender, ev));
-        REQUIRE(result == 99);
+        REQUIRE((callback.GetEventKind() == std::type_index{typeid(std::tuple<TestSender, DamageEvent>)}));
     }
 
-    SECTION("operator() is const — callable on a const EventCallback")
+    SECTION("Const EventCallback can be registered and dispatched")
     {
-        const auto cb = EventCallback::Make<TestSender, DamageEvent>([](const TestSender&, const DamageEvent& e) -> int
-        {
-            return e.mAmount;
-        });
-
-        DamageEvent ev{7};
-        REQUIRE(cb(MakeEventArgs(sender, ev)) == 7);
-    }
-
-    SECTION("Callback captures mutable state correctly across multiple calls")
-    {
-        int callCount = 0;
-        auto cb = EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
-        {
-            ++callCount;
-            return 0;
-        });
-
-        DamageEvent ev{};
-        cb(MakeEventArgs(sender, ev));
-        cb(MakeEventArgs(sender, ev));
-        cb(MakeEventArgs(sender, ev));
-
-        REQUIRE(callCount == 3);
-    }
-
-    SECTION("EventCallback is copy-constructible (Observe semantics)")
-    {
-        int received = 0;
-        auto original = EventCallback::Make<TestSender, DamageEvent>([&received](const TestSender&, const DamageEvent& e) -> int
+        auto manager = EventManager::Make();
+        int received = -1;
+        const auto callback = EventCallback([&received](const TestSender&, const DamageEvent& e)
         {
             received = e.mAmount;
-            return 0;
+        });
+        auto token = manager->Register(callback);
+
+        manager->Notify(sender, DamageEvent{7});
+
+        REQUIRE(received == 7);
+        manager->Unregister(token);
+    }
+
+    SECTION("Callback captures mutable state correctly across multiple notifications")
+    {
+        auto manager = EventManager::Make();
+        int callCount = 0;
+        auto token = manager->Register(EventCallback([&callCount](const TestSender&, const DamageEvent&)
+        {
+            ++callCount;
+        }));
+
+        manager->Notify(sender, DamageEvent{});
+        manager->Notify(sender, DamageEvent{});
+        manager->Notify(sender, DamageEvent{});
+
+        REQUIRE(callCount == 3);
+        manager->Unregister(token);
+    }
+
+    SECTION("EventCallback is copy-constructible")
+    {
+        auto manager = EventManager::Make();
+        int received = 0;
+        const auto original = EventCallback([&received](const TestSender&, const DamageEvent& e)
+        {
+            received = e.mAmount;
         });
 
         EventCallback copy = original;
-        DamageEvent ev{55};
-        copy(MakeEventArgs(sender, ev));
+        auto token = manager->Register(std::move(copy));
+        manager->Notify(sender, DamageEvent{55});
 
         REQUIRE(received == 55);
+        manager->Unregister(token);
     }
 
-    SECTION("EventCallback is move-constructible (Consume semantics)")
+    SECTION("EventCallback is move-constructible")
     {
+        auto manager = EventManager::Make();
         int received = 0;
-        auto original = EventCallback::Make<TestSender, DamageEvent>([&received](const TestSender&, const DamageEvent& e) -> int
+        auto original = EventCallback([&received](const TestSender&, const DamageEvent& e)
         {
             received = e.mAmount;
-            return 0;
         });
 
         EventCallback moved = std::move(original);
-        DamageEvent ev{88};
-        moved(MakeEventArgs(sender, ev));
+        auto token = manager->Register(std::move(moved));
+        manager->Notify(sender, DamageEvent{88});
 
         REQUIRE(received == 88);
+        manager->Unregister(token);
     }
 }
 
@@ -214,10 +215,9 @@ TEST_CASE("Parallel EventManager dispatches concurrent notifications", "[EventMa
     std::atomic<int> callCount{0};
 
     auto token = manager->Register(
-        EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+        EventCallback([&callCount](const TestSender&, const DamageEvent&)
         {
             callCount.fetch_add(1, std::memory_order_relaxed);
-            return 0;
         }));
 
     constexpr int kThreadCount = 8;
@@ -260,10 +260,9 @@ TEST_CASE("Parallel EventManager supports concurrent registration", "[EventManag
             for (int registrationIndex = 0; registrationIndex < kRegistrationsPerThread; ++registrationIndex)
             {
                 (void)manager->Register(
-                    EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+                    EventCallback([&callCount](const TestSender&, const DamageEvent&)
                     {
                         callCount.fetch_add(1, std::memory_order_relaxed);
-                        return 0;
                     }));
             }
         });
@@ -344,10 +343,9 @@ TEST_CASE("Notify delivers correct event data (field values preserved)", "[Notif
     int capturedAmount = -1;
 
     auto token = manager->Register(
-        EventCallback::Make<TestSender, DamageEvent>([&capturedAmount](const TestSender&, const DamageEvent& e) -> int
+        EventCallback([&capturedAmount](const TestSender&, const DamageEvent& e)
         {
             capturedAmount = e.mAmount;
-            return 0;
         }));
 
     manager->Notify(sender, DamageEvent{1337});
@@ -397,10 +395,9 @@ TEST_CASE("Register rvalue overload (consume) — callback fires correctly", "[R
     auto manager = EventManager::Make();
     bool fired = false;
 
-    auto cb = EventCallback::Make<TestSender, DamageEvent>([&fired](const TestSender&, const DamageEvent&) -> int
+    auto cb = EventCallback([&fired](const TestSender&, const DamageEvent&)
     {
         fired = true;
-        return 0;
     });
 
     auto token = manager->Register(std::move(cb));
@@ -415,10 +412,9 @@ TEST_CASE("Register const-ref overload (observe) — callback fires correctly", 
     auto manager = EventManager::Make();
     bool fired = false;
 
-    const auto cb = EventCallback::Make<TestSender, DamageEvent>([&fired](const TestSender&, const DamageEvent&) -> int
+    const auto cb = EventCallback([&fired](const TestSender&, const DamageEvent&)
     {
         fired = true;
-        return 0;
     });
 
     auto token = manager->Register(cb);
@@ -433,19 +429,18 @@ TEST_CASE("Register const-ref overload does not consume the original callback", 
     auto manager = EventManager::Make();
     int callCount = 0;
 
-    const auto cb = EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+    const auto cb = EventCallback([&callCount](const TestSender&, const DamageEvent&)
     {
         ++callCount;
-        return 0;
     });
 
     auto token = manager->Register(cb);
-
-    cb(MakeEventArgs(sender, DamageEvent{}));
+    auto secondToken = manager->Register(cb);
 
     manager->Notify(sender, DamageEvent{});
 
     REQUIRE(callCount == 2);
+    manager->Unregister(secondToken);
     manager->Unregister(token);
 }
 
@@ -472,10 +467,9 @@ TEST_CASE("Same callback can be registered multiple times, each fires independen
     auto manager = EventManager::Make();
     int callCount = 0;
 
-    const auto cb = EventCallback::Make<TestSender, DamageEvent>([&callCount](const TestSender&, const DamageEvent&) -> int
+    const auto cb = EventCallback([&callCount](const TestSender&, const DamageEvent&)
     {
         ++callCount;
-        return 0;
     });
 
     auto t1 = manager->Register(cb);
@@ -638,10 +632,9 @@ TEST_CASE("EmptyEvent (no data fields) can be registered and notified", "[EdgeCa
     bool fired = false;
 
     auto token = manager->Register(
-        EventCallback::Make<TestSender, EmptyEvent>([&fired](const TestSender&, const EmptyEvent&) -> int
+        EventCallback([&fired](const TestSender&, const EmptyEvent&)
         {
             fired = true;
-            return 0;
         }));
 
     manager->Notify<TestSender, EmptyEvent>(sender, EmptyEvent{});
@@ -662,10 +655,9 @@ TEST_CASE("Large number of registrations all fire correctly", "[EdgeCase]")
     for (int i = 0; i < kCount; ++i)
     {
         tokens.push_back(manager->Register(
-            EventCallback::Make<TestSender, DamageEvent>([&totalFired](const TestSender&, const DamageEvent&) -> int
+            EventCallback([&totalFired](const TestSender&, const DamageEvent&)
             {
                 ++totalFired;
-                return 0;
             })));
     }
 
@@ -703,6 +695,27 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
 {
     auto manager = EventManager::Make();
     std::vector<int> log;
+
+    SECTION("Const callback overload copies and registers the callback")
+    {
+        int callCount = 0;
+        const auto callback = EventCallback([&callCount](const TestSender&, const DamageEvent&)
+        {
+            ++callCount;
+        });
+
+        auto firstHandler = manager->Register(UsingRAII{}, callback);
+        REQUIRE(static_cast<bool>(firstHandler));
+
+        manager->Notify(sender, DamageEvent{});
+        REQUIRE(callCount == 1);
+
+        auto secondHandler = manager->Register(UsingRAII{}, callback);
+        REQUIRE(static_cast<bool>(secondHandler));
+
+        manager->Notify(sender, DamageEvent{});
+        REQUIRE(callCount == 3);
+    }
 
     SECTION("Callback fires while handler is alive, and not after it dies")
     {
@@ -777,3 +790,5 @@ TEST_CASE("TokenHandler unregisters on scope exit", "[TokenHandler]")
         REQUIRE(static_cast<bool>(handler));
     }
 }
+
+} // namespace events_unittest

@@ -47,10 +47,9 @@ struct ResourceDeleter
 	/// @param inDelete Reference to the resource to delete.
 	void operator()(T& inDelete) const noexcept
 	{
-		constexpr bool kIsSpecialization =
-			(std::is_same_v<T, void> && !std::is_same_v<T, void>);
-		static_assert(kIsSpecialization,
-					  "You must provide your own Deleter<T> specialization "
+		constexpr bool kIsSpecialized = (std::is_same_v<T, void> && !std::is_same_v<T, void>);
+		static_assert(kIsSpecialized,
+					  "You must provide your own ResourceDeleter<T> specialization "
 					  "when using ResourceHandler");
 	}
 }; // struct ResourceDeleter
