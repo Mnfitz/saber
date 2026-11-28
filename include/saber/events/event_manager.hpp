@@ -23,8 +23,6 @@
 #include <type_traits>
 #include <vector>
 
-
-// --- forward declarations, in the real namespace ---
 namespace saber {
 
 /// @brief Tag selecting the RAII-returning EventManager::Register overload.
@@ -422,7 +420,268 @@ private:
 
 }; // class EventManager
 
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
+
+namespace detail {
+
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventManagerImpl
+#endif
+
+class EventManagerImpl final :
+	public EventManager // EventManagerImpl is-a EventManager
+{
+public:
+	~EventManagerImpl() override = default;
+
+private:
+	friend class EventManager; // allow Make() to construct it
+    EventManagerImpl() = default;
+
+private:
+	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
+	void OnUnregister(Token inToken) override;
+	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
+
+private:
+	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
+	using CallbackElement = CallbackList::value_type;
+	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+
+	// Writers call this before changing registrations. A notification snapshot shares the current vector;
+	// when that happens, detach the writer onto a copy so the active iteration remains unchanged.
+	CallbackList& GetCallbackListOrCopy()
+	{
+		// This implementation is single-threaded; use_count() is not a synchronization primitive.
+		{
+			const bool hasActiveSnapshot = (mCallbackList.use_count() > 1);
+			if (hasActiveSnapshot)
+			{
+				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+			}
+		}
+		return *mCallbackList;
+	}
+
+}; // class EventManagerImpl
+
 // --- inlines ---
+
+inline EventManager::Token
+	EventManagerImpl::OnRegister(std::type_index inEventKind, EventCallback&& ioCallback)
+{
+	// Create a manager-unique identity, then append the owned callback and its routing key to live state.
+	Token token = GenerateToken();
+	auto& callbackList = GetCallbackListOrCopy();
+	callbackList.emplace_back(token, inEventKind, std::move(ioCallback));
+	return token;
+}
+
+inline void EventManagerImpl::OnUnregister(Token inToken)
+{
+	// Detach first if a notification is iterating the old list, then locate the unique registration to remove.
+	auto& callbackList = GetCallbackListOrCopy();
+	auto findToken = [inToken](const CallbackElement& inElement)
+	{
+		const auto& token = std::get<0>(inElement); // <0> is `Token` in the tuple
+		const bool wasFound = (token == inToken);
+		return wasFound;
+	};
+
+	// There will only ever be one matching token, therefore, we can use std::find_if to
+	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
+	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), findToken);
+
+	SABER_REQUIRE(didFind != callbackList.end());
+
+	// REVISIT: Move assign might throw an exception?
+	// If so, we might have to do something like this:
+	//		std::iter_swap(didFind, std::prev(callbackList.end()));
+	//		callbackList.pop_back();
+
+	// Fill the hole with the last element, then pop it. This is O(1) after lookup and intentionally does not preserve order.
+	*didFind = std::move(callbackList.back());
+	callbackList.pop_back();
+}
+
+inline void EventManagerImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
+{
+	// Keep the current vector alive for this dispatch. Reentrant mutations will detach to a copy, so this
+	// notification sees a fixed registration set even if a callback registers or unregisters callbacks.
+	auto snapshot = mCallbackList;
+	auto findAllCallbacks = [&inAnyArgs, &inEventKind](const auto& inElement) -> void
+	{
+		const auto& [token, kind, callback] = inElement;
+		if (inEventKind == kind)
+		{
+			// Stop exceptions from propogating to top level with try/catch
+			try
+			{
+				EventManager::Invoke(callback, inAnyArgs); // Reference operator(): invoke the callback
+			}
+			catch (...)
+			{
+				// SABER_ASSERT drops you into debugger for debug builds
+				// but does nothing for release builds
+				SABER_ASSERT(!"Unexpected exception");
+			}
+		}
+	};
+
+	// Visit the stable snapshot. Only matching event kinds are invoked; its shared ownership is released
+	// automatically on return, allowing an obsolete pre-mutation vector to be reclaimed.
+	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
+}
+
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
+
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region class EventManagerParallelImpl
+#endif
+
+// Parallel implementation. The mutex protects publication and mutation of the current callback vector, but is
+// deliberately not held while user callbacks run. Notifications retain immutable snapshots; writers use
+// copy-on-write when any notification is still reading the published vector.
+class EventManagerParallelImpl final :
+	public EventManager // is-a: EventManager
+{
+public:
+	~EventManagerParallelImpl() override = default;
+
+private:
+	friend class EventManager; // allow Make() to construct it
+    EventManagerParallelImpl() = default;
+	auto& GetCallbackListOrCopy();
+
+private:
+	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
+	void OnUnregister(Token inToken) override;
+	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
+
+private:
+	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
+	using CallbackElement = CallbackList::value_type;
+	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
+	std::mutex mMutex;
+}; // class EventManagerParallelImpl
+
+// --- inlines ---
+
+inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
+{
+	// The caller holds mMutex. If a notifier retains the current vector, publish a private copy before writing;
+	// readers then continue safely against the unchanged snapshot while this thread updates the new vector.
+	{
+		const bool hasActiveSnapshots = (mCallbackList.use_count() > 1);
+		if (hasActiveSnapshots)
+		{
+			mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
+		}
+	}
+	return *mCallbackList;
+}
+
+inline EventManager::Token
+	EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
+{
+	Token token;
+	{
+		// Serialize token creation and publication of the updated registration vector.
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		token = GenerateToken();
+		auto& callbackList = GetCallbackListOrCopy();
+		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
+	} 
+	return token;
+}
+
+inline void EventManagerParallelImpl::OnUnregister(Token inToken)
+{
+	{
+		// Serialize lookup and removal; copy-on-write preserves callback lists already captured by notifiers.
+		std::lock_guard<std::mutex> lock(mMutex);
+		
+		auto& callbackList = GetCallbackListOrCopy();
+		auto element = std::find_if(callbackList.begin(), callbackList.end(),
+			[inToken](const CallbackElement& inElement)
+			{ 
+				const auto& [token, typeIndex, callback] = inElement;
+				const bool wasFound = (token == inToken);
+				return wasFound; 
+			});
+		SABER_REQUIRE(element != callbackList.end());
+
+		// Fancy swap delete; overwrite iterator with last element in list then remove last element
+		*element = std::move(callbackList.back());
+		callbackList.pop_back();
+	}
+}
+
+inline void EventManagerParallelImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
+{
+	std::shared_ptr<CallbackList> snapshot;
+	{
+		// Capture a consistent list while synchronized, then release the mutex before executing user code.
+		std::lock_guard<std::mutex> lock(mMutex);
+		snapshot = mCallbackList;
+	}
+
+	// The snapshot is immutable for this dispatch. Different matching callbacks may run concurrently, so callback
+	// captures and externally shared state must be safe for concurrent invocation.
+	auto invokeMatchingCallbacks = [inEventKind, &inAnyArgs](const auto& inElement)
+	{
+		const auto& [token, kind, callback] = inElement;
+		if (inEventKind == kind)
+		{
+			try {
+				EventManager::Invoke(callback, inAnyArgs);
+			}
+			catch (...)
+			{
+				SABER_ASSERT(!"Unexpected exception");
+			}
+		}
+	};
+	std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), invokeMatchingCallbacks);
+}
+
+#if SABER_PRAGMA(REGION)
+#pragma endregion {}
+#endif
+
+} // namespace detail
+
+// ------------------------------------------------------------------
+#if SABER_PRAGMA(REGION)
+#pragma region EventManager inlines
+#endif
+
+inline /*static*/ std::shared_ptr<EventManager>
+	EventManager::Make(ThreadingPolicy inPolicy)
+{
+	std::shared_ptr<EventManager> result{};
+	switch (inPolicy)
+	{
+	case ThreadingPolicy::kParallel:
+		result.reset(new detail::EventManagerParallelImpl());
+		break;
+	case ThreadingPolicy::kSingle:
+		result.reset(new detail::EventManagerImpl());
+		break;
+	//default:
+		// We don't use default here because there are only 2 enum values, 
+		// and we want the compiler to helpfully alert us if someone ever adds a 3rd enum
+	} // switch (inPolicy)
+
+	return result;
+}
 
 inline EventManager::TokenHandler
 	EventManager::Register(UsingRAII, const EventCallback& inCallback)
@@ -480,270 +739,21 @@ inline /*static*/ void EventManager::Invoke(const EventCallback& inCallback, con
 #pragma endregion {}
 #endif
 
-namespace detail {
-
-// ------------------------------------------------------------------
-#if SABER_PRAGMA(REGION)
-#pragma region class EventManagerImpl
-#endif
-
-class EventManagerImpl final :
-	public EventManager // EventManagerImpl is-a EventManager
-{
-public:
-	~EventManagerImpl() override = default;
-
-private:
-	friend class EventManager; // allow Make() to construct it
-    EventManagerImpl() = default;
-
-private:
-	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
-	void OnUnregister(Token inToken) override;
-	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
-
-private:
-	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
-	using CallbackElement = CallbackList::value_type;
-	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
-
-	// GetCallbackListOrCopy() enforces Copy On Write safety for the callback list
-	CallbackList& GetCallbackListOrCopy()
-	{
-		// NOTE: use_count() is not thread-safe; use_count() checks assume no concurrent access
-		{
-			const bool isNotifying = (mCallbackList.use_count() > 1);
-    		if (isNotifying)
-			{
-				// Copy-on-write: make copy of in-flight callbacklist...
-				// The use_count() of this new copy in mCallbackList becomes: "==1"
-				// The use_count() of the previous mCallback instance is now: "-=1"
-				mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
-			}
-		}
-		return *mCallbackList;
-	}
-
-}; // class EventManagerImpl
-
-inline EventManager::Token
-	EventManagerImpl::OnRegister(std::type_index inEventKind, EventCallback&& ioCallback)
-{
-	// SABER-76: "Create RAII handler for EventManager::Register"
-	Token token = GenerateToken();
-	auto& callbackList = GetCallbackListOrCopy();
-	callbackList.emplace_back(token, inEventKind, std::move(ioCallback));
-	return token;
-}
-
-inline void EventManagerImpl::OnUnregister(Token inToken)
-{
-	// Search for the token in list and remove it
-	auto& callbackList = GetCallbackListOrCopy();
-	auto findToken = [inToken](const CallbackElement& inElement)
-	{
-		const auto& token = std::get<0>(inElement); // <0> is `Token` in the tuple
-		const bool wasFound = (token == inToken);
-		return wasFound;
-	};
-
-	// There will only ever be one matching token, therefore, we can use std::find_if to
-	// find the first matching token and erase it without needing to go through the entire list with std::remove_if
-	const auto didFind = std::find_if(callbackList.begin(), callbackList.end(), findToken);
-
-	SABER_REQUIRE(didFind != callbackList.end());
-
-	// REVISIT: Move assign might throw an exception?
-	// If so, we might have to do something like this:
-	//		std::iter_swap(didFind, std::prev(callbackList.end()));
-	//		callbackList.pop_back();
-
-	// Use an optimal O(1) removal for performance; note that list order is not considered important
-	*didFind = std::move(callbackList.back());
-	callbackList.pop_back(); // Remove the last element
-}
-
-inline void EventManagerImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
-{
-    // "snapshot" the current state of the mCallbackList...
-    // This protects against modification of mCallbackList due to
-    // re-entrant Register/Unregister calls during OnNotify()
-
-	auto snapshot = mCallbackList;
-	auto findAllCallbacks = [&inAnyArgs, &inEventKind](const auto& inElement) -> void
-	{
-		const auto& [token, kind, callback] = inElement;
-		if (inEventKind == kind)
-		{
-			// Stop exceptions from propogating to top level with try/catch
-			try
-			{
-				EventManager::Invoke(callback, inAnyArgs); // Reference operator(): invoke the callback
-			}
-			catch (...)
-			{
-				// SABER_ASSERT drops you into debugger for debug builds
-				// but does nothing for release builds
-				SABER_ASSERT(!"Unexpected exception");
-			}
-		}
-	};
-
-	// Search for the token in the callback list and invoke all associated callbacks using std::for_each
-	// use std::for_each for C++11, preferred way
-	// snapshot's .use_count() is decremented here (RAII)...
-    // if mCallbackList was modified during OnNotify(), the snapshot's .use_count()
-    // will ==0, and the snapshot's old-copy-of the callback list is also deleted.
-    // however, if no change was made to mCallbackList, snapshot's .use_count()
-    // will >=1, and no list deletion occurs.
-	std::for_each(snapshot->begin(), snapshot->end(), findAllCallbacks);
-}
-
-#if SABER_PRAGMA(REGION)
-#pragma endregion {}
-#endif
-
-// ------------------------------------------------------------------
-#if SABER_PRAGMA(REGION)
-#pragma region class EventManagerParallelImpl
-#endif
-
-class EventManagerParallelImpl final :
-	public EventManager // is-a: EventManager
-{
-public:
-	~EventManagerParallelImpl() override = default;
-
-private:
-	friend class EventManager; // allow Make() to construct it
-    EventManagerParallelImpl() = default;
-	auto& GetCallbackListOrCopy();
-
-private:
-	Token OnRegister(std::type_index inEventKind, EventCallback&& ioCallback) override;
-	void OnUnregister(Token inToken) override;
-	void OnNotify(std::type_index inEventKind, std::any&& inAnyArgs) override;
-
-private:
-	using CallbackList = std::vector<std::tuple<Token, std::type_index, EventCallback>>;
-	using CallbackElement = CallbackList::value_type;
-	std::shared_ptr<CallbackList> mCallbackList{ std::make_shared<CallbackList>() };
-	std::mutex mMutex;
-}; // class EventManagerParallelImpl
-
-inline auto& EventManagerParallelImpl::GetCallbackListOrCopy()
-{
-	{
-		const bool isNotifying = (mCallbackList.use_count() > 1);
-		if (isNotifying)
-		{
-			// Copy-on-write: make copy of in-flight callbacklist...
-			// The use_count() of this new copy in mCallbackList becomes: "==1"
-			// The use_count() of the previous mCallback instance is now: "-=1"
-			mCallbackList = std::make_shared<CallbackList>(*mCallbackList);
-		}
-	}
-	return *mCallbackList;
-}
-
-inline EventManager::Token
-	EventManagerParallelImpl::OnRegister(std::type_index inArgsType, EventCallback&& ioCallback)
-{
-	Token token;
-	{
-		std::lock_guard<std::mutex> lock(mMutex);
-		
-		token = GenerateToken();
-		auto& callbackList = GetCallbackListOrCopy();
-		callbackList.emplace_back(token, inArgsType, std::move(ioCallback));
-	} 
-	return token;
-}
-
-inline void EventManagerParallelImpl::OnUnregister(Token inToken)
-{
-	{
-		std::lock_guard<std::mutex> lock(mMutex);
-		
-		auto& callbackList = GetCallbackListOrCopy();
-		auto element = std::find_if(callbackList.begin(), callbackList.end(),
-			[inToken](const CallbackElement& inElement)
-			{ 
-				const auto& [token, typeIndex, callback] = inElement;
-				const bool wasFound = (token == inToken);
-				return wasFound; 
-			});
-		SABER_REQUIRE(element != callbackList.end());
-
-		// Fancy swap delete; overwrite iterator with last element in list then remove last element
-		*element = std::move(callbackList.back());
-		callbackList.pop_back();
-	}
-}
-
-inline void EventManagerParallelImpl::OnNotify(std::type_index inEventKind, std::any&& inAnyArgs)
-{
-    std::shared_ptr<CallbackList> snapshot;
-    {
-        std::lock_guard<std::mutex> lock(mMutex);
-
-        snapshot = mCallbackList; // now a synchronized read
-    }
-
-    auto invokeMatchingCallbacks = [inEventKind, &inAnyArgs](const auto& inElement)
-    {
-        const auto& [token, kind, callback] = inElement;
-        if (inEventKind == kind)
-        {
-            try {
-				EventManager::Invoke(callback, inAnyArgs);
-			}
-            catch (...)
-			{
-				SABER_ASSERT(!"Unexpected exception");
-			}
-        }
-    };
-    std::for_each(std::execution::par, snapshot->begin(), snapshot->end(), invokeMatchingCallbacks);
-}
-
-} // namespace detail
-
-inline /*static*/ std::shared_ptr<EventManager>
-	EventManager::Make(ThreadingPolicy inPolicy)
-{
-	std::shared_ptr<EventManager> result{};
-	switch (inPolicy)
-	{
-	case ThreadingPolicy::kParallel:
-		result.reset(new detail::EventManagerParallelImpl());
-		break;
-	case ThreadingPolicy::kSingle:
-		result.reset(new detail::EventManagerImpl());
-		break;
-	// default:
-	// We don't use default here because there are only 2 enum values, 
-	// and we want the compiler to helpfully alert us if someone ever adds a 3rd enum
-	} 
-	
-	return result;
-}
-
 } // namespace saber::events
 
 namespace saber::raii {
 
-inline void ResourceDeleter<saber::events::EventToken>::operator()(saber::events::EventToken& inEventToken) const noexcept
+inline void ResourceDeleter<events::EventToken>::operator()(events::EventToken& inEventToken) const noexcept
 {
 	// Check whether the token and Event Manager exists
-    if (inEventToken)
-    {
+	if (inEventToken)
+	{
 		auto eventManager = mWeakManager.lock();
 		if (eventManager)
 		{
 			eventManager->Unregister(inEventToken); // OK now — EventManager is complete
 		}
-    }
+	}
 }
 
 } // namespace saber::raii
